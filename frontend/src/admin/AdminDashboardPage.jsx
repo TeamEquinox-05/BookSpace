@@ -5,7 +5,7 @@ import axios from 'axios';
 import { PageHeader } from '../components/shared';
 import { AdminStatsGrid } from '../components/admin';
 import AvailablePlacesGrid from '../components/shared/AvailablePlacesGrid';
-import CardGridSkeleton from '../components/ui';
+import CardGridSkeleton from '../components/ui/CardGridSkeleton';
 
 export default function AdminDashboardPage() {
   const [stats, setStats] = useState({

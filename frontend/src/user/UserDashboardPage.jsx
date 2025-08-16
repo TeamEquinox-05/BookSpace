@@ -6,7 +6,8 @@ import axios from 'axios';
 import { PageHeader, RecentBookings } from '../components/shared';
 import AvailablePlacesGrid from '../components/shared/AvailablePlacesGrid';
 import BookingModal from '../components/shared/BookingModal';
-import { CardGridSkeleton, TableSkeleton } from '../components/ui';
+import CardGridSkeleton from '../components/ui/CardGridSkeleton';
+import TableSkeleton from '../components/ui/TableSkeleton';
 
 export default function UserDashboardPage({ user }) {
   const [isBookingModalOpen, setBookingModalOpen] = useState(false);
