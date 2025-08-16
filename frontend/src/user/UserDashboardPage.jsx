@@ -6,11 +6,14 @@ import axios from 'axios';
 import { PageHeader, RecentBookings } from '../components/shared';
 import AvailablePlacesGrid from '../components/shared/AvailablePlacesGrid';
 import BookingModal from '../components/shared/BookingModal';
+import { CardGridSkeleton, TableSkeleton } from '../components/ui';
 
 export default function UserDashboardPage({ user }) {
   const [isBookingModalOpen, setBookingModalOpen] = useState(false);
   const [todaysEvents, setTodaysEvents] = useState([]);
   const [availableVenues, setAvailableVenues] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const fetchUserData = async () => {
     try {
@@ -23,6 +26,9 @@ export default function UserDashboardPage({ user }) {
       setAvailableVenues(placesRes.data.filter(place => place.status === 'available'));
     } catch (error) {
       console.error("Error fetching user dashboard data:", error);
+      setError("Failed to load dashboard data. Please try again later.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -49,10 +55,24 @@ export default function UserDashboardPage({ user }) {
       <div className="flex-1 flex flex-col overflow-hidden">
         <PageHeader title="User Dashboard" />
         <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 dark:bg-gray-900 p-6">
-
-          <AvailablePlacesGrid places={availableVenues} />
-        <RecentBookings bookings={todaysEvents} title="Recent Bookings" onAddBooking={() => setBookingModalOpen(true)} />
-
+          {loading ? (
+            <>
+              <CardGridSkeleton />
+              <TableSkeleton />
+            </>
+          ) : error ? (
+            <div className="text-center text-red-500">{error}</div>
+          ) : (
+            <>
+              <AvailablePlacesGrid places={availableVenues} />
+              <RecentBookings bookings={todaysEvents} title="Recent Bookings" onAddBooking={() => setBookingModalOpen(true)} />
+              {availableVenues.length === 0 && todaysEvents.length === 0 && (
+                <div className="text-center text-gray-500 dark:text-gray-400">
+                  No available places or recent bookings.
+                </div>
+              )}
+            </>
+          )}
         </main>
       </div>
       <BookingModal
