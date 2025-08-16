@@ -20,7 +20,7 @@ router.post('/', async (req, res) => {
 // @route   PUT api/places/:id
 // @desc    Update a place
 // @access  Private/Admin
-router.put('/:id', async (req, res) => {
+router.put('/:id', auth, verifyRole('admin'), async (req, res) => {
   try {
     let place = await Place.findById(req.params.id);
     if (!place) {

@@ -224,7 +224,7 @@ router.get('/pending', async (req, res) => {
 // @route   GET api/bookings/approved
 // @desc    Get all approved bookings
 // @access  Public
-router.get('/approved', async (req, res) => {
+router.get('/approved', auth, verifyRole('admin'), async (req, res) => {
   try {
     const bookings = await Booking.find({ status: 'approved' }).sort({ eventStartTime: -1 }).populate('userId', ['name', 'email']).populate('placeId', ['name']);
     res.json(bookings);

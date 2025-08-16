@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const Booking = require('../models/Booking.cjs');
 const Place = require('../models/Place.cjs');
+const auth = require('../middleware/auth.cjs');
+const verifyRole = require('../middleware/verifyRole.cjs');
 
 // @route   GET api/stats
 // @desc    Get admin dashboard stats

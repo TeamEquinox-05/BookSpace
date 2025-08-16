@@ -1,40 +1,115 @@
-Best Approach (Required Changes):
+    at require (node:internal/modules/helpers:141:16)
 
-Authentication Flow
+    at Object.<anonymous> (/app/server.cjs:39:24)
 
-On login/signup, backend issues a JWT with role embedded.
+ 
 
-JWT is stored in a secure, httpOnly cookie (not accessible by JS).
+Node.js v22.11.0
 
-On app load/refresh, frontend calls /api/users/me, backend verifies JWT, and returns { id, name, role }.
+[dotenv@17.2.1] injecting env (0) from src/config/config.env -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
 
-Save user details in React AuthContext.
+/app/src/routes/places.cjs:40
 
-Frontend Role Handling
+router.delete('/:id', auth, verifyRole('admin'), async (req, res) => {
 
-Create an AuthContext to hold user state ({ name, role }).
+                      ^
 
-Provide login(), logout(), refreshUser() functions inside context.
+ 
 
-Use user.role from context for conditional rendering (e.g., show AdminDashboard only if role === "admin").
+ReferenceError: auth is not defined
 
-Remove localStorage usage completely for role or user info.
+    at Object.<anonymous> (/app/src/routes/places.cjs:40:23)
 
-Backend Role Enforcement
+    at Module._compile (node:internal/modules/cjs/loader:1546:14)
 
-Add Express middleware to verify JWT and check role.
+    at Object..js (node:internal/modules/cjs/loader:1689:10)
 
-Protect admin routes with role checks (verifyRole(["admin"])).
+    at Module.load (node:internal/modules/cjs/loader:1318:32)
 
-Example: /admin/venues accessible only if user role = admin.
+    at Function._load (node:internal/modules/cjs/loader:1128:12)
 
-Logout
+    at TracingChannel.traceSync (node:diagnostics_channel:315:14)
 
-Frontend calls /api/auth/logout.
+    at wrapModuleLoad (node:internal/modules/cjs/loader:218:24)
 
-Backend clears cookie.
+    at Module.require (node:internal/modules/cjs/loader:1340:12)
 
-AuthContext resets user = null.
+    at require (node:internal/modules/helpers:141:16)
 
-Goal:
-Make authentication and role-based access secure, scalable, and centralized: frontend only displays role from AuthContext, backend enforces role authorization.
+    at Object.<anonymous> (/app/server.cjs:39:24)
+
+ 
+
+Node.js v22.11.0
+
+[dotenv@17.2.1] injecting env (0) from src/config/config.env -- tip: ⚙️  write to custom object with { processEnv: myObject }
+
+/app/src/routes/places.cjs:40
+
+router.delete('/:id', auth, verifyRole('admin'), async (req, res) => {
+
+                      ^
+
+ 
+
+ReferenceError: auth is not defined
+
+    at Object.<anonymous> (/app/src/routes/places.cjs:40:23)
+
+    at Module._compile (node:internal/modules/cjs/loader:1546:14)
+
+    at Object..js (node:internal/modules/cjs/loader:1689:10)
+
+    at Module.load (node:internal/modules/cjs/loader:1318:32)
+
+    at Function._load (node:internal/modules/cjs/loader:1128:12)
+
+    at TracingChannel.traceSync (node:diagnostics_channel:315:14)
+
+    at wrapModuleLoad (node:internal/modules/cjs/loader:218:24)
+
+    at Module.require (node:internal/modules/cjs/loader:1340:12)
+
+    at require (node:internal/modules/helpers:141:16)
+
+    at Object.<anonymous> (/app/server.cjs:39:24)
+
+ 
+
+Node.js v22.11.0
+
+[dotenv@17.2.1] injecting env (0) from src/config/config.env -- tip: 📡 observe env with Radar: https://dotenvx.com/radar
+
+/app/src/routes/places.cjs:40
+
+router.delete('/:id', auth, verifyRole('admin'), async (req, res) => {
+
+                      ^
+
+ 
+
+ReferenceError: auth is not defined
+
+    at Object.<anonymous> (/app/src/routes/places.cjs:40:23)
+
+    at Module._compile (node:internal/modules/cjs/loader:1546:14)
+
+    at Object..js (node:internal/modules/cjs/loader:1689:10)
+
+    at Module.load (node:internal/modules/cjs/loader:1318:32)
+
+    at Function._load (node:internal/modules/cjs/loader:1128:12)
+
+    at TracingChannel.traceSync (node:diagnostics_channel:315:14)
+
+    at wrapModuleLoad (node:internal/modules/cjs/loader:218:24)
+
+    at Module.require (node:internal/modules/cjs/loader:1340:12)
+
+    at require (node:internal/modules/helpers:141:16)
+
+    at Object.<anonymous> (/app/server.cjs:39:24)
+
+ 
+
+Node.js v22.11.0
