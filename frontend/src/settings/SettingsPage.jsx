@@ -44,45 +44,45 @@ export default function SettingsPage() {
               <div>No user data found.</div>
             ) : (
               <>
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Profile Information</h2>
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">Profile Information</h2>
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-6">
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Name</label>
-                      <input type="text" defaultValue={user.name} className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+                      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Name</label>
+                      <input type="text" defaultValue={user.name} class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm dark:text-white" />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
-                      <input type="email" value={user.email} disabled className="mt-1 block w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm sm:text-sm" />
+                      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
+                      <input type="email" value={user.email} disabled class="mt-1 block w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm sm:text-sm dark:text-white" />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Phone</label>
-                      <input type="text" defaultValue={user.phone} className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+                      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Phone</label>
+                      <input type="text" defaultValue={user.phone} class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm dark:text-white" />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Role</label>
-                      <input type="text" value={user.role} disabled className="mt-1 block w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm sm:text-sm" />
+                      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Role</label>
+                      <input type="text" value={user.role} disabled class="mt-1 block w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm sm:text-sm dark:text-white" />
                     </div>
                   </div>
-                  <div className="mt-6 text-right">
-                    <button className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">Update Profile</button>
+                  <div class="mt-6 text-right">
+                    <button class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">Update Profile</button>
                   </div>
                 </div>
 
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Change Password</h2>
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">Change Password</h2>
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Current Password</label>
-                      <input type="password" className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+                      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Current Password</label>
+                      <input type="password" class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm dark:text-white" />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">New Password</label>
-                      <input type="password" className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+                      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">New Password</label>
+                      <input type="password" class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm dark:text-white" />
                     </div>
                   </div>
-                  <div className="mt-6 text-right">
-                    <button className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">Change Password</button>
+                  <div class="mt-6 text-right">
+                    <button class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">Change Password</button>
                   </div>
                 </div>
               </>
