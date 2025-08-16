@@ -17,7 +17,7 @@ app.use(cookieParser());
 
 // Init Middleware
 app.use(express.json({ extended: false }));
-app.use(cors({origin: ['https://book-space-one.vercel.app', 'http://localhost:5173'], credentials: true, methods: 'GET,HEAD,PUT,PATCH,POST,DELETE'}));
+app.use(cors({ origin: (origin, callback) => { if ([ 'https://book-space-one.vercel.app', 'http://localhost:5173'].indexOf(origin) !== -1) { callback(null, true); } else { callback(new Error('Not allowed by CORS')); } }, credentials: true, methods: 'GET,HEAD,PUT,PATCH,POST,DELETE' }));
 
 // Define Routes
 app.use('/api/auth', require('./src/routes/auth.cjs'));
