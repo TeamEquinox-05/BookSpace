@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 import ForgotPasswordModal from '../components/shared/ForgotPasswordModal';
-import { Mail, Lock } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -12,6 +12,7 @@ const LoginPage = () => {
   });
   const [error, setError] = useState('');
   const [isForgotPasswordModalOpen, setIsForgotPasswordModalOpen] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const { email, password } = formData;
 
@@ -36,6 +37,8 @@ const LoginPage = () => {
       setError(err.response?.data?.msg || 'Server error. Please try again later.');
     }
   };
+
+  const togglePasswordVisibility = () => setShowPassword(!showPassword);
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 flex items-center justify-center p-4">
@@ -74,14 +77,17 @@ const LoginPage = () => {
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
               <input
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 name="password"
                 value={password}
                 onChange={onChange}
                 required
                 placeholder="Password"
-                className="w-full pl-10 pr-3 py-3 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                className="w-full pl-10 pr-10 py-3 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
               />
+              <button type="button" onClick={togglePasswordVisibility} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
             </div>
 
             <div className="text-right">
