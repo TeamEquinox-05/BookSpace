@@ -64,7 +64,12 @@ const BookingModal = ({ isOpen, onClose, places, onBookingSubmit, initialBooking
       await onBookingSubmit(submissionDetails);
       onClose();
     } catch (err) {
-      setError(err.message);
+      // Check if the error has a response from the server and a message
+      if (err.response && err.response.data && err.response.data.msg) {
+        setError(err.response.data.msg); // Use the specific message from the backend
+      } else {
+        setError(err.message || 'An unexpected error occurred.'); // Fallback to generic message
+      }
     }
   };
 

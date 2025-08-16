@@ -21,13 +21,37 @@ router.post('/', auth, async (req, res) => {
   const { placeId, eventTitle, description, eventStartTime, eventEndTime, requestedFacilities } = req.body;
 
   try {
+    // Convert string dates to Date objects for comparison
+    const newEventStartTime = new Date(eventStartTime);
+    const newEventEndTime = new Date(eventEndTime);
+
+    // Find existing approved bookings for this place that might overlap
+    const overlappingBookings = await Booking.find({
+      placeId,
+      status: 'approved',
+      $or: [
+        // Case 1: Existing booking starts within the new booking's time
+        { eventStartTime: { $lt: newEventEndTime, $gte: newEventStartTime } },
+        // Case 2: Existing booking ends within the new booking's time
+        { eventEndTime: { $lte: newEventEndTime, $gt: newEventStartTime } },
+        // Case 3: New booking is completely within an existing booking
+        { eventStartTime: { $lte: newEventStartTime }, eventEndTime: { $gte: newEventEndTime } },
+        // Case 4: Existing booking is completely within the new booking
+        { eventStartTime: { $gte: newEventStartTime }, eventEndTime: { $lte: newEventEndTime } }
+      ]
+    });
+
+    if (overlappingBookings.length > 0) {
+      return res.status(400).json({ msg: 'Booking overlaps with an existing approved booking for this place.' });
+    }
+
     const newBooking = new Booking({
       userId: req.user.id,
       placeId,
       eventTitle,
       description,
-      eventStartTime,
-      eventEndTime,
+      eventStartTime: newEventStartTime,
+      eventEndTime: newEventEndTime,
       requestedFacilities,
     });
 
@@ -138,11 +162,34 @@ router.put('/:id', auth, async (req, res) => {
       return res.status(400).json({ msg: 'Only pending bookings can be edited' });
     }
 
+    // --- Start Overlap Detection for Edit ---
+    const updatedPlaceId = placeId || booking.placeId; // Use new placeId if provided, else existing
+    const updatedEventStartTime = new Date(eventStartTime || booking.eventStartTime);
+    const updatedEventEndTime = new Date(eventEndTime || booking.eventEndTime);
+
+    // Find existing approved bookings for this place that might overlap, excluding the current booking being edited
+    const overlappingBookings = await Booking.find({
+      _id: { $ne: booking._id }, // Exclude the current booking being edited
+      placeId: updatedPlaceId,
+      status: 'approved',
+      $or: [
+        { eventStartTime: { $lt: updatedEventEndTime, $gte: updatedEventStartTime } },
+        { eventEndTime: { $lte: updatedEventEndTime, $gt: updatedEventStartTime } },
+        { eventStartTime: { $lte: updatedEventStartTime }, eventEndTime: { $gte: updatedEventEndTime } },
+        { eventStartTime: { $gte: updatedEventStartTime }, eventEndTime: { $lte: updatedEventEndTime } }
+      ]
+    });
+
+    if (overlappingBookings.length > 0) {
+      return res.status(400).json({ msg: 'Edited booking overlaps with an existing approved booking for this place.' });
+    }
+    // --- End Overlap Detection for Edit ---
+
     booking.eventTitle = eventTitle || booking.eventTitle;
     booking.description = description || booking.description;
-    booking.eventStartTime = eventStartTime || booking.eventStartTime;
-    booking.eventEndTime = eventEndTime || booking.eventEndTime;
-    booking.placeId = placeId || booking.placeId;
+    booking.eventStartTime = updatedEventStartTime; // Use parsed Date object
+    booking.eventEndTime = updatedEventEndTime;     // Use parsed Date object
+    booking.placeId = updatedPlaceId;               // Use updated placeId
     booking.requestedFacilities = requestedFacilities || booking.requestedFacilities;
 
     await booking.save();

@@ -79,7 +79,7 @@ const MyBookingsPage = () => {
       <div className="flex-1 flex flex-col overflow-hidden">
         <PageHeader title="My Bookings" />
         <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 dark:bg-gray-900 p-6">
-          {error && <p className="text-center text-red-500">{error}</p>}
+          
           {loading ? (
             <CardGridSkeleton count={3} />
           ) : bookings.length === 0 ? (
@@ -107,12 +107,14 @@ const MyBookingsPage = () => {
                         Edit
                       </button>
                     )}
-                    <button
-                      onClick={() => handleDeleteClick(booking)}
-                      className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none"
-                    >
-                      Delete
-                    </button>
+                    {booking.status === 'pending' && (
+                      <button
+                        onClick={() => handleDeleteClick(booking)}
+                        className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none"
+                      >
+                        Delete
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
