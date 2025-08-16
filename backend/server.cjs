@@ -17,7 +17,7 @@ app.use(cookieParser());
 
 // Init Middleware
 app.use(express.json({ extended: false }));
-app.use(cors({origin: 'https://book-space-tau.vercel.app', credentials: true, methods: 'GET,HEAD,PUT,PATCH,POST,DELETE'}));
+app.use(cors({origin: 'https://book-space-one.vercel.app/', credentials: true, methods: 'GET,HEAD,PUT,PATCH,POST,DELETE'}));
 
 // Define Routes
 app.use('/api/auth', require('./src/routes/auth.cjs'));
