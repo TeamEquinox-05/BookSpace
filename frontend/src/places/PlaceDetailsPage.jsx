@@ -42,7 +42,7 @@ export default function PlaceDetailsPage() {
               <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">{place.name}</h2>
               <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
                 <p className="text-gray-600 dark:text-gray-400 mb-4">{place.details}</p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-900 dark:text-white">
                   <p><span className="font-semibold">Capacity:</span> {place.capacity}</p>
                   <p><span className="font-semibold">Location:</span> {place.location}</p>
                   <p><span className="font-semibold">Status:</span> {place.status}</p>
