@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useParams } from 'react-router-dom';
 import { PageHeader } from '../components/shared';
-
+import DetailViewSkeleton from '../components/ui/DetailViewSkeleton';
 export default function VenueDetailPage({ role = 'user' }) {
   const { id } = useParams();
   const [venue, setVenue] = useState(null);
