@@ -54,7 +54,7 @@ const Sidebar = ({ role = 'user' }) => {
       <div className="p-3 border-t border-slate-200 dark:border-slate-700">
         <Link
           to="/login"
-          onClick={() => { localStorage.removeItem('token'); localStorage.removeItem('role'); }}
+          onClick={() => { localStorage.clear(); }}
           className={`flex items-center p-3 rounded-lg text-red-500 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 ${!isExpanded && 'justify-center'}`}
           title="Logout"
         >
