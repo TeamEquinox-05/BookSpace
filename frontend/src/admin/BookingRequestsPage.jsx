@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { PageHeader } from '../components/shared';
 import { Check, X, Loader2 } from 'lucide-react';
-
+import CardGridSkeleton from '../components/ui/CardGridSkeleton';
 export default function BookingRequestsPage() {
   const [pendingBookings, setPendingBookings] = useState([]);
   const [loading, setLoading] = useState(true);
