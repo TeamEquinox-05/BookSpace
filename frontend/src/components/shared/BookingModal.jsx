@@ -75,7 +75,7 @@ const BookingModal = ({ isOpen, onClose, places, onBookingSubmit, initialBooking
           {/* Form Content */}
           <div>
             <label htmlFor="placeId" className="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">Venue</label>
-            <select id="placeId" name="placeId" value={bookingDetails.placeId} onChange={handleChange} className="w-full p-2.5 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+            <select id="placeId" name="placeId" value={bookingDetails.placeId} onChange={handleChange} className="w-full p-2.5 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition dark:text-white">
               {places.map(place => <option key={place._id} value={place._id}>{place.name}</option>)}
             </select>
           </div>
@@ -94,20 +94,20 @@ const BookingModal = ({ isOpen, onClose, places, onBookingSubmit, initialBooking
           )}
           <div>
             <label htmlFor="eventTitle" className="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">Event Title</label>
-            <input type="text" id="eventTitle" name="eventTitle" value={bookingDetails.eventTitle} onChange={handleChange} required className="w-full p-2.5 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" />
+            <input type="text" id="eventTitle" name="eventTitle" value={bookingDetails.eventTitle} onChange={handleChange} required className="w-full p-2.5 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition dark:text-white" />
           </div>
           <div>
             <label htmlFor="description" className="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">Description</label>
-            <textarea id="description" name="description" value={bookingDetails.description} onChange={handleChange} rows="3" className="w-full p-2.5 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"></textarea>
+            <textarea id="description" name="description" value={bookingDetails.description} onChange={handleChange} rows="3" className="w-full p-2.5 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition dark:text-white"></textarea>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label htmlFor="eventStartTime" className="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">Start Time</label>
-              <input type="datetime-local" id="eventStartTime" name="eventStartTime" value={bookingDetails.eventStartTime} onChange={handleChange} min={getMinBookingTime()} max={getMaxBookingTime()} required className="w-full p-2.5 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" />
+              <input type="datetime-local" id="eventStartTime" name="eventStartTime" value={bookingDetails.eventStartTime} onChange={handleChange} min={getMinBookingTime()} max={getMaxBookingTime()} required className="w-full p-2.5 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition dark:text-white" />
             </div>
             <div>
               <label htmlFor="eventEndTime" className="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">End Time</label>
-              <input type="datetime-local" id="eventEndTime" name="eventEndTime" value={bookingDetails.eventEndTime} onChange={handleChange} min={bookingDetails.eventStartTime || getMinBookingTime()} required className="w-full p-2.5 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" />
+              <input type="datetime-local" id="eventEndTime" name="eventEndTime" value={bookingDetails.eventEndTime} onChange={handleChange} min={bookingDetails.eventStartTime || getMinBookingTime()} required className="w-full p-2.5 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition dark:text-white" />
             </div>
           </div>
           {error && <p className="text-red-500 text-sm text-center">{error}</p>}
