@@ -99,14 +99,14 @@ router.post('/signup', async (req, res) => {
     jwt.sign(
       payload,
       process.env.JWT_SECRET,
-      { expiresIn: 360000 },
+      { expiresIn: 3600 },
       (err, token) => {
         if (err) throw err;
         res.cookie('token', token, {
           httpOnly: true,
           secure: process.env.NODE_ENV === 'production',
           sameSite: 'none',
-          maxAge: 3600000, // 1 hour
+          maxAge: 3600, // 1 hour
         });
         res.status(200).json({ msg: 'Signed up successfully', user: { name: user.name, role: user.role } });
       }
@@ -269,6 +269,19 @@ router.post('/reset-password', async (req, res) => {
     console.error('Error in reset-password route:', err.message);
     res.status(500).send('Server error');
   }
+});
+
+// @route   POST api/auth/logout
+// @desc    Logout user / Clear cookie
+// @access  Public
+router.post('/logout', (req, res) => {
+  res.cookie('token', '', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'none',
+    expires: new Date(0), // Set expiration to a past date to clear the cookie
+  });
+  res.status(200).json({ msg: 'Logged out successfully' });
 });
 
 module.exports = router;

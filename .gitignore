@@ -12,7 +12,6 @@ dist
 dist-ssr
 *.local
 cli-images
-# Gemini.md
 
 # Editor directories and files
 .vscode/*

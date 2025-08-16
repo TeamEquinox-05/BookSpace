@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 import { User, Mail, Lock, Phone, Briefcase, Eye, EyeOff } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 const SignupPage = ({ onSignupSuccess }) => {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -41,8 +43,7 @@ const SignupPage = ({ onSignupSuccess }) => {
     try {
       const res = await axios.post('/auth/signup', formData);
       const { user } = res.data;
-      localStorage.setItem('role', user.role);
-      localStorage.setItem('userName', user.name);
+      login(user);
       if (user.role === 'admin') {
         navigate('/admin');
       } else {

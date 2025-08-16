@@ -6,8 +6,10 @@ import { PageHeader } from '../components/shared';
 import { AdminStatsGrid } from '../components/admin';
 import AvailablePlacesGrid from '../components/shared/AvailablePlacesGrid';
 import CardGridSkeleton from '../components/ui/CardGridSkeleton';
+import { useAuth } from '../../context/AuthContext';
 
 export default function AdminDashboardPage() {
+  const { user } = useAuth();
   const [stats, setStats] = useState({
     totalPlaces: { value: 0, change: '' },
     activeBookings: { value: 0, change: '' },
@@ -20,7 +22,6 @@ export default function AdminDashboardPage() {
   const [availablePlaces, setAvailablePlaces] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const role = localStorage.getItem('role');
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -58,7 +59,7 @@ export default function AdminDashboardPage() {
             <div className="text-center text-red-500">{error}</div>
           ) : (
             <>
-              <AvailablePlacesGrid places={availablePlaces} role={role} />
+              <AvailablePlacesGrid places={availablePlaces} role={user?.role} />
               <AdminStatsGrid stats={stats} />
               {availablePlaces.length === 0 && (
                 <div className="text-center text-gray-500 dark:text-gray-400">

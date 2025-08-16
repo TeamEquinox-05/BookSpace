@@ -237,7 +237,7 @@ router.get('/approved', async (req, res) => {
 // @route   GET api/bookings
 // @desc    Get all bookings
 // @access  Public
-router.get('/', async (req, res) => {
+router.get('/', auth, verifyRole('admin'), async (req, res) => {
   try {
     const bookings = await Booking.find().populate('userId', ['name', 'email']).populate('placeId', ['name']);
     res.json(bookings);

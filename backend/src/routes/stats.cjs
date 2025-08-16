@@ -6,7 +6,7 @@ const Place = require('../models/Place.cjs');
 // @route   GET api/stats
 // @desc    Get admin dashboard stats
 // @access  Private/Admin
-router.get('/', async (req, res) => {
+router.get('/', auth, verifyRole('admin'), async (req, res) => {
   try {
     const totalPlaces = await Place.countDocuments();
     const activeBookings = await Booking.countDocuments({ status: 'approved' });

@@ -12,9 +12,10 @@ import VenueManagementPage from './admin/VenueManagementPage.jsx';
 import VenueDetailPage from './venues/VenueDetailPage.jsx';
 import PrivateRoute from './components/shared/PrivateRoute.jsx';
 import Layout from './components/shared/Layout.jsx';
+import { useAuth } from './context/AuthContext.jsx';
 
 function App() {
-  const role = localStorage.getItem('role');
+  const { user, loading } = useAuth();
 
   return (
     <Routes>
@@ -24,7 +25,15 @@ function App() {
       {/* Redirect root path based on auth status */}
       <Route 
         path="/"
-        element={role ? <Navigate to={role === 'admin' ? '/admin' : '/dashboard'} /> : <Navigate to="/login" />}
+        element={
+          loading ? (
+            <div>Loading...</div>
+          ) : user ? (
+            <Navigate to={user.role === 'admin' ? '/admin' : '/dashboard'} />
+          ) : (
+            <Navigate to="/login" />
+          )
+        }
       />
 
       {/* Routes with Layout */}

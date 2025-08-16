@@ -3,9 +3,11 @@ import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 import ForgotPasswordModal from '../components/shared/ForgotPasswordModal';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 const LoginPage = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -23,8 +25,7 @@ const LoginPage = () => {
     try {
       const res = await axios.post('/auth/login', formData);
       const { user } = res.data;
-      localStorage.setItem('role', user.role);
-      localStorage.setItem('userName', user.name);
+      login(user);
       console.log('Login successful. User role:', user.role);
       if (user.role === 'admin') {
         console.log('Navigating to /admin');

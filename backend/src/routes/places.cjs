@@ -37,7 +37,7 @@ router.put('/:id', async (req, res) => {
 // @route   DELETE api/places/:id
 // @desc    Delete a place
 // @access  Private/Admin
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', auth, verifyRole('admin'), async (req, res) => {
   try {
     let place = await Place.findById(req.params.id);
     if (!place) {

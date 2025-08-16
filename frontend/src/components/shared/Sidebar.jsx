@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Home, ClipboardCheck, Calendar, Building, Users, Settings, LogOut, PanelLeftClose, PanelRightClose, ClipboardList } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
-const Sidebar = ({ role = 'user' }) => {
+const Sidebar = () => {
   const location = useLocation();
   const [isExpanded, setIsExpanded] = useState(true);
+  const { user, logout } = useAuth();
 
   const userNavLinks = [
     { icon: <Home size={20} />, text: 'Home', path: '/dashboard' },
@@ -21,7 +23,7 @@ const Sidebar = ({ role = 'user' }) => {
     { icon: <Settings size={20} />, text: 'Settings', path: '/admin/settings' },
   ];
 
-  const navLinks = role === 'admin' ? adminNavLinks : userNavLinks;
+  const navLinks = user?.role === 'admin' ? adminNavLinks : userNavLinks;
 
   const NavLink = ({ icon, text, path }) => (
     <Link
@@ -54,7 +56,7 @@ const Sidebar = ({ role = 'user' }) => {
       <div className="p-3 border-t border-slate-200 dark:border-slate-700">
         <Link
           to="/login"
-          onClick={() => { localStorage.clear(); }}
+          onClick={logout}
           className={`flex items-center p-3 rounded-lg text-red-500 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 ${!isExpanded && 'justify-center'}`}
           title="Logout"
         >

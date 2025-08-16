@@ -1,10 +1,11 @@
 import React from 'react';
 import { Bell, Search, Moon, Sun, Menu, X } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
+import { useAuth } from '../../context/AuthContext';
 
 const PageHeader = ({ title, children, sidebarOpen, setSidebarOpen }) => {
   const { darkMode, toggleDarkMode } = useTheme();
-  const userName = localStorage.getItem('userName') || ' ';
+  const { user } = useAuth();
 
   const handleToggle = () => {
     toggleDarkMode();
@@ -51,7 +52,7 @@ const PageHeader = ({ title, children, sidebarOpen, setSidebarOpen }) => {
           </button>
 
           <div className="w-9 h-9 bg-blue-600 rounded-full flex items-center justify-center cursor-pointer">
-            <span className="text-white font-semibold text-sm">{userName.charAt(0).toUpperCase()}</span>
+            <span className="text-white font-semibold text-sm">{(user?.name || ' ').charAt(0).toUpperCase()}</span>
           </div>
         </div>
       </div>
