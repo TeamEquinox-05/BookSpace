@@ -10,12 +10,7 @@ export default function SettingsPage() {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const token = localStorage.getItem('token');
-        const res = await axios.get('/users/me', {
-          headers: {
-            'x-auth-token': token,
-          },
-        });
+        const res = await axios.get('/users/me');
         setUser(res.data);
       } catch (err) {
         setError(err.message);

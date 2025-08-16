@@ -40,9 +40,10 @@ const SignupPage = ({ onSignupSuccess }) => {
     setError('');
     try {
       const res = await axios.post('/auth/signup', formData);
-      localStorage.setItem('token', res.data.token);
-      const decodedToken = JSON.parse(atob(res.data.token.split('.')[1]));
-      if (decodedToken.user.role === 'admin') {
+      const { user } = res.data;
+      localStorage.setItem('role', user.role);
+      localStorage.setItem('userName', user.name);
+      if (user.role === 'admin') {
         navigate('/admin');
       } else {
         navigate('/dashboard');

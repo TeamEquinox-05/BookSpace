@@ -108,7 +108,7 @@ router.post('/signup', async (req, res) => {
           sameSite: 'none',
           maxAge: 3600000, // 1 hour
         });
-        res.status(200).json({ msg: 'Signed up successfully' });
+        res.status(200).json({ msg: 'Signed up successfully', user: { name: user.name, role: user.role } });
       }
     );
   } catch (err) {

@@ -64,13 +64,8 @@ const MyBookingsPage = () => {
   };
 
   const handleDeleteBooking = async () => {
-    const token = localStorage.getItem('token');
     try {
-      await axios.delete(`/bookings/${currentBooking._id}`, {
-        headers: {
-          'x-auth-token': token,
-        },
-      });
+      await axios.delete(`/bookings/${currentBooking._id}`);
 
       setIsDeleteModalOpen(false);
       fetchBookingsAndPlaces(); // Refresh the list
