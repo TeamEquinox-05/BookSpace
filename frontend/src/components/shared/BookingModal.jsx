@@ -76,7 +76,7 @@ const BookingModal = ({ isOpen, onClose, places, onBookingSubmit, initialBooking
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex justify-center items-center p-4" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/60 z-50 flex justify-center items-center p-4">
       <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-2xl w-full max-w-lg transform transition-all" onClick={e => e.stopPropagation()}>
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-slate-800 dark:text-white">{initialBooking ? "Edit Booking" : "Request a Booking"}</h2>
