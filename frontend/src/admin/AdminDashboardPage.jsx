@@ -6,7 +6,7 @@ import { PageHeader } from '../components/shared';
 import { AdminStatsGrid } from '../components/admin';
 import AvailablePlacesGrid from '../components/shared/AvailablePlacesGrid';
 import CardGridSkeleton from '../components/ui/CardGridSkeleton';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../context/AuthContext';
 
 export default function AdminDashboardPage() {
   const { user } = useAuth();

@@ -20,7 +20,12 @@ const PrivateRoute = ({ adminOnly }) => {
     return <Navigate to="/dashboard" />;
   }
 
-  // 3. If all checks pass, render the requested component.
+  // 3. Prevent admins from accessing non-admin specific routes (like user dashboard)
+  if (!adminOnly && user.role === 'admin') {
+    return <Navigate to="/admin" />;
+  }
+
+  // 4. If all checks pass, render the requested component.
   return <Outlet />;
 };
 

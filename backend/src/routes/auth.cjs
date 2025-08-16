@@ -43,7 +43,10 @@ router.post('/send-otp', async (req, res) => {
       text: `Your OTP is: ${otp}`,
     };
 
-    await transporter.sendMail(mailOptions);
+    await transporter.sendMail(mailOptions).catch(mailErr => {
+      console.error('Nodemailer sendMail error:', mailErr);
+      throw mailErr; // Re-throw to be caught by the outer try-catch
+    });
     res.status(200).json({ msg: 'OTP sent successfully' });
   } catch (err) {
     console.error(err.message);
@@ -104,11 +107,11 @@ router.post('/signup', async (req, res) => {
         if (err) throw err;
         res.cookie('token', token, {
           httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'none',
-          maxAge: 3600, // 1 hour
+          secure: process.env.NODE_ENV === 'production' ? true : false,
+          sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'Lax',
+          maxAge: 3600000, // 1 hour
         });
-        res.status(200).json({ msg: 'Signed up successfully', user: { name: user.name, role: user.role } });
+        res.status(200).json({ msg: 'Signed up successfully', token, user: { name: user.name, role: user.role } });
       }
     );
   } catch (err) {
@@ -158,11 +161,11 @@ router.post('/login', async (req, res) => {
         if (err) throw err;
         res.cookie('token', token, {
           httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'none',
+          secure: process.env.NODE_ENV === 'production' ? true : false,
+          sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'Lax',
           maxAge: 3600000, // 1 hour
         });
-        res.status(200).json({ msg: 'Logged in successfully', user: { name: user.name, role: user.role } });
+        res.status(200).json({ msg: 'Logged in successfully', token, user: { name: user.name, role: user.role } });
       }
     );
   } catch (err) {
@@ -200,7 +203,10 @@ router.post('/forgot-password', async (req, res) => {
       text: `Your OTP for password reset is: ${otp}`,
     };
 
-    await transporter.sendMail(mailOptions);
+    await transporter.sendMail(mailOptions).catch(mailErr => {
+      console.error('Nodemailer sendMail error:', mailErr);
+      throw mailErr; // Re-throw to be caught by the outer try-catch
+    });
     console.log('OTP email sent to:', email);
     res.status(200).json({ msg: 'OTP sent to your email' });
   } catch (err) {
@@ -277,8 +283,8 @@ router.post('/reset-password', async (req, res) => {
 router.post('/logout', (req, res) => {
   res.cookie('token', '', {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'none',
+    secure: process.env.NODE_ENV === 'production' ? true : false,
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'Lax',
     expires: new Date(0), // Set expiration to a past date to clear the cookie
   });
   res.status(200).json({ msg: 'Logged out successfully' });

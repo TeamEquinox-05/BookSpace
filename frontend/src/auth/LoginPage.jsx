@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
-import ForgotPasswordModal from '../components/shared/ForgotPasswordModal';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../context/AuthContext';
+import { ForgotPasswordModal } from '../components/shared';
 
 const LoginPage = () => {
   const navigate = useNavigate();

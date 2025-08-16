@@ -22,20 +22,6 @@ function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
 
-      {/* Redirect root path based on auth status */}
-      <Route 
-        path="/"
-        element={
-          loading ? (
-            <div>Loading...</div>
-          ) : user ? (
-            <Navigate to={user.role === 'admin' ? '/admin' : '/dashboard'} />
-          ) : (
-            <Navigate to="/login" />
-          )
-        }
-      />
-
       {/* Routes with Layout */}
       <Route element={<Layout />}>
         <Route element={<PrivateRoute />}>
@@ -54,6 +40,9 @@ function App() {
           <Route path="/admin/places/:id" element={<VenueDetailPage role="admin" />} />
         </Route>
       </Route>
+
+      {/* Catch-all for unauthenticated users trying to access protected routes */}
+      {!loading && !user && <Route path="*" element={<Navigate to="/login" />} />}
 
       {/* Wildcard route redirects to root for logic handling */}
       <Route path="*" element={<Navigate to="/" />} />

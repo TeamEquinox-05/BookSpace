@@ -1,4 +1,5 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
+import { createContext, useState, useEffect } from 'react';
+import { useContext } from 'react';
 import axios from 'axios';
 
 const AuthContext = createContext();
@@ -9,11 +10,23 @@ export const AuthProvider = ({ children }) => {
 
   // Function to fetch user data from backend
   const refreshUser = async () => {
+    setLoading(true); // Set loading to true at the very beginning
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setUser(null);
+      setLoading(false);
+      return;
+    }
+
+    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
     try {
       const res = await axios.get('/users/me');
       setUser(res.data);
     } catch (err) {
-      // If there's an error (e.g., token expired or not present), clear user
+      // If there's an error (e.g., token expired or not present), clear user and token
+      localStorage.removeItem('token');
+      delete axios.defaults.headers.common['Authorization'];
       setUser(null);
     } finally {
       setLoading(false);
@@ -26,18 +39,23 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   // Login function
-  const login = (userData) => {
+  const login = (userData, token) => {
     setUser(userData);
+    if (token) {
+      localStorage.setItem('token', token);
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    }
   };
 
   // Logout function
   const logout = async () => {
     try {
       await axios.post('/auth/logout');
-      setUser(null);
     } catch (err) {
       console.error('Logout failed:', err);
-      // Even if logout fails on backend, clear frontend state
+    } finally {
+      localStorage.removeItem('token');
+      delete axios.defaults.headers.common['Authorization'];
       setUser(null);
     }
   };

@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const Place = require('../models/Place.cjs');
 const Booking = require('../models/Booking.cjs');
+const auth = require('../middleware/auth.cjs');
+const verifyRole = require('../middleware/verifyRole.cjs');
 
 // @route   POST api/places
 // @desc    Create a new place

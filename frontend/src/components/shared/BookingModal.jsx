@@ -21,8 +21,8 @@ const BookingModal = ({ isOpen, onClose, places, onBookingSubmit, initialBooking
       if (initialBooking) {
         setBookingDetails({
           ...initialBooking,
-          eventStartTime: new Date(initialBooking.eventStartTime).toISOString().slice(0, 16),
-          eventEndTime: new Date(initialBooking.eventEndTime).toISOString().slice(0, 16),
+          eventStartTime: new Date(initialBooking.eventStartTime).toLocaleString('sv-SE', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).replace(' ', 'T'),
+          eventEndTime: new Date(initialBooking.eventEndTime).toLocaleString('sv-SE', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).replace(' ', 'T'),
         });
         setSelectedFacilities(initialBooking.requestedFacilities || []);
       } else {
@@ -55,7 +55,13 @@ const BookingModal = ({ isOpen, onClose, places, onBookingSubmit, initialBooking
       return;
     }
     try {
-      await onBookingSubmit({ ...bookingDetails, requestedFacilities: selectedFacilities });
+      const submissionDetails = {
+        ...bookingDetails,
+        eventStartTime: new Date(bookingDetails.eventStartTime).toISOString(),
+        eventEndTime: new Date(bookingDetails.eventEndTime).toISOString(),
+        requestedFacilities: selectedFacilities
+      };
+      await onBookingSubmit(submissionDetails);
       onClose();
     } catch (err) {
       setError(err.message);

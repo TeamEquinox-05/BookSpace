@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Mail, KeyRound, Lock, X, Loader2 } from 'lucide-react';
+import axios from 'axios';
 
 // Helper component for the step indicator
 const StepIndicator = ({ currentStep }) => {
@@ -77,7 +78,9 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
     setLoading(true);
     setMessage('');
     try {
+      console.log('Sending OTP request with email:', email);
       const res = await axios.post('/auth/forgot-password', { email });
+      console.log('OTP sent response:', res.data);
       if (!isResend) setStep(2);
       setMessage({ text: res.data.msg, type: 'success' });
       setTimer(60);
