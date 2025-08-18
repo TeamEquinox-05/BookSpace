@@ -29,7 +29,7 @@ const Sidebar = () => {
   const NavLink = ({ icon, text, path }) => (
     <Link
       to={path}
-      className={`flex items-center p-3 my-1 rounded-lg transition-colors duration-200 ${location.pathname === path ? 'bg-blue-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'}`}
+      className={`flex items-center p-3 my-1 rounded-lg transition-colors duration-200 ${location.pathname === path ? 'bg-blue-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'} ${!isExpanded && 'justify-center'}`}
       title={text} // Tooltip for collapsed view
     >
       <motion.div
