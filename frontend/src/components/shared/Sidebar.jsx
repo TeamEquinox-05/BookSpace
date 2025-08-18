@@ -5,7 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 
 const Sidebar = () => {
   const location = useLocation();
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false);
   const { user, logout } = useAuth();
 
   const userNavLinks = [
@@ -41,12 +41,13 @@ const Sidebar = () => {
   );
 
   return (
-    <aside className={`relative h-screen bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 transition-all duration-300 ease-in-out flex flex-col ${isExpanded ? 'w-64' : 'w-20'}`}>
+    <aside
+      className={`relative h-screen bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 transition-all duration-300 ease-in-out flex flex-col ${isExpanded ? 'w-64' : 'w-20'}`}
+      onMouseEnter={() => setIsExpanded(true)}
+      onMouseLeave={() => setIsExpanded(false)}
+    >
       <div className={`flex items-center border-b border-slate-200 dark:border-slate-700 h-16 ${isExpanded ? 'justify-between px-4' : 'justify-center'}`}>
         {isExpanded && <h1 className="text-2xl font-bold text-blue-600 dark:text-blue-400">BookSpace</h1>}
-        <button onClick={() => setIsExpanded(!isExpanded)} className="p-2 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700">
-          {isExpanded ? <PanelLeftClose size={20} /> : <PanelRightClose size={20} />}
-        </button>
       </div>
 
       <nav className="flex-1 p-3 space-y-1">
