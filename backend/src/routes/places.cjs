@@ -118,4 +118,17 @@ router.get('/', async (req, res) => {
   }
 });
 
+// @route   GET api/places/:id/bookings
+// @desc    Get all bookings for a specific place
+// @access  Public
+router.get('/:id/bookings', async (req, res) => {
+  try {
+    const bookings = await Booking.find({ placeId: req.params.id });
+    res.json(bookings);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+});
+
 module.exports = router;

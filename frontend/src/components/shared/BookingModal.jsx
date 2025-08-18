@@ -8,6 +8,8 @@ const BookingModal = ({ isOpen, onClose, places, onBookingSubmit, initialBooking
   const [selectedFacilities, setSelectedFacilities] = useState(initialBooking?.requestedFacilities || []);
   const [availableFacilities, setAvailableFacilities] = useState([]);
   const [error, setError] = useState(null);
+  const [isAvailable, setIsAvailable] = useState(true);
+  const [availabilityMessage, setAvailabilityMessage] = useState('');
 
   const getMinBookingTime = () => new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 16);
   const getMaxBookingTime = () => {
@@ -46,6 +48,35 @@ const BookingModal = ({ isOpen, onClose, places, onBookingSubmit, initialBooking
   const handleFacilityChange = (facility) => {
     setSelectedFacilities(prev => prev.some(f => f.name === facility.name) ? prev.filter(f => f.name !== facility.name) : [...prev, facility]);
   };
+
+  const checkAvailability = async () => {
+    if (!bookingDetails.placeId || !bookingDetails.eventStartTime || !bookingDetails.eventEndTime) {
+      setIsAvailable(true);
+      setAvailabilityMessage('');
+      return;
+    }
+
+    try {
+      const res = await axios.post('/bookings/check-availability', {
+        placeId: bookingDetails.placeId,
+        eventStartTime: new Date(bookingDetails.eventStartTime).toISOString(),
+        eventEndTime: new Date(bookingDetails.eventEndTime).toISOString(),
+      });
+      setIsAvailable(res.data.available);
+      setAvailabilityMessage(res.data.msg);
+    } catch (err) {
+      console.error('Error checking availability:', err);
+      setIsAvailable(false);
+      setAvailabilityMessage('Error checking availability.');
+    }
+  };
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      checkAvailability();
+    }, 500); // Debounce for 500ms
+    return () => clearTimeout(timeoutId);
+  }, [bookingDetails.placeId, bookingDetails.eventStartTime, bookingDetails.eventEndTime]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -122,9 +153,10 @@ const BookingModal = ({ isOpen, onClose, places, onBookingSubmit, initialBooking
             </div>
           </div>
           {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+          {!isAvailable && availabilityMessage && <p className="text-red-500 text-sm text-center">{availabilityMessage}</p>}
           <div className="flex justify-end gap-4 pt-4">
             <button type="button" onClick={onClose} className="px-5 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-600 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-500 transition-colors">Cancel</button>
-            <button type="submit" className="px-5 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+            <button type="submit" disabled={!isAvailable} className="px-5 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">
               {initialBooking ? "Update Booking" : "Submit Request"}
             </button>
           </div>

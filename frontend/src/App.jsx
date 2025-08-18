@@ -14,12 +14,17 @@ import VenueDetailPage from './venues/VenueDetailPage.jsx';
 import PrivateRoute from './components/shared/PrivateRoute.jsx';
 import Layout from './components/shared/Layout.jsx';
 import { useAuth } from './context/AuthContext.jsx';
+import { Spinner } from './components/ui';
 
 function App() {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return <div className="min-h-screen bg-slate-900 flex justify-center items-center text-white">Loading...</div>;
+    return (
+      <div className="min-h-screen bg-slate-900 flex justify-center items-center">
+        <Spinner size="lg" color="white" />
+      </div>
+    );
   }
 
   return (

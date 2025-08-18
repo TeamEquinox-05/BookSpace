@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { PageHeader } from '../components/shared';
 import FormSkeleton from '../components/ui/FormSkeleton';
+import { Spinner } from '../components/ui';
 export default function SettingsPage() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -34,7 +35,9 @@ export default function SettingsPage() {
         <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 dark:bg-gray-900 p-6">
           <div className="max-w-4xl mx-auto">
             {loading ? (
-              <FormSkeleton />
+              <div className="flex justify-center items-center h-64">
+                <Spinner size="lg" />
+              </div>
             ) : !user ? (
               <div>No user data found.</div>
             ) : (

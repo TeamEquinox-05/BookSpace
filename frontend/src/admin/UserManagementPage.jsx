@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { PageHeader, ConfirmationModal } from '../components/shared';
-import { Check, X, Trash2, Search, Filter } from 'lucide-react';
+import { Check, X, Trash2, Search, Filter, User as UserIcon } from 'lucide-react';
+import { Spinner } from '../components/ui';
 
 export default function UserManagementPage() {
   const [users, setUsers] = useState([]);
@@ -100,7 +101,9 @@ export default function UserManagementPage() {
             </div>
 
             {loading ? (
-              <div className="text-center text-gray-500 dark:text-gray-400">Loading...</div>
+              <div className="text-center py-12">
+                <Spinner size="lg" />
+              </div>
             ) : error ? (
               <div className="text-center text-red-500">Error: {error}</div>
             ) : (
@@ -110,11 +113,14 @@ export default function UserManagementPage() {
                     <div className="p-6">
                       <div className="flex items-center space-x-4">
                         <div className="flex-shrink-0">
-                          <img className="h-12 w-12 rounded-full" src={`https://i.pravatar.cc/150?u=${user._id}`} alt={`${user.name}'s avatar`} />
+                          <div className="h-12 w-12 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                            <UserIcon className="h-8 w-8 text-gray-500 dark:text-gray-400" />
+                          </div>
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-lg font-semibold text-gray-900 dark:text-white truncate">{user.name}</p>
                           <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{user.email}</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400 truncate">Role: {user.role}</p>
                         </div>
                       </div>
                       <div className="mt-4 flex justify-between items-center">

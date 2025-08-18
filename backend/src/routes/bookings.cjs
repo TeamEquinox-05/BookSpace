@@ -1,17 +1,40 @@
 const express = require('express');
 const router = express.Router();
 const Booking = require('../models/Booking.cjs');
-const nodemailer = require('nodemailer');
+const { sendEmail } = require('../utils/email.cjs');
 const auth = require('../middleware/auth.cjs');
 const verifyRole = require('../middleware/verifyRole.cjs');
 
-// Nodemailer transporter (ensure these are loaded from config.env in a real app)
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
+// @route   POST api/bookings/check-availability
+// @desc    Check if a place is available for a given time range
+// @access  Public
+router.post('/check-availability', async (req, res) => {
+  const { placeId, eventStartTime, eventEndTime } = req.body;
+
+  try {
+    const newEventStartTime = new Date(eventStartTime);
+    const newEventEndTime = new Date(eventEndTime);
+
+    const overlappingBookings = await Booking.find({
+      placeId,
+      status: 'approved',
+      $or: [
+        { eventStartTime: { $lt: newEventEndTime, $gte: newEventStartTime } },
+        { eventEndTime: { $lte: newEventEndTime, $gt: newEventStartTime } },
+        { eventStartTime: { $lte: newEventStartTime }, eventEndTime: { $gte: newEventEndTime } },
+        { eventStartTime: { $gte: newEventStartTime }, eventEndTime: { $lte: newEventEndTime } }
+      ]
+    });
+
+    if (overlappingBookings.length > 0) {
+      return res.json({ available: false, msg: 'Place is not available during this time.' });
+    } else {
+      return res.json({ available: true, msg: 'Place is available.' });
+    }
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
 });
 
 // @route   POST api/bookings

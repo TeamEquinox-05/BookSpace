@@ -35,4 +35,49 @@ router.get('/', auth, verifyRole('admin'), async (req, res) => {
   }
 });
 
+// @route   GET api/stats/bookings-by-month
+// @desc    Get bookings by month for the current year
+// @access  Private/Admin
+router.get('/bookings-by-month', auth, verifyRole('admin'), async (req, res) => {
+  try {
+    const bookingsByMonth = await Booking.aggregate([
+      {
+        $match: {
+          eventStartTime: {
+            $gte: new Date(new Date().getFullYear(), 0, 1),
+            $lt: new Date(new Date().getFullYear() + 1, 0, 1),
+          },
+        },
+      },
+      {
+        $group: {
+          _id: { $month: "$eventStartTime" },
+          count: { $sum: 1 },
+        },
+      },
+      {
+        $sort: { "_id": 1 },
+      },
+    ]);
+
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    ];
+
+    const chartData = months.map((month, index) => {
+      const data = bookingsByMonth.find((item) => item._id === index + 1);
+      return {
+        name: month,
+        bookings: data ? data.count : 0,
+      };
+    });
+
+    res.json(chartData);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+});
+
 module.exports = router;
