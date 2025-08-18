@@ -27,7 +27,7 @@ router.post('/send-otp', async (req, res) => {
     // Check if user already exists
     let user = await User.findOne({ email });
     if (user) {
-      return res.status(400).json({ msg: 'User already exists' });
+      return res.status(400).json({ msg: 'An account with this email already exists and is pending approval.' });
     }
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
@@ -90,30 +90,7 @@ router.post('/signup', async (req, res) => {
     // Clean up OTP store
     delete otpStore[email];
 
-    // Return jsonwebtoken
-    const payload = {
-      user: {
-        id: user.id,
-        name: user.name,
-        role: user.role,
-      },
-    };
-
-    jwt.sign(
-      payload,
-      process.env.JWT_SECRET,
-      { expiresIn: 3600 },
-      (err, token) => {
-        if (err) throw err;
-        res.cookie('token', token, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === 'production' ? true : false,
-          sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'Lax',
-          maxAge: 3600000, // 1 hour
-        });
-        res.status(200).json({ msg: 'Signed up successfully', token, user: { name: user.name, role: user.role } });
-      }
-    );
+    res.status(200).json({ msg: 'Signup successful. Your account is pending approval.' });
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server error');
@@ -130,11 +107,17 @@ router.post('/login', async (req, res) => {
   try {
     // Check if user exists
     let user = await User.findOne({ email });
-    if (!user) {
-      console.log('Login failed: User not registered for email:', email);
+    if (!user || user.isDeleted) {
+      console.log('Login failed: User not registered or is deleted for email:', email);
       return res.status(400).json({ msg: 'User not registered' });
     }
     console.log('User found:', user.email);
+
+    // Check if user is active
+    if (user.status !== 'active') {
+      console.log('Login failed: User not active for email:', email);
+      return res.status(400).json({ msg: `Your account is ${user.status}. Please contact an administrator.` });
+    }
 
     // Check password
     const isMatch = await bcrypt.compare(password, user.password);

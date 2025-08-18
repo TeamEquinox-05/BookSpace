@@ -21,6 +21,15 @@ const UserSchema = new mongoose.Schema({
     type: String,
     default: 'user'
   },
+  status: {
+    type: String,
+    enum: ['pending', 'active', 'rejected'],
+    default: 'pending'
+  },
+  isDeleted: {
+    type: Boolean,
+    default: false
+  },
   date: {
     type: Date,
     default: Date.now

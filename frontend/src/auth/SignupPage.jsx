@@ -2,11 +2,9 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 import { User, Mail, Lock, Phone, Briefcase, Eye, EyeOff } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
 
 const SignupPage = ({ onSignupSuccess }) => {
   const navigate = useNavigate();
-  const { login } = useAuth();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -19,6 +17,7 @@ const SignupPage = ({ onSignupSuccess }) => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [signupSuccess, setSignupSuccess] = useState(false);
 
   const { name, email, password, phone, role, otp } = formData;
 
@@ -41,15 +40,8 @@ const SignupPage = ({ onSignupSuccess }) => {
     setLoading(true);
     setError('');
     try {
-      const res = await axios.post('/auth/signup', formData);
-      const { user, token } = res.data;
-      login(user, token);
-      if (user.role === 'admin') {
-        navigate('/admin');
-      } else {
-        navigate('/dashboard');
-      }
-      // onSignupSuccess(); // This function is not passed as a prop
+      await axios.post('/auth/signup', formData);
+      setSignupSuccess(true);
     } catch (err) {
       setError(err.response?.data?.msg || 'Server error. Please try again later.');
     }
@@ -70,68 +62,79 @@ const SignupPage = ({ onSignupSuccess }) => {
 
         {/* Right Side: Form */}
         <div className="w-full md:w-1/2 p-8 sm:p-12">
-          <h2 className="text-3xl font-bold mb-2 text-slate-900 dark:text-white">Create Account</h2>
-          <p className="text-slate-600 dark:text-slate-400 mb-8">Get started with a free account today.</p>
-
-          {error && (
-            <div className="bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg relative mb-6" role="alert">
-              <span>{error}</span>
+          {signupSuccess ? (
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-green-600">Signup Successful!</h2>
+              <p className="text-slate-600 dark:text-slate-400 mt-4">Your account has been created and is pending approval from an administrator.</p>
+              <p className="text-slate-600 dark:text-slate-400 mt-2">You will be notified by email once your account is approved.</p>
+              <Link to="/login" className="mt-6 inline-block px-6 py-3 text-white bg-blue-600 rounded-lg font-semibold hover:bg-blue-700">Back to Login</Link>
             </div>
-          )}
+          ) : (
+            <>
+              <h2 className="text-3xl font-bold mb-2 text-slate-900 dark:text-white">Create Account</h2>
+              <p className="text-slate-600 dark:text-slate-400 mb-8">Get started with a free account today.</p>
 
-          <form className="space-y-5" onSubmit={onSubmit}>
-            {!otpSent ? (
-              <>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-                  <input type="text" name="name" value={name} onChange={onChange} required placeholder="Full Name" className="w-full pl-10 pr-3 py-3 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
+              {error && (
+                <div className="bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg relative mb-6" role="alert">
+                  <span>{error}</span>
                 </div>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-                  <input type="email" name="email" value={email} onChange={onChange} required placeholder="Email Address" className="w-full pl-10 pr-3 py-3 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
-                </div>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-                  <input type={showPassword ? 'text' : 'password'} name="password" value={password} onChange={onChange} required placeholder="Password" className="w-full pl-10 pr-10 py-3 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
-                  <button type="button" onClick={togglePasswordVisibility} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
-                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              )}
+
+              <form className="space-y-5" onSubmit={onSubmit}>
+                {!otpSent ? (
+                  <>
+                    <div className="relative">
+                      <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                      <input type="text" name="name" value={name} onChange={onChange} required placeholder="Full Name" className="w-full pl-10 pr-3 py-3 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
+                    </div>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                      <input type="email" name="email" value={email} onChange={onChange} required placeholder="Email Address" className="w-full pl-10 pr-3 py-3 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
+                    </div>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                      <input type={showPassword ? 'text' : 'password'} name="password" value={password} onChange={onChange} required placeholder="Password" className="w-full pl-10 pr-10 py-3 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
+                      <button type="button" onClick={togglePasswordVisibility} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                        {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                      </button>
+                    </div>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                      <input type="text" name="phone" value={phone} onChange={onChange} placeholder="Phone Number (Optional)" className="w-full pl-10 pr-3 py-3 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
+                    </div>
+                    <div className="relative">
+                      <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                      <select name="role" value={role} onChange={onChange} className="w-full pl-10 pr-3 py-3 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition appearance-none">
+                        <option value="user">User</option>
+                        <option value="admin">Admin</option>
+                      </select>
+                    </div>
+                  </>
+                ) : (
+                  <div>
+                    <p className="text-center text-slate-600 dark:text-slate-400 mb-4">An OTP has been sent to <span className="font-semibold text-slate-800 dark:text-slate-200">{email}</span>. Please enter it below.</p>
+                    <div className="relative">
+                      <input type="text" name="otp" value={otp} onChange={onChange} required placeholder="Enter 6-digit OTP" className="w-full text-center tracking-[0.5em] font-semibold text-lg pr-3 py-3 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
+                    </div>
+                  </div>
+                )}
+                
+                {!otpSent ? (
+                  <button type="button" onClick={handleSendOtp} disabled={loading} className="w-full px-4 py-3 text-white bg-blue-600 rounded-lg font-semibold hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-slate-800 transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
+                    {loading ? 'Sending OTP...' : 'Send OTP & Continue'}
                   </button>
-                </div>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-                  <input type="text" name="phone" value={phone} onChange={onChange} placeholder="Phone Number (Optional)" className="w-full pl-10 pr-3 py-3 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
-                </div>
-                <div className="relative">
-                  <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-                  <select name="role" value={role} onChange={onChange} className="w-full pl-10 pr-3 py-3 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition appearance-none">
-                    <option value="user">User</option>
-                    <option value="admin">Admin</option>
-                  </select>
-                </div>
-              </>
-            ) : (
-              <div>
-                <p className="text-center text-slate-600 dark:text-slate-400 mb-4">An OTP has been sent to <span className="font-semibold text-slate-800 dark:text-slate-200">{email}</span>. Please enter it below.</p>
-                <div className="relative">
-                  <input type="text" name="otp" value={otp} onChange={onChange} required placeholder="Enter 6-digit OTP" className="w-full text-center tracking-[0.5em] font-semibold text-lg pr-3 py-3 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
-                </div>
-              </div>
-            )}
-            
-            {!otpSent ? (
-              <button type="button" onClick={handleSendOtp} disabled={loading} className="w-full px-4 py-3 text-white bg-blue-600 rounded-lg font-semibold hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-slate-800 transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
-                {loading ? 'Sending OTP...' : 'Send OTP & Continue'}
-              </button>
-            ) : (
-              <button type="submit" disabled={loading} className="w-full px-4 py-3 text-white bg-green-600 rounded-lg font-semibold hover:bg-green-700 disabled:bg-green-400 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 dark:focus:ring-offset-slate-800 transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
-                {loading ? 'Verifying...' : 'Create Account'}
-              </button>
-            )}
-          </form>
+                ) : (
+                  <button type="submit" disabled={loading} className="w-full px-4 py-3 text-white bg-green-600 rounded-lg font-semibold hover:bg-green-700 disabled:bg-green-400 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 dark:focus:ring-offset-slate-800 transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
+                    {loading ? 'Verifying...' : 'Create Account'}
+                  </button>
+                )}
+              </form>
 
-          <p className="text-sm text-center text-slate-600 dark:text-slate-400 mt-8">
-            Already have an account? <Link to="/login" className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300">Login</Link>
-          </p>
+              <p className="text-sm text-center text-slate-600 dark:text-slate-400 mt-8">
+                Already have an account? <Link to="/login" className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300">Login</Link>
+              </p>
+            </>
+          )}
         </div>
       </div>
     </div>
