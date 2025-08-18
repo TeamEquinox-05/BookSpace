@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { PageHeader, ConfirmationModal } from '../components/shared';
+import { Check, X, Trash2, Search, Filter } from 'lucide-react';
 
 export default function UserManagementPage() {
   const [users, setUsers] = useState([]);
@@ -58,71 +59,110 @@ export default function UserManagementPage() {
     setShowConfirmation(true);
   };
 
+  const statusColors = {
+    active: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
+    pending: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
+    rejected: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
+  };
+
   return (
     <>
       <div className="flex-1 flex flex-col overflow-hidden">
         <PageHeader title="User Management" />
         <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 dark:bg-gray-900 p-6">
           <div className="max-w-7xl mx-auto">
-            <div className="flex justify-between items-center mb-4">
-              <input
-                type="text"
-                placeholder="Search by name or email"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-1/3 p-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-              />
-              <select
-                value={status}
-                onChange={(e) => setStatus(e.target.value)}
-                className="p-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-              >
-                <option value="">All Statuses</option>
-                <option value="pending">Pending</option>
-                <option value="active">Active</option>
-                <option value="rejected">Rejected</option>
-              </select>
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-6">
+              <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
+                <div className="relative w-full md:w-1/3">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                  <input
+                    type="text"
+                    placeholder="Search by name or email"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="w-full pl-10 p-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  />
+                </div>
+                <div className="relative w-full md:w-auto">
+                  <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                  <select
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value)}
+                    className="w-full md:w-auto pl-10 p-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white appearance-none"
+                  >
+                    <option value="">All Statuses</option>
+                    <option value="pending">Pending</option>
+                    <option value="active">Active</option>
+                    <option value="rejected">Rejected</option>
+                  </select>
+                </div>
+              </div>
             </div>
+
             {loading ? (
-              <div>Loading...</div>
+              <div className="text-center text-gray-500 dark:text-gray-400">Loading...</div>
             ) : error ? (
-              <div>Error: {error}</div>
+              <div className="text-center text-red-500">Error: {error}</div>
             ) : (
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                  <thead className="bg-gray-50 dark:bg-gray-700">
-                    <tr>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Name</th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Email</th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
-                    {users.map((user) => (
-                      <tr key={user._id}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{user.name}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{user.email}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{user.status}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {users.map((user) => (
+                  <div key={user._id} className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden transform hover:-translate-y-1 transition-transform duration-300">
+                    <div className="p-6">
+                      <div className="flex items-center space-x-4">
+                        <div className="flex-shrink-0">
+                          <img className="h-12 w-12 rounded-full" src={`https://i.pravatar.cc/150?u=${user._id}`} alt={`${user.name}'s avatar`} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-lg font-semibold text-gray-900 dark:text-white truncate">{user.name}</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{user.email}</p>
+                        </div>
+                      </div>
+                      <div className="mt-4 flex justify-between items-center">
+                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusColors[user.status]}`}>
+                          {user.status}
+                        </span>
+                        <div className="flex items-center space-x-2">
                           {user.status === 'pending' && (
                             <>
-                              <button onClick={() => openConfirmation(user, 'approve')} className="text-green-600 hover:text-green-900 mr-4">Approve</button>
-                              <button onClick={() => openConfirmation(user, 'reject')} className="text-red-600 hover:text-red-900">Reject</button>
+                              <button onClick={() => openConfirmation(user, 'approve')} className="p-2 rounded-full text-green-500 hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors">
+                                <Check size={20} />
+                              </button>
+                              <button onClick={() => openConfirmation(user, 'reject')} className="p-2 rounded-full text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors">
+                                <X size={20} />
+                              </button>
                             </>
                           )}
-                          <button onClick={() => openConfirmation(user, 'remove')} className="text-red-600 hover:text-red-900 ml-4">Remove</button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                          <button onClick={() => openConfirmation(user, 'remove')} className="p-2 rounded-full text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                            <Trash2 size={20} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
-            <div className="flex justify-between items-center mt-4">
-              <button onClick={() => setCurrentPage(currentPage - 1)} disabled={currentPage === 1} className="p-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white">Previous</button>
-              <span>Page {currentPage} of {totalPages}</span>
-              <button onClick={() => setCurrentPage(currentPage + 1)} disabled={currentPage === totalPages} className="p-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white">Next</button>
+
+            <div className="mt-8 flex justify-center">
+              <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                <button
+                  onClick={() => setCurrentPage(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
+                >
+                  Previous
+                </button>
+                <span className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-200">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <button
+                  onClick={() => setCurrentPage(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
+                >
+                  Next
+                </button>
+              </nav>
             </div>
           </div>
         </main>
