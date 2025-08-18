@@ -3,12 +3,7 @@ const router = express.Router();
 const User = require('../models/User.cjs');
 const auth = require('../middleware/auth.cjs');
 
-// Placeholder email service
-const sendEmail = (to, subject, text) => {
-  console.log(`Sending email to ${to}`);
-  console.log(`Subject: ${subject}`);
-  console.log(`Text: ${text}`);
-};
+const { sendEmail } = require('../utils/email.cjs');
 
 // @route   GET api/users/me
 // @desc    Get current user

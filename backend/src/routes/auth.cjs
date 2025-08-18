@@ -2,20 +2,13 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const nodemailer = require('nodemailer');
+const { sendEmail } = require('../utils/email.cjs');
 const User = require('../models/User.cjs');
 
 // In-memory storage for OTPs (for demonstration purposes)
 const otpStore = {};
 
-// Nodemailer transporter
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
+
 
 // @route   POST api/auth/send-otp
 // @desc    Send OTP to user's email
@@ -36,17 +29,7 @@ router.post('/send-otp', async (req, res) => {
       timestamp: Date.now(),
     };
 
-    const mailOptions = {
-      from: process.env.EMAIL_USER,
-      to: email,
-      subject: 'Your OTP for Signup',
-      text: `Your OTP is: ${otp}`,
-    };
-
-    await transporter.sendMail(mailOptions).catch(mailErr => {
-      console.error('Nodemailer sendMail error:', mailErr);
-      throw mailErr; // Re-throw to be caught by the outer try-catch
-    });
+    await sendEmail(email, 'Your OTP for Signup', `Your OTP is: ${otp}`);
     res.status(200).json({ msg: 'OTP sent successfully' });
   } catch (err) {
     console.error(err.message);
@@ -179,17 +162,7 @@ router.post('/forgot-password', async (req, res) => {
     await user.save();
     console.log('User saved with OTP');
 
-    const mailOptions = {
-      from: process.env.EMAIL_USER,
-      to: email,
-      subject: 'Your OTP for Password Reset',
-      text: `Your OTP for password reset is: ${otp}`,
-    };
-
-    await transporter.sendMail(mailOptions).catch(mailErr => {
-      console.error('Nodemailer sendMail error:', mailErr);
-      throw mailErr; // Re-throw to be caught by the outer try-catch
-    });
+    await sendEmail(email, 'Your OTP for Password Reset', `Your OTP for password reset is: ${otp}`);
     console.log('OTP email sent to:', email);
     res.status(200).json({ msg: 'OTP sent to your email' });
   } catch (err) {
