@@ -29,15 +29,25 @@ const Sidebar = () => {
   const NavLink = ({ icon, text, path }) => (
     <Link
       to={path}
-      className={`flex items-center p-3 my-1 rounded-lg transition-colors duration-200 ${
-        location.pathname === path
-          ? 'bg-blue-600 text-white shadow-md'
-          : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
-      } ${!isExpanded && 'justify-center'}`}
+      className={`flex items-center p-3 my-1 rounded-lg transition-colors duration-200 ${location.pathname === path ? 'bg-blue-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'}`}
       title={text} // Tooltip for collapsed view
     >
-      {icon}
-      {isExpanded && <span className="ml-4 font-medium whitespace-nowrap">{text}</span>}
+      <motion.div
+        className="flex items-center"
+        initial={{ x: 0 }}
+        animate={{ x: isExpanded ? 0 : 0 }} // Keep icon fixed relative to its container
+        transition={{ duration: 0.3, ease: 'easeInOut' }}
+      >
+        {icon}
+      </motion.div>
+      <motion.span
+        className="ml-4 font-medium whitespace-nowrap"
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: isExpanded ? 1 : 0, x: isExpanded ? 0 : -20 }}
+        transition={{ duration: 0.3, ease: 'easeInOut' }}
+      >
+        {text}
+      </motion.span>
     </Link>
   );
 
@@ -66,7 +76,14 @@ const Sidebar = () => {
           title="Logout"
         >
           <LogOut size={20} />
-          {isExpanded && <span className="ml-4 font-medium whitespace-nowrap">Logout</span>}
+          <motion.span
+            className="ml-4 font-medium whitespace-nowrap"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: isExpanded ? 1 : 0, x: isExpanded ? 0 : -20 }}
+            transition={{ duration: 0.3, ease: 'easeInOut' }}
+          >
+            Logout
+          </motion.span>
         </Link>
       </div>
     </motion.aside>
