@@ -47,11 +47,12 @@ function App() {
         </Route>
       </Route>
 
+      <Route path="/" element={user ? (user.role === 'admin' ? <Navigate to="/admin" /> : <Navigate to="/dashboard" />) : <Navigate to="/login" />} />
+
       {/* Catch-all for unauthenticated users trying to access protected routes */}
       {!user && <Route path="*" element={<Navigate to="/login" />} />}
 
-      {/* Wildcard route redirects to root for logic handling */}
-      <Route path="*" element={<Navigate to="/" />} />
+      
     </Routes>
   );
 }
