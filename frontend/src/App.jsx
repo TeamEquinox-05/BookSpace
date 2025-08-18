@@ -17,6 +17,10 @@ import { useAuth } from './context/AuthContext.jsx';
 function App() {
   const { user, loading } = useAuth();
 
+  if (loading) {
+    return <div class="min-h-screen bg-slate-900 flex justify-center items-center text-white">Loading...</div>;
+  }
+
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
@@ -42,7 +46,7 @@ function App() {
       </Route>
 
       {/* Catch-all for unauthenticated users trying to access protected routes */}
-      {!loading && !user && <Route path="*" element={<Navigate to="/login" />} />}
+      {!user && <Route path="*" element={<Navigate to="/login" />} />}
 
       {/* Wildcard route redirects to root for logic handling */}
       <Route path="*" element={<Navigate to="/" />} />
