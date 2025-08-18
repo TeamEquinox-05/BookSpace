@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Home, ClipboardCheck, Calendar, Building, Users, Settings, LogOut, PanelLeftClose, PanelRightClose, ClipboardList } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { motion } from 'framer-motion';
 
 const Sidebar = () => {
   const location = useLocation();
@@ -41,8 +42,11 @@ const Sidebar = () => {
   );
 
   return (
-    <aside
-      className={`relative h-screen bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 transition-all duration-300 ease-in-out flex flex-col ${isExpanded ? 'w-64' : 'w-20'}`}
+    <motion.aside
+      className="relative h-screen bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col overflow-hidden"
+      initial={{ width: '5rem' }} // Collapsed width
+      animate={{ width: isExpanded ? '16rem' : '5rem' }} // Expanded vs. collapsed width
+      transition={{ duration: 0.3, ease: 'easeInOut' }}
       onMouseEnter={() => setIsExpanded(true)}
       onMouseLeave={() => setIsExpanded(false)}
     >
@@ -65,7 +69,7 @@ const Sidebar = () => {
           {isExpanded && <span className="ml-4 font-medium whitespace-nowrap">Logout</span>}
         </Link>
       </div>
-    </aside>
+    </motion.aside>
   );
 };
 
