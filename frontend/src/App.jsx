@@ -9,6 +9,7 @@ import SignupPage from './auth/SignupPage.jsx';
 import SettingsPage from './settings/SettingsPage.jsx';
 import PlaceDetailsPage from './places/PlaceDetailsPage.jsx';
 import VenueManagementPage from './admin/VenueManagementPage.jsx';
+import UserManagementPage from './admin/UserManagementPage.jsx';
 import VenueDetailPage from './venues/VenueDetailPage.jsx';
 import PrivateRoute from './components/shared/PrivateRoute.jsx';
 import Layout from './components/shared/Layout.jsx';
@@ -41,6 +42,7 @@ function App() {
           <Route path="/admin/requests" element={<BookingRequestsPage />} />
           <Route path="/admin/settings" element={<SettingsPage />} />
           <Route path="/admin/venues" element={<VenueManagementPage />} />
+          <Route path="/admin/users" element={<UserManagementPage />} />
           <Route path="/admin/places/:id" element={<VenueDetailPage role="admin" />} />
         </Route>
       </Route>
