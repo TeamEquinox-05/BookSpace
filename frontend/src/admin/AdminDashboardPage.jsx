@@ -8,6 +8,7 @@ import AvailablePlacesGrid from '../components/shared/AvailablePlacesGrid';
 import CardGridSkeleton from '../components/ui/CardGridSkeleton';
 import { Spinner } from '../components/ui';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { useAuth } from '../../context/AuthContext';
 
 export default function AdminDashboardPage() {
   const { user } = useAuth();

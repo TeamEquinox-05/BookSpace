@@ -9,8 +9,10 @@ import BookingModal from '../components/shared/BookingModal';
 import CardGridSkeleton from '../components/ui/CardGridSkeleton';
 import TableSkeleton from '../components/ui/TableSkeleton';
 import { Spinner } from '../components/ui';
+import { useAuth } from '../../context/AuthContext';
 
-export default function UserDashboardPage({ user }) {
+export default function UserDashboardPage() {
+  const { user } = useAuth();
   const [isBookingModalOpen, setBookingModalOpen] = useState(false);
   const [todaysEvents, setTodaysEvents] = useState([]);
   const [availableVenues, setAvailableVenues] = useState([]);
