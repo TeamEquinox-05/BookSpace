@@ -3,7 +3,7 @@ import { Bell, Search, Moon, Sun, Menu, X } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
 
-const PageHeader = ({ title, children, sidebarOpen, setSidebarOpen }) => {
+const PageHeader = ({ title, children }) => {
   const { darkMode, toggleDarkMode } = useTheme();
   const { user } = useAuth();
 
@@ -21,9 +21,7 @@ const PageHeader = ({ title, children, sidebarOpen, setSidebarOpen }) => {
       <div className="flex items-center justify-between px-4 sm:px-6 h-16">
         {/* Left Side */}
         <div className="flex items-center space-x-4">
-          <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors lg:hidden">
-            {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
-          </button>
+          
           <h1 className="text-xl md:text-2xl font-bold text-slate-800 dark:text-white">
             {title}
           </h1>
