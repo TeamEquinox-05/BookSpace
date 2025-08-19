@@ -90,6 +90,7 @@ const MobileSidebar = ({ isOpen, onClose }) => {
                   <RouterNavLink
                     key={item.id}
                     to={item.href}
+                    end={item.end} // Pass the end prop here
                     onClick={onClose} // Close sidebar on navigation
                     className={({ isActive }) =>
                       cn(

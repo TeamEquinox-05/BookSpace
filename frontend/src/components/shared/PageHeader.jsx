@@ -21,7 +21,6 @@ const PageHeader = ({ title, children }) => {
       <div className="flex items-center justify-between px-4 sm:px-6 h-16">
         {/* Left Side */}
         <div className="flex items-center space-x-4">
-          
           <h1 className="text-xl md:text-2xl font-bold text-slate-800 dark:text-white">
             {title}
           </h1>
