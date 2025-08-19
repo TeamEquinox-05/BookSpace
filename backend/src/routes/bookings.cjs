@@ -3,7 +3,7 @@ const router = express.Router();
 const Booking = require('../models/Booking.cjs');
 const { sendEmail } = require('../utils/email.cjs');
 const auth = require('../middleware/auth.cjs');
-const verifyRole = require('../middleware/verifyRole.cjs');
+const { sendEmail } = require('../utils/email.cjs');
 
 // @route   POST api/bookings/check-availability
 // @desc    Check if a place is available for a given time range
@@ -89,7 +89,7 @@ router.post('/', auth, async (req, res) => {
 // @route   PUT api/bookings/:id/status
 // @desc    Update booking status (approve/reject)
 // @access  Private/Admin
-router.put('/:id/status', async (req, res) => {
+router.put('/:id/status', auth, verifyRole('admin'), async (req, res) => {
   console.log('Received status update request for booking:', req.params.id);
   const { status, reason } = req.body;
   const { id } = req.params;
@@ -119,24 +119,14 @@ router.put('/:id/status', async (req, res) => {
 
     if (status === 'approved') {
       // Email to user
-      await transporter.sendMail({
-        from: process.env.EMAIL_USER,
-        to: userEmail,
-        subject: 'Booking Approved!',
-        text: `Your booking for ${eventTitle} at ${placeName} has been approved.`,
-      });
+      await sendEmail(userEmail, 'Booking Approved!', `Your booking for ${eventTitle} at ${placeName} has been approved.`);
       console.log('User approval email sent.');
 
       // Email to facility handlers (granular)
       for (const facility of booking.requestedFacilities) {
         console.log('Sending facility email for:', facility);
         if (facility && facility.email) { // Ensure facility object and email exist
-          await transporter.sendMail({
-            from: process.env.EMAIL_USER,
-            to: facility.email,
-            subject: `Facility Booking: ${eventTitle} Approved for ${placeName}`,
-            text: `The ${facility.name} at ${placeName} has been booked for ${eventTitle} from ${booking.eventStartTime.toLocaleString()} to ${booking.eventEndTime.toLocaleString()}.`,
-          });
+          await sendEmail(facility.email, `Facility Booking: ${eventTitle} Approved for ${placeName}`, `The ${facility.name} at ${placeName} has been booked for ${eventTitle} from ${booking.eventStartTime.toLocaleString()} to ${booking.eventEndTime.toLocaleString()}.`);
           console.log(`Facility email sent to ${facility.email}`);
         } else {
           console.warn(`Skipping email for malformed facility: ${JSON.stringify(facility)}`);
@@ -145,12 +135,7 @@ router.put('/:id/status', async (req, res) => {
 
     } else if (status === 'rejected') {
       // Email to user with reason
-      await transporter.sendMail({
-        from: process.env.EMAIL_USER,
-        to: userEmail,
-        subject: 'Booking Rejected',
-        text: `Your booking for ${eventTitle} at ${placeName} has been rejected. Reason: ${reason}`,
-      });
+      await sendEmail(userEmail, 'Booking Rejected', `Your booking for ${eventTitle} at ${placeName} has been rejected. Reason: ${reason}`);
       console.log('User rejection email sent.');
     }
 

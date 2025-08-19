@@ -2,6 +2,7 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import AdminDashboardPage from './admin/AdminDashboardPage.jsx';
 import BookingRequestsPage from './admin/BookingRequestsPage.jsx';
+import AllBookingsPage from './admin/AllBookingsPage.jsx';
 import UserDashboardPage from './user/UserDashboardPage.jsx';
 import MyBookingsPage from './user/MyBookingsPage.jsx';
 import LoginPage from './auth/LoginPage.jsx';
@@ -45,6 +46,7 @@ function App() {
         <Route element={<PrivateRoute adminOnly={true} />}>
           <Route path="/admin" element={<AdminDashboardPage />} end />
           <Route path="/admin/requests" element={<BookingRequestsPage />} />
+          <Route path="/admin/bookings" element={<AllBookingsPage />} />
           <Route path="/admin/settings" element={<SettingsPage />} />
           <Route path="/admin/venues" element={<VenueManagementPage />} />
           <Route path="/admin/users" element={<UserManagementPage />} />

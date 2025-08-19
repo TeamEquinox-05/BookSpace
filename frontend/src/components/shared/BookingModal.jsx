@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
+import axios from 'axios';
 
 const BookingModal = ({ isOpen, onClose, places, onBookingSubmit, initialBooking }) => {
   const [bookingDetails, setBookingDetails] = useState(initialBooking || {
