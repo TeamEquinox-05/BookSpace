@@ -3,6 +3,7 @@ const router = express.Router();
 const Booking = require('../models/Booking.cjs');
 const { sendEmail } = require('../utils/email.cjs');
 const auth = require('../middleware/auth.cjs');
+const verifyRole = require('../middleware/verifyRole.cjs');
 
 // @route   POST api/bookings/check-availability
 // @desc    Check if a place is available for a given time range
