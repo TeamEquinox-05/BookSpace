@@ -35,7 +35,7 @@ function App() {
       {/* Routes with Layout */}
       <Route element={<Layout />}>
         <Route element={<PrivateRoute />}>
-          <Route path="/dashboard" element={<UserDashboardPage />} />
+          <Route path="/dashboard" element={<UserDashboardPage />} end />
           <Route path="/my-bookings" element={<MyBookingsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/places/:id" element={<PlaceDetailsPage />} />
@@ -43,7 +43,7 @@ function App() {
 
         {/* Admin Routes */}
         <Route element={<PrivateRoute adminOnly={true} />}>
-          <Route path="/admin" element={<AdminDashboardPage />} />
+          <Route path="/admin" element={<AdminDashboardPage />} end />
           <Route path="/admin/requests" element={<BookingRequestsPage />} />
           <Route path="/admin/settings" element={<SettingsPage />} />
           <Route path="/admin/venues" element={<VenueManagementPage />} />
