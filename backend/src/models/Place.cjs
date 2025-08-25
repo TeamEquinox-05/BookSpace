@@ -36,4 +36,8 @@ const PlaceSchema = new mongoose.Schema({
   }
 });
 
+// Add indexes for better query performance
+PlaceSchema.index({ status: 1 });
+PlaceSchema.index({ name: 1 });
+
 module.exports = mongoose.model('place', PlaceSchema);

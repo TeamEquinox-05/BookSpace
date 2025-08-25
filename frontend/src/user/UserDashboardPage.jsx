@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import axios from 'axios';
 
 // Import shared components
@@ -10,6 +11,7 @@ import CardGridSkeleton from '../components/ui/CardGridSkeleton';
 import TableSkeleton from '../components/ui/TableSkeleton';
 import { Spinner } from '../components/ui';
 import { useAuth } from '../context/AuthContext';
+import { AlertCircle, RefreshCw, Calendar, MapPin } from 'lucide-react';
 
 export default function UserDashboardPage() {
   const { user } = useAuth();
@@ -21,6 +23,7 @@ export default function UserDashboardPage() {
 
   const fetchUserData = async () => {
     try {
+      setError(null);
       const [bookingsRes, placesRes] = await Promise.all([
         axios.get('/bookings/approved'),
         axios.get('/places'),
@@ -54,31 +57,100 @@ export default function UserDashboardPage() {
     }
   };
 
+  const handleRetry = () => {
+    setLoading(true);
+    fetchUserData();
+  };
+
   return (
     <>
       <div className="flex-1 flex flex-col overflow-hidden">
         <PageHeader title="User Dashboard" />
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 dark:bg-gray-900 p-6">
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/30 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 p-6">
           {loading ? (
-            <div className="flex justify-center items-center h-64">
-              <Spinner size="lg" />
-            </div>
+            <motion.div 
+              className="flex flex-col justify-center items-center h-64"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3 }}
+            >
+              <div className="relative">
+                <Spinner size="lg" />
+                <motion.div
+                  className="absolute inset-0 border-4 border-blue-200 dark:border-blue-800 rounded-full"
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                />
+              </div>
+              <p className="mt-4 text-slate-600 dark:text-slate-400">Loading your dashboard...</p>
+            </motion.div>
           ) : error ? (
-            <div className="text-center text-red-500">{error}</div>
+            <motion.div 
+              className="flex flex-col justify-center items-center h-64"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3 }}
+            >
+              <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-8 text-center max-w-md mx-auto border border-red-100 dark:border-red-900/30">
+                <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <AlertCircle className="w-8 h-8 text-red-600 dark:text-red-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-slate-800 dark:text-white mb-2">Oops! Something went wrong</h3>
+                <p className="text-red-600 dark:text-red-400 mb-6">{error}</p>
+                <motion.button
+                  onClick={handleRetry}
+                  className="inline-flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg hover:shadow-xl"
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  <span>Try Again</span>
+                </motion.button>
+              </div>
+            </motion.div>
           ) : (
-            <>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="space-y-8"
+            >
               <AvailablePlacesGrid places={availableVenues} />
               <RecentBookings bookings={todaysEvents} title="Recent Bookings" onAddBooking={() => setBookingModalOpen(true)} />
+              
               {availableVenues.length === 0 && todaysEvents.length === 0 && (
-                <div className="text-center py-12">
-                  <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full mb-4">
-                    <svg className="w-8 h-8 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                <motion.div 
+                  className="text-center py-16"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.4 }}
+                >
+                  <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-lg p-12 max-w-lg mx-auto border border-slate-100 dark:border-slate-700">
+                    <div className="flex justify-center space-x-4 mb-6">
+                      <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-900/30 rounded-2xl flex items-center justify-center">
+                        <Calendar className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <div className="w-16 h-16 bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 rounded-2xl flex items-center justify-center">
+                        <MapPin className="w-8 h-8 text-purple-600 dark:text-purple-400" />
+                      </div>
+                    </div>
+                    <h3 className="text-2xl font-bold text-slate-800 dark:text-white mb-3">Welcome to BookSpace!</h3>
+                    <p className="text-slate-600 dark:text-slate-400 mb-8 leading-relaxed">
+                      You're all set! Start exploring available places and create your first booking to get started.
+                    </p>
+                    <motion.button
+                      onClick={() => setBookingModalOpen(true)}
+                      className="inline-flex items-center space-x-2 px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg hover:shadow-xl"
+                      whileHover={{ scale: 1.05, y: -3 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <Calendar className="w-5 h-5" />
+                      <span>Create Your First Booking</span>
+                    </motion.button>
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-800 dark:text-white">No Available Places or Bookings</h3>
-                  <p className="text-gray-500 dark:text-gray-400 mt-2">Check back later to see available places and your recent bookings.</p>
-                </div>
+                </motion.div>
               )}
-            </>
+            </motion.div>
           )}
         </main>
       </div>

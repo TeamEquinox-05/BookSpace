@@ -1,4 +1,5 @@
 const express = require('express');
+const { body, validationResult } = require('express-validator');
 const router = express.Router();
 const User = require('../models/User.cjs');
 const auth = require('../middleware/auth.cjs');
@@ -61,32 +62,60 @@ router.get('/', auth, async (req, res) => {
 // @route   PUT api/users/:id/approve
 // @desc    Approve a user
 // @access  Private (Admin only)
-router.put('/:id/approve', auth, async (req, res) => {
-  if (req.user.role !== 'admin') {
-    return res.status(403).json({ msg: 'Access denied' });
-  }
+router.put('/:id/approve', 
+  auth, 
+  [
+    body('id').isMongoId().withMessage('Invalid user ID')
+  ],
+  async (req, res) => {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ msg: 'Access denied' });
+    }
 
-  try {
-    const user = await User.findByIdAndUpdate(req.params.id, { status: 'active' }, { new: true });
-    sendEmail(user.email, 'Account Approved', 'Your account has been approved. You can now log in.');
-    res.json(user);
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server Error');
-  }
-});
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+
+      const user = await User.findByIdAndUpdate(req.params.id, { status: 'active' }, { new: true });
+      if (!user) {
+        return res.status(404).json({ msg: 'User not found' });
+      }
+      
+      sendEmail(user.email, 'Account Approved', 'Your account has been approved. You can now log in.');
+      res.json(user);
+    } catch (err) {
+      console.error(err.message);
+      res.status(500).send('Server Error');
+    }
+  });
 
 // @route   PUT api/users/:id/reject
 // @desc    Reject a user
 // @access  Private (Admin only)
-router.put('/:id/reject', auth, async (req, res) => {
-  if (req.user.role !== 'admin') {
-    return res.status(403).json({ msg: 'Access denied' });
-  }
+router.put('/:id/reject', 
+  auth, 
+  [
+    body('id').isMongoId().withMessage('Invalid user ID')
+  ],
+  async (req, res) => {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ msg: 'Access denied' });
+    }
 
-  try {
-    const user = await User.findByIdAndUpdate(req.params.id, { status: 'rejected' }, { new: true });
-    sendEmail(user.email, 'Account Rejected', 'Your account has been rejected. Please contact an administrator for more information.');
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+
+      const user = await User.findByIdAndUpdate(req.params.id, { status: 'rejected' }, { new: true });
+      if (!user) {
+        return res.status(404).json({ msg: 'User not found' });
+      }
+      
+      sendEmail(user.email, 'Account Rejected', 'Your account has been rejected. Please contact an administrator for more information.');
     res.json(user);
   } catch (err) {
     console.error(err.message);

@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const { body, validationResult } = require('express-validator');
 const Booking = require('../models/Booking.cjs');
 const { sendEmail } = require('../utils/email.cjs');
 const auth = require('../middleware/auth.cjs');
@@ -40,7 +41,24 @@ router.post('/check-availability', async (req, res) => {
 // @route   POST api/bookings
 // @desc    Create a booking
 // @access  Private
-router.post('/', auth, async (req, res) => {
+router.post('/', [
+  auth,
+  body('placeId').isMongoId().withMessage('Invalid place ID'),
+  body('eventTitle').isLength({ min: 3, max: 100 }).trim().escape().withMessage('Event title must be 3-100 characters'),
+  body('description').optional().isLength({ max: 500 }).trim().escape().withMessage('Description must be less than 500 characters'),
+  body('eventStartTime').isISO8601().withMessage('Invalid start time format'),
+  body('eventEndTime').isISO8601().withMessage('Invalid end time format'),
+  body('requestedFacilities').optional().isArray().withMessage('Facilities must be an array')
+], async (req, res) => {
+  // Check for validation errors
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ 
+      msg: 'Validation failed', 
+      errors: errors.array() 
+    });
+  }
+
   const { placeId, eventTitle, description, eventStartTime, eventEndTime, requestedFacilities } = req.body;
 
   try {

@@ -106,7 +106,7 @@ const SignupPage = ({ onSignupSuccess }) => {
                       <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
                       <select name="role" value={role} onChange={onChange} className="w-full pl-10 pr-3 py-3 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition appearance-none">
                         <option value="user">User</option>
-                        <option value="admin">Admin</option>
+                        {/* Admin role removed from public signup */}
                       </select>
                     </div>
                   </>

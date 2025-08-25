@@ -1,4 +1,5 @@
 const express = require('express');
+const { body, validationResult } = require('express-validator');
 const router = express.Router();
 const Place = require('../models/Place.cjs');
 const Booking = require('../models/Booking.cjs');
@@ -8,27 +9,59 @@ const verifyRole = require('../middleware/verifyRole.cjs');
 // @route   POST api/places
 // @desc    Create a new place
 // @access  Private/Admin
-router.post('/', async (req, res) => {
-  try {
-    const newPlace = new Place(req.body);
-    const place = await newPlace.save();
-    res.json(place);
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server Error');
-  }
-});
+router.post('/', 
+  auth,
+  verifyRole('admin'),
+  [
+    body('name').trim().notEmpty().withMessage('Name is required').isLength({ max: 100 }),
+    body('location').trim().notEmpty().withMessage('Location is required'),
+    body('capacity').isInt({ min: 1 }).withMessage('Capacity must be a positive number'),
+    body('amenities').optional().isArray(),
+    body('cost').isNumeric().withMessage('Cost must be a number'),
+    body('description').optional().trim().isLength({ max: 500 })
+  ],
+  async (req, res) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+
+      const newPlace = new Place(req.body);
+      const place = await newPlace.save();
+      res.json(place);
+    } catch (err) {
+      console.error(err.message);
+      res.status(500).send('Server Error');
+    }
+  });
 
 // @route   PUT api/places/:id
 // @desc    Update a place
 // @access  Private/Admin
-router.put('/:id', auth, verifyRole('admin'), async (req, res) => {
-  try {
-    let place = await Place.findById(req.params.id);
-    if (!place) {
-      return res.status(404).json({ msg: 'Place not found' });
-    }
-    place = await Place.findByIdAndUpdate(req.params.id, { $set: req.body }, { new: true });
+router.put('/:id', 
+  auth, 
+  verifyRole('admin'), 
+  [
+    body('name').optional().trim().notEmpty().withMessage('Name cannot be empty').isLength({ max: 100 }),
+    body('location').optional().trim().notEmpty().withMessage('Location cannot be empty'),
+    body('capacity').optional().isInt({ min: 1 }).withMessage('Capacity must be a positive number'),
+    body('amenities').optional().isArray(),
+    body('cost').optional().isNumeric().withMessage('Cost must be a number'),
+    body('description').optional().trim().isLength({ max: 500 })
+  ],
+  async (req, res) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+
+      let place = await Place.findById(req.params.id);
+      if (!place) {
+        return res.status(404).json({ msg: 'Place not found' });
+      }
+      place = await Place.findByIdAndUpdate(req.params.id, { $set: req.body }, { new: true });
     res.json(place);
   } catch (err) {
     console.error(err.message);
