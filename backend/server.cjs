@@ -22,6 +22,7 @@ const allowedOrigins = [
   'https://book-space-one.vercel.app',
   'https://book-space-ovhl69ldy-equinoxs-projects-2265d853.vercel.app/',
   'http://localhost:5173',
+  'https://book-space-one.vercel.app/',
 ];
 app.use(cors({
   origin: (origin, callback) => {
