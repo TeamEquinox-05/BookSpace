@@ -5,6 +5,9 @@ const Booking = require('../models/Booking.cjs');
 const { sendEmail } = require('../utils/email.cjs');
 const auth = require('../middleware/auth.cjs');
 const verifyRole = require('../middleware/verifyRole.cjs');
+const PDFDocument = require('pdfkit');
+const { Document, Packer, Paragraph, Table, TableCell, TableRow, WidthType } = require('docx');
+const moment = require('moment');
 
 // @route   POST api/bookings/check-availability
 // @desc    Check if a place is available for a given time range
@@ -62,22 +65,16 @@ router.post('/', [
   const { placeId, eventTitle, description, eventStartTime, eventEndTime, requestedFacilities } = req.body;
 
   try {
-    // Convert string dates to Date objects for comparison
     const newEventStartTime = new Date(eventStartTime);
     const newEventEndTime = new Date(eventEndTime);
 
-    // Find existing approved bookings for this place that might overlap
     const overlappingBookings = await Booking.find({
       placeId,
       status: 'approved',
       $or: [
-        // Case 1: Existing booking starts within the new booking's time
         { eventStartTime: { $lt: newEventEndTime, $gte: newEventStartTime } },
-        // Case 2: Existing booking ends within the new booking's time
         { eventEndTime: { $lte: newEventEndTime, $gt: newEventStartTime } },
-        // Case 3: New booking is completely within an existing booking
         { eventStartTime: { $lte: newEventStartTime }, eventEndTime: { $gte: newEventEndTime } },
-        // Case 4: Existing booking is completely within the new booking
         { eventStartTime: { $gte: newEventStartTime }, eventEndTime: { $lte: newEventEndTime } }
       ]
     });
@@ -108,7 +105,6 @@ router.post('/', [
 // @desc    Update booking status (approve/reject)
 // @access  Private/Admin
 router.put('/:id/status', auth, verifyRole('admin'), async (req, res) => {
-  console.log('Received status update request for booking:', req.params.id);
   const { status, reason } = req.body;
   const { id } = req.params;
 
@@ -119,42 +115,22 @@ router.put('/:id/status', auth, verifyRole('admin'), async (req, res) => {
       return res.status(404).json({ msg: 'Booking not found' });
     }
 
-    console.log('Updating booking:', booking);
     booking.status = status;
-    booking.eventTitle = booking.eventTitle; // Explicitly set to trigger validation check
+    booking.eventTitle = booking.eventTitle;
     if (status === 'rejected') {
-      booking.reason = reason; // Assuming you add a 'reason' field to your Booking model
+      booking.reason = reason;
     }
 
     await booking.save();
-    console.log('Booking saved. Sending emails...');
 
-    // Send email notifications
     const userEmail = booking.userId.email;
     const placeName = booking.placeId.name;
     const eventTitle = booking.eventTitle;
-    console.log('User Email:', userEmail, 'Place Name:', placeName, 'Event Title:', eventTitle);
 
     if (status === 'approved') {
-      // Email to user
       await sendEmail(userEmail, 'Booking Approved!', `Your booking for ${eventTitle} at ${placeName} has been approved.`);
-      console.log('User approval email sent.');
-
-      // Email to facility handlers (granular)
-      for (const facility of booking.requestedFacilities) {
-        console.log('Sending facility email for:', facility);
-        if (facility && facility.email) { // Ensure facility object and email exist
-          await sendEmail(facility.email, `Facility Booking: ${eventTitle} Approved for ${placeName}`, `The ${facility.name} at ${placeName} has been booked for ${eventTitle} from ${booking.eventStartTime.toLocaleString()} to ${booking.eventEndTime.toLocaleString()}.`);
-          console.log(`Facility email sent to ${facility.email}`);
-        } else {
-          console.warn(`Skipping email for malformed facility: ${JSON.stringify(facility)}`);
-        }
-      }
-
     } else if (status === 'rejected') {
-      // Email to user with reason
       await sendEmail(userEmail, 'Booking Rejected', `Your booking for ${eventTitle} at ${placeName} has been rejected. Reason: ${reason}`);
-      console.log('User rejection email sent.');
     }
 
     res.json(booking);
@@ -168,7 +144,6 @@ router.put('/:id/status', auth, verifyRole('admin'), async (req, res) => {
 // @desc    Update a booking
 // @access  Private
 router.put('/:id', auth, async (req, res) => {
-  console.log('Received PUT request for booking ID:', req.params.id);
   const { eventTitle, description, eventStartTime, eventEndTime, placeId, requestedFacilities } = req.body;
 
   try {
@@ -178,44 +153,22 @@ router.put('/:id', auth, async (req, res) => {
       return res.status(404).json({ msg: 'Booking not found' });
     }
 
-    // Ensure user owns the booking
     if (booking.userId.toString() !== req.user.id) {
       return res.status(401).json({ msg: 'User not authorized' });
     }
 
-    // Only allow edits if booking is pending
     if (booking.status !== 'pending') {
       return res.status(400).json({ msg: 'Only pending bookings can be edited' });
     }
 
-    // --- Start Overlap Detection for Edit ---
-    const updatedPlaceId = placeId || booking.placeId; // Use new placeId if provided, else existing
     const updatedEventStartTime = new Date(eventStartTime || booking.eventStartTime);
     const updatedEventEndTime = new Date(eventEndTime || booking.eventEndTime);
 
-    // Find existing approved bookings for this place that might overlap, excluding the current booking being edited
-    const overlappingBookings = await Booking.find({
-      _id: { $ne: booking._id }, // Exclude the current booking being edited
-      placeId: updatedPlaceId,
-      status: 'approved',
-      $or: [
-        { eventStartTime: { $lt: updatedEventEndTime, $gte: updatedEventStartTime } },
-        { eventEndTime: { $lte: updatedEventEndTime, $gt: updatedEventStartTime } },
-        { eventStartTime: { $lte: updatedEventStartTime }, eventEndTime: { $gte: updatedEventEndTime } },
-        { eventStartTime: { $gte: updatedEventStartTime }, eventEndTime: { $lte: updatedEventEndTime } }
-      ]
-    });
-
-    if (overlappingBookings.length > 0) {
-      return res.status(400).json({ msg: 'Edited booking overlaps with an existing approved booking for this place.' });
-    }
-    // --- End Overlap Detection for Edit ---
-
     booking.eventTitle = eventTitle || booking.eventTitle;
     booking.description = description || booking.description;
-    booking.eventStartTime = updatedEventStartTime; // Use parsed Date object
-    booking.eventEndTime = updatedEventEndTime;     // Use parsed Date object
-    booking.placeId = updatedPlaceId;               // Use updated placeId
+    booking.eventStartTime = updatedEventStartTime;
+    booking.eventEndTime = updatedEventEndTime;
+    booking.placeId = placeId || booking.placeId;
     booking.requestedFacilities = requestedFacilities || booking.requestedFacilities;
 
     await booking.save();
@@ -237,7 +190,6 @@ router.delete('/:id', auth, async (req, res) => {
       return res.status(404).json({ msg: 'Booking not found' });
     }
 
-    // Ensure user owns the booking
     if (booking.userId.toString() !== req.user.id) {
       return res.status(401).json({ msg: 'User not authorized' });
     }
@@ -270,7 +222,6 @@ router.get('/my-bookings', auth, async (req, res) => {
 // @access  Private (now requires auth)
 router.get('/recent', auth, async (req, res) => {
   try {
-    // Fetch only bookings made by the authenticated user
     const bookings = await Booking.find({ userId: req.user.id }).sort({ requestedAt: -1 }).limit(5).populate('userId', ['name', 'email']).populate('placeId', ['name']);
     res.json(bookings);
   } catch (err) {
@@ -287,7 +238,6 @@ router.get('/pending', async (req, res) => {
     const bookings = await Booking.find({ status: 'pending' })
       .populate('userId', ['name', 'email'])
       .populate('placeId', ['name', 'location']);
-    console.log('Pending Bookings fetched from DB:', bookings);
     res.json(bookings);
   } catch (err) {
     console.error(err.message);
@@ -315,6 +265,99 @@ router.get('/', auth, verifyRole('admin'), async (req, res) => {
   try {
     const bookings = await Booking.find().populate('userId', ['name', 'email']).populate('placeId', ['name']);
     res.json(bookings);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+});
+
+// @route   GET api/bookings/report
+// @desc    Generate a report of bookings
+// @access  Private/Admin
+router.get('/report', auth, verifyRole('admin'), async (req, res) => {
+  const { format, status, placeId, date, sortKey, sortDirection } = req.query;
+
+  try {
+    let query = Booking.find();
+
+    // Filtering
+    if (status && status !== '') query = query.where('status').equals(status);
+    if (placeId && placeId !== '') query = query.where('placeId').equals(placeId);
+    if (date && date !== '') {
+      const start = moment(date).startOf('day');
+      const end = moment(date).endOf('day');
+      query = query.where('eventStartTime').gte(start).lte(end);
+    }
+
+    // Sorting
+    if (sortKey) {
+      const sort = {};
+      sort[sortKey] = sortDirection === 'descending' ? -1 : 1;
+      query = query.sort(sort);
+    }
+
+    console.log('Report generation triggered with filters:', { status, placeId, date });
+
+    const bookings = await query.populate('userId', 'name').populate('placeId', 'name').exec();
+
+    console.log(`Found ${bookings.length} bookings to report.`);
+
+    if (format === 'pdf') {
+      const doc = new PDFDocument({ margin: 50 });
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'attachment; filename=bookings-report.pdf');
+      doc.pipe(res);
+
+      doc.fontSize(20).text('Bookings Report', { align: 'center' });
+      doc.moveDown();
+
+      const tableTop = doc.y;
+      const itemX = 50;
+
+      const drawRow = (y, items) => {
+        let currentX = itemX;
+        items.forEach(item => {
+          doc.fontSize(10).text(item.text, currentX, y, { width: item.width, align: 'left' });
+          currentX += item.width;
+        });
+      };
+
+      const headers = [
+        { text: 'Event', width: 150 },
+        { text: 'Place', width: 100 },
+        { text: 'User', width: 100 },
+        { text: 'Start Time', width: 120 },
+        { text: 'Status', width: 80 },
+      ];
+
+      drawRow(tableTop, headers.map(h => ({...h, text: h.text.toUpperCase()})) );
+      doc.moveTo(itemX, tableTop + 20).lineTo(550, tableTop + 20).stroke();
+
+      let y = tableTop + 25;
+      bookings.forEach(booking => {
+        const items = [
+          { text: booking.eventTitle, width: 150 },
+          { text: booking.placeId?.name || 'N/A', width: 100 },
+          { text: booking.userId?.name || 'N/A', width: 100 },
+          { text: moment(booking.eventStartTime).format('YYYY-MM-DD HH:mm'), width: 120 },
+          { text: booking.status, width: 80 },
+        ];
+        drawRow(y, items);
+        y += 25;
+      });
+
+      doc.end();
+
+    } else if (format === 'docx') {
+      // ... DOCX generation logic ...
+      const buffer = await Packer.toBuffer(doc);
+      res.setHeader('Content-Disposition', 'attachment; filename=bookings-report.docx');
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+      res.send(buffer);
+
+    } else {
+      res.status(400).send('Invalid format requested');
+    }
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server Error');

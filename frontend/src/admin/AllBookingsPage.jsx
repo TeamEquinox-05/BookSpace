@@ -3,7 +3,7 @@ import axios from 'axios';
 import moment from 'moment';
 import { PageHeader } from '../components/shared';
 import { Spinner, TableSkeleton } from '../components/ui';
-import { ShieldX, SlidersHorizontal } from 'lucide-react';
+import { ShieldX, Download, FileText, FileType, FileJson } from 'lucide-react';
 
 const FilterControls = ({ places, filters, setFilters }) => {
   const handleInputChange = (e) => {
@@ -66,6 +66,103 @@ const FilterControls = ({ places, filters, setFilters }) => {
           >
             Clear Filters
           </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const DownloadReport = ({ filters, sortConfig, disabled }) => {
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  const downloadCSV = async () => {
+    setIsDownloading(true);
+    // This is a simplified CSV generation. For a real app, a library like papaparse would be better.
+    const headers = ['Event', 'Place', 'User', 'Start Time', 'Status'];
+    const query = new URLSearchParams({
+      ...filters,
+      sortKey: sortConfig.key,
+      sortDirection: sortConfig.direction,
+    }).toString();
+    const response = await axios.get(`/bookings?${query}`);
+    const bookings = response.data;
+
+    let csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n";
+    bookings.forEach(b => {
+      const row = [
+        `"${b.eventTitle}"`, // Corrected: escaped quotes within template literals
+        `"${b.placeId?.name || 'N/A'}"`, // Corrected: escaped quotes within template literals
+        `"${b.userId?.name || 'N/A'}"`, // Corrected: escaped quotes within template literals
+        `"${moment(b.eventStartTime).format('YYYY-MM-DD HH:mm')}"`, // Corrected: escaped quotes within template literals
+        `"${b.status}"` // Corrected: escaped quotes within template literals
+      ].join(",");
+      csvContent += row + "\n";
+    });
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "bookings-report.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setIsDownloading(false);
+  };
+
+  const downloadFromServer = async (format) => {
+    setIsDownloading(true);
+    try {
+      const query = new URLSearchParams({
+        format,
+        ...filters,
+        sortKey: sortConfig.key,
+        sortDirection: sortConfig.direction,
+      }).toString();
+
+      const response = await axios.get(`/bookings/report?${query}`, {
+        responseType: 'blob',
+      });
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `bookings-report.${format}`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error('Download error:', error);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  return (
+    <div className="relative inline-block text-left">
+      <div className="group">
+        <button
+          type="button"
+          disabled={disabled || isDownloading}
+          className="inline-flex justify-center w-full rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isDownloading ? (
+            <><Spinner size="sm" className="mr-2" /> Downloading...</>
+          ) : (
+            <><Download className="mr-2 h-5 w-5" /> Download Report</>
+          )}
+        </button>
+        <div className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-200 z-10">
+          <div className="py-1" role="menu" aria-orientation="vertical">
+            <a href="#" onClick={() => downloadCSV()} className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">
+              <FileJson className="mr-3 h-5 w-5" /> Download as CSV
+            </a>
+            <a href="#" onClick={() => downloadFromServer('pdf')} className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">
+              <FileType className="mr-3 h-5 w-5" /> Download as PDF
+            </a>
+            <a href="#" onClick={() => downloadFromServer('docx')} className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">
+              <FileText className="mr-3 h-5 w-5" /> Download as DOCX
+            </a>
+          </div>
         </div>
       </div>
     </div>
@@ -160,6 +257,9 @@ const AllBookingsPage = () => {
     return (
       <>
         <FilterControls places={places} filters={filters} setFilters={setFilters} />
+        <div className="p-4 flex justify-end">
+          <DownloadReport filters={filters} sortConfig={sortConfig} disabled={filteredAndSortedBookings.length === 0} />
+        </div>
         {filteredAndSortedBookings.length === 0 ? (
           <div className="text-center py-12">
             <h3 className="text-xl font-semibold text-gray-800 dark:text-white">No Bookings Match Filters</h3>
@@ -195,11 +295,7 @@ const AllBookingsPage = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{booking.userId?.name || 'N/A'}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{moment(booking.eventStartTime).format('YYYY-MM-DD HH:mm')}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        booking.status === 'approved' ? 'bg-green-100 text-green-800' :
-                        booking.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-red-100 text-red-800'
-                      }`}>
+                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${booking.status === 'approved' ? 'bg-green-100 text-green-800' : booking.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'}`}>
                         {booking.status}
                       </span>
                     </td>
