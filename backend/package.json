@@ -21,6 +21,8 @@
     "mongodb": "^6.18.0",
     "mongoose": "^8.17.0",
     "nodemailer": "^7.0.5",
-    "nodemon": "^3.1.10"
+    "nodemon": "^3.1.10",
+    "pdfkit": "^0.15.0",
+    "docx": "^8.5.0"
   }
 }
