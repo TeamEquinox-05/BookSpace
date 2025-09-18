@@ -30,11 +30,13 @@ function App() {
 
   return (
     <Routes>
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/signup" element={<SignupPage />} />
+      {/* Public routes - accessible whether logged in or not */}
+      <Route path="/login" element={user ? (user.role === 'admin' ? <Navigate to="/admin" replace /> : <Navigate to="/dashboard" replace />) : <LoginPage />} />
+      <Route path="/signup" element={user ? (user.role === 'admin' ? <Navigate to="/admin" replace /> : <Navigate to="/dashboard" replace />) : <SignupPage />} />
 
-      {/* Routes with Layout */}
+      {/* Routes with Layout - for authenticated users */}
       <Route element={<Layout />}>
+        {/* Regular user routes */}
         <Route element={<PrivateRoute />}>
           <Route path="/dashboard" element={<UserDashboardPage />} end />
           <Route path="/my-bookings" element={<MyBookingsPage />} />
@@ -54,12 +56,14 @@ function App() {
         </Route>
       </Route>
 
-      <Route path="/" element={user ? (user.role === 'admin' ? <Navigate to="/admin" /> : <Navigate to="/dashboard" />) : <Navigate to="/login" />} />
+      {/* Root path redirect */}
+      <Route path="/" element={user ? (user.role === 'admin' ? <Navigate to="/admin" replace /> : <Navigate to="/dashboard" replace />) : <Navigate to="/login" replace />} />
 
-      {/* Catch-all for unauthenticated users trying to access protected routes */}
-      {!user && <Route path="*" element={<Navigate to="/login" />} />}
-
-      
+      {/* Catch-all route - always redirects to login if not authenticated or to appropriate dashboard if authenticated */}
+      <Route path="*" element={!user 
+        ? <Navigate to="/login" replace /> 
+        : (user.role === 'admin' ? <Navigate to="/admin" replace /> : <Navigate to="/dashboard" replace />)} 
+      />
     </Routes>
   );
 }

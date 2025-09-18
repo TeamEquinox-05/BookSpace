@@ -68,21 +68,34 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Logout function
+  // Enhanced logout function that ensures complete cleanup
   const logout = async () => {
+    console.log('Logout: Starting...');
     try {
-      await axios.post('/auth/logout'); // Backend clears the httpOnly cookie
-      
-      // Also clear localStorage token and Authorization header
-      localStorage.removeItem('authToken');
-      delete axios.defaults.headers.common['Authorization'];
+      // Clear backend session by calling logout endpoint
+      await axios.post('/auth/logout');
+      console.log('Logout: Successfully called backend logout endpoint');
     } catch (err) {
-      console.error('Logout failed:', err);
-      // Even if the API call fails, clear local state
-      localStorage.removeItem('authToken');
-      delete axios.defaults.headers.common['Authorization'];
+      console.error('Logout: Backend logout failed:', err.message);
+      // Continue with frontend cleanup even if backend call fails
     } finally {
+      // Clean up all authentication data
+      console.log('Logout: Cleaning up frontend auth state');
+      
+      // Clear user state
       setUser(null);
+      
+      // Clear any stored tokens
+      localStorage.removeItem('authToken');
+      sessionStorage.removeItem('authToken');
+      
+      // Clear Authorization header
+      delete axios.defaults.headers.common['Authorization'];
+      
+      // Add a small delay to ensure state updates are processed
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      console.log('Logout: Completed');
     }
   };
 

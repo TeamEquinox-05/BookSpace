@@ -307,7 +307,11 @@ router.post('/reset-password', async (req, res) => {
 // @desc    Logout user / Clear cookie
 // @access  Public
 router.post('/logout', (req, res) => {
-  // Enhanced cookie clearing for cross-domain usage
+  console.log('Logout request received');
+  
+  // Try multiple approaches to ensure cookie is properly cleared
+  
+  // 1. Clear with specific domain settings matching login
   res.cookie('token', '', {
     httpOnly: true,
     secure: true,
@@ -316,8 +320,18 @@ router.post('/logout', (req, res) => {
     domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : 'localhost',
     expires: new Date(0), // Set expiration to a past date to clear the cookie
   });
+  
+  // 2. Also try clearing without domain specification (handles some edge cases)
+  res.cookie('token', '', {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'none',
+    path: '/',
+    expires: new Date(0),
+  });
+  
   console.log('Logout successful, cookie cleared');
-  res.status(200).json({ msg: 'Logged out successfully' });
+  res.status(200).json({ msg: 'Logged out successfully', success: true });
 });
 
 module.exports = router;

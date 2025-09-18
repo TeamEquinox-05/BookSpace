@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { NavLink as RouterNavLink, useLocation } from 'react-router-dom';
+import { NavLink as RouterNavLink, useLocation, useNavigate } from 'react-router-dom';
 import { Home, ClipboardCheck, Calendar, Building, Users, Settings, LogOut, Search, ChevronRight, Plus, FileText, Bell, BarChart3 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { motion } from 'framer-motion';
@@ -9,6 +9,7 @@ const cn = (...classes) => classes.filter(Boolean).join(' ');
 
 const Sidebar = ({ isExpanded, setIsExpanded, onMouseEnter, onMouseLeave }) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { user, logout } = useAuth();
 
   // Define sidebar sections and items
@@ -129,19 +130,19 @@ const Sidebar = ({ isExpanded, setIsExpanded, onMouseEnter, onMouseLeave }) => {
 
       {/* Footer */}
       <div className="border-t border-slate-200 dark:border-slate-700 p-4 overflow-hidden">
-        <RouterNavLink
-          to="/login"
-          onClick={logout}
-          className={({ isActive }) =>
-            cn(
-              "flex items-center rounded-lg transition-all",
-              "bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white",
-              "border border-slate-200 dark:border-slate-600",
-              isExpanded 
-                ? "w-full gap-3 px-3 py-2.5" 
-                : "justify-center w-12 h-12 mx-auto px-2 py-2.5"
-            )
-          }
+        <button
+          onClick={async () => {
+            await logout();
+            navigate('/login', { replace: true });  // Navigate with replace:true to prevent going back
+          }}
+          className={cn(
+            "flex items-center rounded-lg transition-all",
+            "bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white",
+            "border border-slate-200 dark:border-slate-600",
+            isExpanded 
+              ? "w-full gap-3 px-3 py-2.5" 
+              : "justify-center w-12 h-12 mx-auto px-2 py-2.5"
+          )}
         >
           <LogOut className="w-5 h-5 flex-shrink-0" />
           {isExpanded && (
@@ -149,7 +150,7 @@ const Sidebar = ({ isExpanded, setIsExpanded, onMouseEnter, onMouseLeave }) => {
               Logout
             </span>
           )}
-        </RouterNavLink>
+        </button>
       </div>
     </motion.div>
   );
