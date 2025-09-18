@@ -29,8 +29,8 @@ const LoginPage = () => {
     
     try {
       const res = await axios.post('/auth/login', formData);
-      const { user } = res.data;
-      login(user);
+      const { user, token } = res.data;
+      login(user, token); // Pass the token to the login function as fallback
       console.log('Login successful. User role:', user.role);
       if (user.role === 'admin') {
         console.log('Navigating to /admin');

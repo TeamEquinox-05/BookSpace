@@ -182,16 +182,26 @@ router.post('/login',
     jwt.sign(
       payload,
       process.env.JWT_SECRET,
-      { expiresIn: '1h' },
+      { expiresIn: '24h' }, // Extended token expiration to 24 hours for testing
       (err, token) => {
         if (err) throw err;
+        
+        // Enhanced cookie settings for cross-domain usage
         res.cookie('token', token, {
           httpOnly: true,
-          secure: process.env.NODE_ENV === 'production' ? true : false,
-          sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'Lax',
-          maxAge: 3600000, // 1 hour
+          secure: true, // Always use secure cookies
+          sameSite: 'none', // Required for cross-domain cookies
+          maxAge: 86400000, // 24 hours
+          path: '/',
+          domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : 'localhost',
         });
-        res.status(200).json({ msg: 'Logged in successfully', token, user: { name: user.name, role: user.role } });
+        
+        console.log('Login successful, token set in cookie');
+        res.status(200).json({ 
+          msg: 'Logged in successfully', 
+          token, // Also sending token in response body for debugging
+          user: { id: user.id, name: user.name, email: user.email, role: user.role } 
+        });
       }
     );
   } catch (err) {
@@ -297,12 +307,16 @@ router.post('/reset-password', async (req, res) => {
 // @desc    Logout user / Clear cookie
 // @access  Public
 router.post('/logout', (req, res) => {
+  // Enhanced cookie clearing for cross-domain usage
   res.cookie('token', '', {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production' ? true : false,
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'Lax',
+    secure: true,
+    sameSite: 'none',
+    path: '/',
+    domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : 'localhost',
     expires: new Date(0), // Set expiration to a past date to clear the cookie
   });
+  console.log('Logout successful, cookie cleared');
   res.status(200).json({ msg: 'Logged out successfully' });
 });
 

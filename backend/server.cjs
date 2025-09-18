@@ -15,22 +15,31 @@ connectDB();
 const app = express();
 app.use(cookieParser());
 
+// Set trust proxy to trust the Render reverse proxy
+app.set('trust proxy', 1);
+
 // Init Middleware
 app.use(express.json({ extended: false }));
 
 const allowedOrigins = [
-  'https://book-space-3xmh.vercel.app'
+  'https://book-space-3xmh.vercel.app',
+  'https://book-space.vercel.app'  // Adding alternative domain
 ];
+
+// Enhanced CORS configuration for cross-origin cookies
 app.use(cors({
   origin: (origin, callback) => {
+    console.log('Request origin:', origin);
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
+      console.log('Origin not allowed by CORS:', origin);
       callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true,
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 
 // Define Routes

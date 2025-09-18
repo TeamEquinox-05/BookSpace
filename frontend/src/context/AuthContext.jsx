@@ -11,6 +11,12 @@ export const AuthProvider = ({ children }) => {
   // Configure axios to send cookies with requests
   useEffect(() => {
     axios.defaults.withCredentials = true;
+    
+    // Check if we have a token in localStorage and set the Authorization header
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    }
   }, []);
 
   // Function to fetch user data from backend
@@ -20,6 +26,14 @@ export const AuthProvider = ({ children }) => {
 
     try {
       console.log('refreshUser: Making /users/me request...');
+      
+      // Check if we have a token in localStorage (fallback mechanism)
+      const token = localStorage.getItem('authToken');
+      if (token && !axios.defaults.headers.common['Authorization']) {
+        console.log('Setting Authorization header from localStorage token');
+        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      }
+      
       const res = await axios.get('/users/me');
       console.log('refreshUser: /users/me request successful. User data:', res.data);
       setUser(res.data);
@@ -27,6 +41,9 @@ export const AuthProvider = ({ children }) => {
       console.error('refreshUser: /users/me request failed:', err.response ? err.response.data : err.message);
       // If there's an error (e.g., cookie not sent or invalid), clear user
       setUser(null);
+      // Also clear token from localStorage on auth failure
+      localStorage.removeItem('authToken');
+      delete axios.defaults.headers.common['Authorization'];
     } finally {
       console.log('refreshUser: Finished. Loading set to false.');
       setLoading(false);
@@ -38,18 +55,32 @@ export const AuthProvider = ({ children }) => {
     refreshUser();
   }, []);
 
-  // Login function (token is now handled by httpOnly cookie from backend)
-  const login = (userData) => { // Removed token parameter
+  // Login function that can handle both cookie-based auth and token-based auth
+  const login = (userData, token) => {
     setUser(userData);
-    // No need to set localStorage or Authorization header here
+    
+    // If we receive a token, store it as a fallback mechanism
+    // This is in case the httpOnly cookie doesn't work properly in the deployed environment
+    if (token) {
+      localStorage.setItem('authToken', token);
+      // Also set the default Authorization header for all future requests
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    }
   };
 
   // Logout function
   const logout = async () => {
     try {
       await axios.post('/auth/logout'); // Backend clears the httpOnly cookie
+      
+      // Also clear localStorage token and Authorization header
+      localStorage.removeItem('authToken');
+      delete axios.defaults.headers.common['Authorization'];
     } catch (err) {
       console.error('Logout failed:', err);
+      // Even if the API call fails, clear local state
+      localStorage.removeItem('authToken');
+      delete axios.defaults.headers.common['Authorization'];
     } finally {
       setUser(null);
     }
