@@ -19,11 +19,7 @@ app.use(cookieParser());
 app.use(express.json({ extended: false }));
 
 const allowedOrigins = [
-  'https://book-space-one.vercel.app',
-  'https://book-space-ovhl69ldy-equinoxs-projects-2265d853.vercel.app/',
-  'http://localhost:5173',
-  'https://book-space-one.vercel.app/',
-  'https://bookspace-1.onrender.com'
+  'https://book-space-3xmh.vercel.app'
 ];
 app.use(cors({
   origin: (origin, callback) => {
