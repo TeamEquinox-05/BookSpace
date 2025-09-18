@@ -25,17 +25,21 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     console.log('Setting up API and authentication configuration');
     
-    // Configure the regular axios instance with credentials
-    axios.defaults.withCredentials = true;
-    
     // Get authentication token from storage
-    const token = localStorage.getItem('authToken');
+    const token = localStorage.getItem('token');
+    console.log('Token in localStorage:', token ? 'Found' : 'Not found');
+    
     if (token) {
       console.log('Found token in localStorage, configuring auth headers');
+      const authHeader = `Bearer ${token}`;
       
       // Add token to both axios instances
-      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      api.defaults.headers.common['Authorization'] = authHeader;
+      axios.defaults.headers.common['Authorization'] = authHeader;
+      
+      console.log('Initial setup: Auth headers configured');
+    } else {
+      console.log('No token found in localStorage on initial setup');
     }
     
     // Add request interceptor for logging
@@ -63,7 +67,7 @@ export const AuthProvider = ({ children }) => {
         // Handle authentication errors specially
         if (error.response?.status === 401) {
           console.log('Authentication error detected, clearing auth data');
-          localStorage.removeItem('authToken');
+          localStorage.removeItem('token');
         }
         
         return Promise.reject(error);
@@ -91,17 +95,23 @@ export const AuthProvider = ({ children }) => {
   // Login function with improved token handling
   const login = (userData, token) => {
     console.log('Login: Setting user data and token');
+    console.log('Login: Token received:', token ? 'Yes' : 'No');
     setUser(userData);
     
-    // If we receive a token, store it as a fallback mechanism
-    // This is critical since we're having CORS issues with cookies
+    // If we receive a token, store it
     if (token) {
-      console.log('Login: Storing auth token in localStorage');
-      localStorage.setItem('authToken', token);
+      console.log('Login: Storing auth token in localStorage with key "token"');
+      localStorage.setItem('token', token);
       
-      // Set the token for both axios instances
-      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      // Set the token for both axios instances immediately
+      const authHeader = `Bearer ${token}`;
+      api.defaults.headers.common['Authorization'] = authHeader;
+      axios.defaults.headers.common['Authorization'] = authHeader;
+      
+      console.log('Login: Auth headers set for both axios instances');
+      console.log('Login: axios.defaults.headers.common.Authorization =', axios.defaults.headers.common['Authorization']);
+    } else {
+      console.warn('Login: No token received from backend');
     }
   };
 
@@ -134,8 +144,8 @@ export const AuthProvider = ({ children }) => {
       setUser(null);
       
       // Clear any stored tokens
-      localStorage.removeItem('authToken');
-      sessionStorage.removeItem('authToken');
+      localStorage.removeItem('token');
+      sessionStorage.removeItem('token');
       
       // Clear Authorization headers
       delete api.defaults.headers.common['Authorization'];

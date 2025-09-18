@@ -25,7 +25,7 @@ export default function UserDashboardPage() {
     try {
       setError(null);
       const [bookingsRes, placesRes] = await Promise.all([
-        axios.get('/bookings/approved'),
+        axios.get('/bookings/my-bookings'), // Use user-specific endpoint instead of admin-only
         axios.get('/places'),
       ]);
 
