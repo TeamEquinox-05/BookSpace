@@ -232,8 +232,8 @@ router.get('/recent', auth, async (req, res) => {
 
 // @route   GET api/bookings/pending
 // @desc    Get all pending bookings
-// @access  Public (will be restricted to Admin later)
-router.get('/pending', async (req, res) => {
+// @access  Private (Admin only)
+router.get('/pending', auth, verifyRole('admin'), async (req, res) => {
   try {
     const bookings = await Booking.find({ status: 'pending' })
       .populate('userId', ['name', 'email'])

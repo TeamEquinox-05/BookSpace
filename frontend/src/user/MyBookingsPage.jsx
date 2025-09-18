@@ -17,19 +17,9 @@ const MyBookingsPage = () => {
   const fetchBookingsAndPlaces = async () => {
     setLoading(true);
     try {
-      // Get token from localStorage for direct authorization
-      const token = localStorage.getItem('authToken');
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      
       const [bookingsRes, placesRes] = await Promise.all([
-        axios.get('https://bookspace-be.onrender.com/api/bookings/my-bookings', { 
-          withCredentials: true,
-          headers 
-        }),
-        axios.get('https://bookspace-be.onrender.com/api/places', { 
-          withCredentials: true,
-          headers 
-        }),
+        axios.get('/bookings/my-bookings'),
+        axios.get('/places'),
       ]);
 
       setBookings(bookingsRes.data);
@@ -57,14 +47,9 @@ const MyBookingsPage = () => {
   };
 
   const handleUpdateBooking = async (updatedDetails) => {
-    const token = localStorage.getItem('token');
     console.log('Attempting to update booking with ID:', currentBooking._id);
     try {
-      await axios.put(`/bookings/${currentBooking._id}`, updatedDetails, {
-        headers: {
-          'x-auth-token': token,
-        },
-      });
+      await axios.put(`/bookings/${currentBooking._id}`, updatedDetails);
 
       setIsEditModalOpen(false);
       fetchBookingsAndPlaces(); // Refresh the list
