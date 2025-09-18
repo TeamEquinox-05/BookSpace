@@ -8,7 +8,7 @@ import { ThemeProvider } from './context/ThemeContext.jsx';
 import { AuthProvider } from './context/AuthContext.jsx';
 
 
-axios.defaults.baseURL = 'http://localhost:5000/api/';
+axios.defaults.baseURL = 'https://bookspace-be.onrender.com/api/';
 axios.defaults.withCredentials = true;
 
 createRoot(document.getElementById('root')).render(
