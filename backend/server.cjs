@@ -21,6 +21,7 @@ app.set('trust proxy', 1);
 // Init Middleware
 app.use(express.json({ extended: false }));
 
+// Define allowed origins
 const allowedOrigins = [
   'https://book-space-3xmh.vercel.app',
   'https://book-space.vercel.app',
@@ -28,50 +29,41 @@ const allowedOrigins = [
   'http://localhost:5173'  // Add Vite default development port
 ];
 
-// Configure CORS before defining routes
-// Apply CORS configuration to all routes
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  console.log('Request origin:', origin);
-  
-  // Check if the origin is in our allowed list
-  if (allowedOrigins.includes(origin)) {
-    res.header('Access-Control-Allow-Origin', origin);
-    res.header('Access-Control-Allow-Credentials', 'true');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  }
-  
-  // Handle preflight requests
-  if (req.method === 'OPTIONS') {
-    return res.sendStatus(200);
-  }
-  
-  next();
-});
-
-// Use cors middleware as a fallback with more permissive settings
+// Simplify the CORS configuration - use a single approach
+// This creates a cleaner middleware chain and reduces conflicts
 app.use(cors({
   origin: function (origin, callback) {
-    console.log('CORS middleware processing origin:', origin);
-    // Allow requests with no origin (like mobile apps or curl requests)
+    console.log('CORS request from origin:', origin);
+    
+    // Allow requests with no origin (like mobile apps, curl requests, or server-to-server)
     if (!origin) {
+      console.log('Request has no origin, allowing');
       return callback(null, true);
     }
     
-    if (allowedOrigins.indexOf(origin) !== -1) {
+    // Check if origin is in our allowed list
+    if (allowedOrigins.includes(origin)) {
+      console.log('Origin allowed by CORS:', origin);
       callback(null, true);
     } else {
-      console.log('Origin rejected by CORS:', origin);
+      console.log('Origin blocked by CORS:', origin);
       callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'],
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+  allowedHeaders: 'Origin,X-Requested-With,Content-Type,Accept,Authorization,X-Auth-Token',
+  exposedHeaders: 'Content-Length,Content-Range',
   preflightContinue: false,
-  optionsSuccessStatus: 204
+  optionsSuccessStatus: 204,
+  maxAge: 86400  // Cache preflight request results for 24 hours
 }));
+
+// Log all requests for debugging
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.path} - Origin: ${req.headers.origin || 'none'}`);
+  next();
+});
 
 // Define Routes
 app.use('/api/auth', require('./src/routes/auth.cjs'));

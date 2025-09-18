@@ -28,16 +28,12 @@ const LoginPage = () => {
     setError('');
     
     try {
-      // Try direct approach to avoid CORS issues
-      const res = await axios.post('https://bookspace-be.onrender.com/api/auth/login', formData, {
-        withCredentials: true,
-        headers: {
-          'Content-Type': 'application/json'
-        }
+      const res = await axios.post('/auth/login', formData, {
+        withCredentials: true
       });
       
       const { user, token } = res.data;
-      login(user, token); // Pass the token to the login function as fallback
+      login(user, token);
       console.log('Login successful. User role:', user.role);
       
       // Short delay to ensure state updates before navigation
@@ -51,6 +47,7 @@ const LoginPage = () => {
         navigate('/dashboard', { replace: true });
       }
     } catch (err) {
+      console.error('Login error:', err);
       setError(err.response?.data?.msg || 'Server error. Please try again later.');
     } finally {
       setIsLoading(false);

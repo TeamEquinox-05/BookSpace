@@ -2,11 +2,14 @@ import { createContext, useState, useEffect } from 'react';
 import { useContext } from 'react';
 import axios from 'axios';
 
-// Add custom axios instance with error handling
+// Define base URL for API
+const API_BASE_URL = 'https://bookspace-be.onrender.com/api';
+
+// Create custom axios instance for the API
 const api = axios.create({
-  baseURL: 'https://bookspace-be.onrender.com/api',
+  baseURL: API_BASE_URL,
   withCredentials: true,
-  timeout: 10000, // 10 second timeout
+  timeout: 15000, // 15 second timeout for slow connections
   headers: {
     'Content-Type': 'application/json'
   }
@@ -20,84 +23,62 @@ export const AuthProvider = ({ children }) => {
 
   // Setup axios and API configuration
   useEffect(() => {
-    // Configure the regular axios instance
+    console.log('Setting up API and authentication configuration');
+    
+    // Configure the regular axios instance with credentials
     axios.defaults.withCredentials = true;
     
-    // Configure our custom API instance with auth token if available
+    // Get authentication token from storage
     const token = localStorage.getItem('authToken');
     if (token) {
+      console.log('Found token in localStorage, configuring auth headers');
+      
+      // Add token to both axios instances
       api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     }
     
-    // Add request interceptor to handle CORS preflight
+    // Add request interceptor for logging
     api.interceptors.request.use(
       config => {
-        // Add CORS headers to every request
-        config.headers['Access-Control-Allow-Origin'] = 'https://book-space-3xmh.vercel.app';
+        // Log outgoing requests for debugging
+        console.log(`Making ${config.method.toUpperCase()} request to: ${config.url}`);
         return config;
       },
       error => {
+        console.error('Request error:', error.message);
         return Promise.reject(error);
       }
     );
     
     // Add response interceptor to handle errors
     api.interceptors.response.use(
-      response => response,
+      response => {
+        console.log('API response successful:', response.config.url);
+        return response;
+      },
       error => {
-        console.error('API Error:', error.message);
-        if (error.message.includes('Network Error') || error.message.includes('CORS')) {
-          console.log('CORS issue detected. Using localStorage token as fallback');
+        console.error(`API Error (${error.config?.url || 'unknown endpoint'}):`, error.message);
+        
+        // Handle authentication errors specially
+        if (error.response?.status === 401) {
+          console.log('Authentication error detected, clearing auth data');
+          localStorage.removeItem('authToken');
         }
+        
         return Promise.reject(error);
       }
     );
   }, []);
 
-  // Function to fetch user data from backend with improved error handling
   const refreshUser = async () => {
-    console.log('refreshUser: Starting...');
-    setLoading(true);
-
     try {
-      // Check if we have a token in localStorage (fallback mechanism)
-      const token = localStorage.getItem('authToken');
-      if (token) {
-        console.log('Using token from localStorage');
-        api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      }
-      
-      console.log('refreshUser: Making /users/me request...');
-      
-      try {
-        // First try using the custom api instance
-        const res = await api.get('/users/me');
-        console.log('refreshUser: /users/me request successful. User data:', res.data);
-        setUser(res.data);
-      } catch (apiError) {
-        console.error('API request failed, trying direct axios:', apiError.message);
-        
-        // If that fails, try a direct approach
-        const directRes = await axios.get('https://bookspace-be.onrender.com/api/users/me', {
-          headers: token ? { 'Authorization': `Bearer ${token}` } : {},
-          withCredentials: true
-        });
-        
-        console.log('refreshUser: Direct request successful. User data:', directRes.data);
-        setUser(directRes.data);
-      }
-    } catch (err) {
-      console.error('refreshUser: All attempts failed:', err.message);
-      // If there's an error (e.g., cookie not sent or invalid), clear user
+      const res = await api.get('/users/me');
+      setUser(res.data);
+    } catch (error) {
+      console.error('Error refreshing user:', error);
       setUser(null);
-      // Also clear token from localStorage on auth failure
-      localStorage.removeItem('authToken');
-      delete api.defaults.headers.common['Authorization'];
-      delete axios.defaults.headers.common['Authorization'];
     } finally {
-      console.log('refreshUser: Finished. Loading set to false.');
       setLoading(false);
     }
   };
