@@ -187,16 +187,19 @@ router.post('/login',
         if (err) throw err;
         
         // Enhanced cookie settings for cross-domain usage
+        // Don't specify domain to let browser handle it correctly
         res.cookie('token', token, {
           httpOnly: true,
           secure: true, // Always use secure cookies
           sameSite: 'none', // Required for cross-domain cookies
           maxAge: 86400000, // 24 hours
           path: '/',
-          domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : 'localhost',
         });
         
         console.log('Login successful, token set in cookie');
+        console.log('Origin header:', req.headers.origin);
+        console.log('Referer header:', req.headers.referer);
+        
         res.status(200).json({ 
           msg: 'Logged in successfully', 
           token, // Also sending token in response body for debugging
@@ -308,27 +311,31 @@ router.post('/reset-password', async (req, res) => {
 // @access  Public
 router.post('/logout', (req, res) => {
   console.log('Logout request received');
+  console.log('Origin header:', req.headers.origin);
+  console.log('Referer header:', req.headers.referer);
   
   // Try multiple approaches to ensure cookie is properly cleared
   
-  // 1. Clear with specific domain settings matching login
+  // Clear the cookie without specifying domain
   res.cookie('token', '', {
     httpOnly: true,
     secure: true,
     sameSite: 'none',
     path: '/',
-    domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : 'localhost',
     expires: new Date(0), // Set expiration to a past date to clear the cookie
   });
   
-  // 2. Also try clearing without domain specification (handles some edge cases)
-  res.cookie('token', '', {
-    httpOnly: true,
-    secure: true,
-    sameSite: 'none',
-    path: '/',
-    expires: new Date(0),
-  });
+  // For Render hosting specifically, also try clearing with the domain
+  if (req.headers.origin && req.headers.origin.includes('vercel.app')) {
+    res.cookie('token', '', {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+      path: '/',
+      expires: new Date(0),
+      domain: '.vercel.app'
+    });
+  }
   
   console.log('Logout successful, cookie cleared');
   res.status(200).json({ msg: 'Logged out successfully', success: true });

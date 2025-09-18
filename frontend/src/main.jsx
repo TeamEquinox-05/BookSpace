@@ -7,9 +7,8 @@ import App from './App.jsx';
 import { ThemeProvider } from './context/ThemeContext.jsx';
 import { AuthProvider } from './context/AuthContext.jsx';
 
-
-axios.defaults.baseURL = 'https://bookspace-be.onrender.com/api';
-axios.defaults.withCredentials = true;
+// Configure axios - we'll use direct URLs instead of baseURL to avoid CORS issues
+axios.defaults.withCredentials = true; // Enable sending cookies with requests
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

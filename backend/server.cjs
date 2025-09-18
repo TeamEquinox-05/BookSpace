@@ -23,23 +23,54 @@ app.use(express.json({ extended: false }));
 
 const allowedOrigins = [
   'https://book-space-3xmh.vercel.app',
-  'https://book-space.vercel.app'  // Adding alternative domain
+  'https://book-space.vercel.app',
+  'http://localhost:3000',
+  'http://localhost:5173'  // Add Vite default development port
 ];
 
-// Enhanced CORS configuration for cross-origin cookies
+// Configure CORS before defining routes
+// Apply CORS configuration to all routes
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  console.log('Request origin:', origin);
+  
+  // Check if the origin is in our allowed list
+  if (allowedOrigins.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  }
+  
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  
+  next();
+});
+
+// Use cors middleware as a fallback with more permissive settings
 app.use(cors({
-  origin: (origin, callback) => {
-    console.log('Request origin:', origin);
-    if (!origin || allowedOrigins.includes(origin)) {
+  origin: function (origin, callback) {
+    console.log('CORS middleware processing origin:', origin);
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) {
+      return callback(null, true);
+    }
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
-      console.log('Origin not allowed by CORS:', origin);
+      console.log('Origin rejected by CORS:', origin);
       callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true,
-  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'],
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 }));
 
 // Define Routes

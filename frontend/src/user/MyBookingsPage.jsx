@@ -17,15 +17,26 @@ const MyBookingsPage = () => {
   const fetchBookingsAndPlaces = async () => {
     setLoading(true);
     try {
+      // Get token from localStorage for direct authorization
+      const token = localStorage.getItem('authToken');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      
       const [bookingsRes, placesRes] = await Promise.all([
-        axios.get('/bookings/my-bookings'),
-        axios.get('/places'), // Fetch all places to populate the dropdown
+        axios.get('https://bookspace-be.onrender.com/api/bookings/my-bookings', { 
+          withCredentials: true,
+          headers 
+        }),
+        axios.get('https://bookspace-be.onrender.com/api/places', { 
+          withCredentials: true,
+          headers 
+        }),
       ]);
 
       setBookings(bookingsRes.data);
       setAvailablePlaces(placesRes.data.filter(place => place.status === 'available'));
     } catch (err) {
       setError(err.message);
+      console.error('Error fetching data:', err);
     } finally {
       setLoading(false);
     }

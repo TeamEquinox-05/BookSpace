@@ -28,16 +28,27 @@ const LoginPage = () => {
     setError('');
     
     try {
-      const res = await axios.post('/auth/login', formData);
+      // Try direct approach to avoid CORS issues
+      const res = await axios.post('https://bookspace-be.onrender.com/api/auth/login', formData, {
+        withCredentials: true,
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
       const { user, token } = res.data;
       login(user, token); // Pass the token to the login function as fallback
       console.log('Login successful. User role:', user.role);
+      
+      // Short delay to ensure state updates before navigation
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       if (user.role === 'admin') {
         console.log('Navigating to /admin');
-        navigate('/admin');
+        navigate('/admin', { replace: true });
       } else {
         console.log('Navigating to /dashboard');
-        navigate('/dashboard');
+        navigate('/dashboard', { replace: true });
       }
     } catch (err) {
       setError(err.response?.data?.msg || 'Server error. Please try again later.');
