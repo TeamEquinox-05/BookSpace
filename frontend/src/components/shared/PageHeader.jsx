@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Bell, Search, Moon, Sun, Menu, X } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
@@ -7,13 +7,11 @@ const PageHeader = ({ title, children }) => {
   const { darkMode, toggleDarkMode } = useTheme();
   const { user } = useAuth();
 
+  // Note: Theme class application is already handled in ThemeContext.jsx
+  // We don't need to apply it here again
+
   const handleToggle = () => {
     toggleDarkMode();
-    if (!darkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
   }
 
   return (
@@ -39,7 +37,11 @@ const PageHeader = ({ title, children }) => {
             />
           </div>
 
-          <button onClick={handleToggle} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+          <button 
+            onClick={handleToggle} 
+            className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+            aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"}
+          >
             {darkMode ? <Sun size={20} className="text-yellow-400" /> : <Moon size={20} className="text-slate-600" />}
           </button>
           

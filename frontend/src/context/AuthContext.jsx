@@ -9,10 +9,12 @@ const API_BASE_URL = 'https://bookspace-be.onrender.com/api';
 const api = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true,
-  timeout: 15000, // 15 second timeout for slow connections
+  timeout: 30000, // 30 second timeout for very slow connections
   headers: {
     'Content-Type': 'application/json'
-  }
+  },
+  // Add retry logic
+  retryDelay: 1000,
 });
 
 const AuthContext = createContext();
@@ -76,20 +78,91 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const refreshUser = async () => {
+    console.log('Starting user data refresh...');
     try {
-      const res = await api.get('/users/me');
+      // First, check if API is reachable with a simple health check
+      try {
+        // Using a direct fetch with a short timeout to quickly check if the API is accessible
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout for health check
+        
+        // Attempt a basic connection to the API
+        const healthCheck = await fetch(`${API_BASE_URL}/auth/health`, {
+          signal: controller.signal,
+          method: 'HEAD' // Just check connection, don't need response body
+        });
+        
+        clearTimeout(timeoutId);
+        console.log('API health check successful');
+      } catch (healthErr) {
+        console.warn('API health check failed, will still try to authenticate:', healthErr.message);
+      }
+      
+      // Try to get user data with token (if available)
+      const token = localStorage.getItem('token');
+      
+      // Set authorization header if token exists
+      const options = {};
+      if (token) {
+        options.headers = {
+          'Authorization': `Bearer ${token}`
+        };
+      }
+      
+      console.log('Fetching user data...');
+      const res = await api.get('/users/me', options);
+      console.log('User data received successfully');
       setUser(res.data);
     } catch (error) {
       console.error('Error refreshing user:', error);
+      
+      // Special handling based on error type
+      if (error.code === 'ECONNABORTED') {
+        console.warn('Connection timeout. Server may be down or network issues.');
+      } else if (error.response) {
+        // The request was made and the server responded with a status code
+        console.log('Server responded with status:', error.response.status);
+        
+        if (error.response.status === 401) {
+          // Unauthorized - clear any stored token as it's invalid
+          localStorage.removeItem('token');
+        }
+      } else if (error.request) {
+        // The request was made but no response was received
+        console.warn('No response received from server');
+      }
+      
       setUser(null);
     } finally {
       setLoading(false);
     }
   };
 
-  // On initial load, try to fetch user data
+  // On initial load, try to fetch user data with retry logic if server is temporarily down
   useEffect(() => {
-    refreshUser();
+    let retryCount = 0;
+    const maxRetries = 2; // Maximum number of retries
+    
+    const attemptRefresh = async () => {
+      try {
+        await refreshUser();
+      } catch (error) {
+        console.error(`Authentication attempt ${retryCount + 1} failed:`, error);
+        
+        if (retryCount < maxRetries) {
+          retryCount++;
+          const delay = retryCount * 3000; // Increasing delay: 3s, 6s
+          console.log(`Retrying authentication in ${delay/1000}s...`);
+          
+          setTimeout(attemptRefresh, delay);
+        } else {
+          console.log('Max retries reached. User must login manually.');
+          setLoading(false);
+        }
+      }
+    };
+    
+    attemptRefresh();
   }, []);
 
   // Login function with improved token handling
