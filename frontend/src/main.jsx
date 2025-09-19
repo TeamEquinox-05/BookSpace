@@ -10,6 +10,7 @@ import { AuthProvider } from './context/AuthContext.jsx';
 // Configure axios defaults
 axios.defaults.baseURL = 'https://bookspace-be.onrender.com/api';
 axios.defaults.withCredentials = true;
+axios.defaults.timeout = 60000; // 60 second timeout to match AuthContext config
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

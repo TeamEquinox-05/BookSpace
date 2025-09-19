@@ -5,17 +5,18 @@ import axios from 'axios';
 // Define base URL for API
 const API_BASE_URL = 'https://bookspace-be.onrender.com/api';
 
-// Create custom axios instance for the API
-const api = axios.create({
+// Define shared config for consistent timeout settings
+const API_CONFIG = {
   baseURL: API_BASE_URL,
   withCredentials: true,
-  timeout: 30000, // 30 second timeout for very slow connections
+  timeout: 60000, // 60 second timeout for very slow connections (Render free tier can be slow on cold starts)
   headers: {
     'Content-Type': 'application/json'
-  },
-  // Add retry logic
-  retryDelay: 1000,
-});
+  }
+};
+
+// Create custom axios instance for the API with the shared config
+const api = axios.create(API_CONFIG);
 
 const AuthContext = createContext();
 
@@ -26,6 +27,9 @@ export const AuthProvider = ({ children }) => {
   // Setup axios and API configuration
   useEffect(() => {
     console.log('Setting up API and authentication configuration');
+    
+    // Apply the same config to global axios instance
+    axios.defaults.timeout = API_CONFIG.timeout;
     
     // Get authentication token from storage
     const token = localStorage.getItem('token');
@@ -39,7 +43,7 @@ export const AuthProvider = ({ children }) => {
       api.defaults.headers.common['Authorization'] = authHeader;
       axios.defaults.headers.common['Authorization'] = authHeader;
       
-      console.log('Initial setup: Auth headers configured');
+      console.log('Initial setup: Auth headers configured with timeout:', API_CONFIG.timeout);
     } else {
       console.log('No token found in localStorage on initial setup');
     }
@@ -79,45 +83,54 @@ export const AuthProvider = ({ children }) => {
 
   const refreshUser = async () => {
     console.log('Starting user data refresh...');
-    try {
-      // First, check if API is reachable with a simple health check
+    
+    // Check for stored user data to enable offline mode
+    const storedUser = localStorage.getItem('userData');
+    let cachedUser = null;
+    
+    if (storedUser) {
       try {
-        // Using a direct fetch with a short timeout to quickly check if the API is accessible
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout for health check
-        
-        // Attempt a basic connection to the API
-        const healthCheck = await fetch(`${API_BASE_URL}/auth/health`, {
-          signal: controller.signal,
-          method: 'HEAD' // Just check connection, don't need response body
-        });
-        
-        clearTimeout(timeoutId);
-        console.log('API health check successful');
-      } catch (healthErr) {
-        console.warn('API health check failed, will still try to authenticate:', healthErr.message);
+        cachedUser = JSON.parse(storedUser);
+        console.log('Found cached user data:', cachedUser.name);
+      } catch (e) {
+        console.error('Failed to parse stored user data');
+        localStorage.removeItem('userData');
       }
+    }
+    
+    try {
+      // Set a short timeout to avoid blocking the UI
+      const controller = new AbortController();
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Backend connection timed out')), 10000); // Fail fast
+      });
       
-      // Try to get user data with token (if available)
-      const token = localStorage.getItem('token');
-      
-      // Set authorization header if token exists
-      const options = {};
-      if (token) {
-        options.headers = {
-          'Authorization': `Bearer ${token}`
-        };
-      }
-      
+      // Race between the fetch request and the timeout
       console.log('Fetching user data...');
-      const res = await api.get('/users/me', options);
+      const res = await Promise.race([
+        api.get('/users/me'),
+        timeoutPromise
+      ]);
+      
       console.log('User data received successfully');
       setUser(res.data);
+      
+      // Cache the user data for offline access
+      localStorage.setItem('userData', JSON.stringify(res.data));
+      
+      return true; // Success
     } catch (error) {
       console.error('Error refreshing user:', error);
       
+      // If we have cached user data, use it in offline mode
+      if (cachedUser) {
+        console.log('Using cached user data for offline mode');
+        setUser(cachedUser);
+        return true; // Continue with cached data
+      }
+      
       // Special handling based on error type
-      if (error.code === 'ECONNABORTED') {
+      if (error.code === 'ECONNABORTED' || error.message === 'Backend connection timed out') {
         console.warn('Connection timeout. Server may be down or network issues.');
       } else if (error.response) {
         // The request was made and the server responded with a status code
@@ -126,6 +139,7 @@ export const AuthProvider = ({ children }) => {
         if (error.response.status === 401) {
           // Unauthorized - clear any stored token as it's invalid
           localStorage.removeItem('token');
+          localStorage.removeItem('userData');
         }
       } else if (error.request) {
         // The request was made but no response was received
@@ -133,43 +147,50 @@ export const AuthProvider = ({ children }) => {
       }
       
       setUser(null);
+      return false; // Failed to authenticate
     } finally {
       setLoading(false);
     }
   };
 
-  // On initial load, try to fetch user data with retry logic if server is temporarily down
+  // On initial load, try to fetch user data or use cached data
   useEffect(() => {
-    let retryCount = 0;
-    const maxRetries = 2; // Maximum number of retries
-    
-    const attemptRefresh = async () => {
+    // Try to load cached user data immediately to prevent UI blocking
+    const storedUser = localStorage.getItem('userData');
+    if (storedUser) {
       try {
-        await refreshUser();
-      } catch (error) {
-        console.error(`Authentication attempt ${retryCount + 1} failed:`, error);
-        
-        if (retryCount < maxRetries) {
-          retryCount++;
-          const delay = retryCount * 3000; // Increasing delay: 3s, 6s
-          console.log(`Retrying authentication in ${delay/1000}s...`);
-          
-          setTimeout(attemptRefresh, delay);
-        } else {
-          console.log('Max retries reached. User must login manually.');
-          setLoading(false);
-        }
+        const cachedUser = JSON.parse(storedUser);
+        setUser(cachedUser);
+        console.log('Temporarily using cached user data while refreshing');
+      } catch (e) {
+        console.error('Failed to parse stored user data');
+      }
+    }
+    
+    // Then attempt to refresh from server
+    const attemptRefresh = async () => {
+      const success = await refreshUser();
+      
+      if (!success) {
+        console.log('Using offline mode. Some features may be limited.');
+        // We're already showing the cached user if available, so no additional action needed
       }
     };
     
     attemptRefresh();
   }, []);
 
-  // Login function with improved token handling
+  // Login function with improved token handling and offline support
   const login = (userData, token) => {
     console.log('Login: Setting user data and token');
     console.log('Login: Token received:', token ? 'Yes' : 'No');
     setUser(userData);
+    
+    // Always cache the user data for offline access
+    if (userData) {
+      console.log('Login: Storing user data in localStorage for offline access');
+      localStorage.setItem('userData', JSON.stringify(userData));
+    }
     
     // If we receive a token, store it
     if (token) {
@@ -182,7 +203,6 @@ export const AuthProvider = ({ children }) => {
       axios.defaults.headers.common['Authorization'] = authHeader;
       
       console.log('Login: Auth headers set for both axios instances');
-      console.log('Login: axios.defaults.headers.common.Authorization =', axios.defaults.headers.common['Authorization']);
     } else {
       console.warn('Login: No token received from backend');
     }
@@ -216,8 +236,9 @@ export const AuthProvider = ({ children }) => {
       // Clear user state
       setUser(null);
       
-      // Clear any stored tokens
+      // Clear any stored tokens and user data
       localStorage.removeItem('token');
+      localStorage.removeItem('userData');
       sessionStorage.removeItem('token');
       
       // Clear Authorization headers
