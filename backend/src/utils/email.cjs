@@ -17,8 +17,12 @@ const sgMail = require('@sendgrid/mail');
 //     MAILGUN_API_KEY, MAILGUN_DOMAIN (e.g., mg.yourdomain.com)
 
 const getFromAddress = () => {
-  // Prefer explicit EMAIL_FROM; fallback to EMAIL_USER; else a generic placeholder
-  return process.env.EMAIL_FROM || process.env.EMAIL_USER || 'noreply@bookspace.app';
+  // Prefer explicit EMAIL_FROM
+  if (process.env.EMAIL_FROM) return process.env.EMAIL_FROM;
+  // If using Resend and no EMAIL_FROM is set, use Resend's onboarding sender for testing
+  if (process.env.RESEND_API_KEY) return 'onboarding@resend.dev';
+  // Fallbacks
+  return process.env.EMAIL_USER || 'noreply@bookspace.app';
 };
 
 // Gmail transporter functions (for fallback)
