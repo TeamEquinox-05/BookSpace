@@ -65,16 +65,6 @@ app.use((req, res, next) => {
   next();
 });
 
-// Health check endpoint
-app.get('/api/health', (req, res) => {
-  res.status(200).json({ 
-    status: 'ok', 
-    message: 'Backend server is running',
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development'
-  });
-});
-
 // Define Routes
 app.use('/api/auth', require('./src/routes/auth.cjs'));
 app.use('/api/places', require('./src/routes/places.cjs'));

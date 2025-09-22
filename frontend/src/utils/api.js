@@ -1,55 +1,12 @@
 import axios from 'axios';
 
-// Backend URLs
-const LOCAL_API_URL = 'http://localhost:10000/api';
-const REMOTE_API_URL = 'https://bookspace-be.onrender.com/api';
-
-// Function to detect if local backend is running
-const checkLocalBackend = async () => {
-  try {
-    // Try multiple endpoints to detect local backend
-    const endpoints = [
-      `${LOCAL_API_URL}/health`,
-      `${LOCAL_API_URL}/stats` // fallback endpoint that might exist
-    ];
-    
-    for (const endpoint of endpoints) {
-      try {
-        const response = await axios.get(endpoint, { 
-          timeout: 1500,
-          withCredentials: false 
-        });
-        if (response.status === 200) {
-          console.log(`Local backend detected via: ${endpoint}`);
-          return true;
-        }
-      } catch (error) {
-        // Continue to next endpoint
-      }
-    }
-    
-    return false;
-  } catch (error) {
-    return false;
-  }
-};
-
-// Function to get the appropriate base URL
-const getBaseURL = async () => {
-  // Cache the result for a short time to avoid repeated checks
-  if (!getBaseURL.cache || Date.now() - getBaseURL.cacheTime > 30000) { // 30 seconds cache
-    const isLocalRunning = await checkLocalBackend();
-    getBaseURL.cache = isLocalRunning ? LOCAL_API_URL : REMOTE_API_URL;
-    getBaseURL.cacheTime = Date.now();
-    console.log(`Using ${isLocalRunning ? 'LOCAL' : 'REMOTE'} backend: ${getBaseURL.cache}`);
-  }
-  return getBaseURL.cache;
-};
+// Backend URL - using only Render backend
+const API_URL = 'https://bookspace-be.onrender.com/api';
 
 // Create custom axios instance for the API
 const api = axios.create({
-  baseURL: REMOTE_API_URL, // Default to remote, will be updated dynamically
-  withCredentials: true, // Always include credentials for CORS requests
+  baseURL: API_URL,
+  withCredentials: true, // Include credentials for CORS requests
   timeout: 60000, // 60 second timeout
   headers: {
     'Content-Type': 'application/json',
@@ -57,54 +14,6 @@ const api = axios.create({
     // No custom headers that might trigger CORS preflight issues
   }
 });
-
-// Smart request function that tries local first, then remote
-const smartRequest = async (config) => {
-  // First, try with automatic detection
-  try {
-    const baseURL = await getBaseURL();
-    config.baseURL = baseURL;
-    config.withCredentials = baseURL.includes('localhost') ? false : true;
-    
-    return await originalRequest.call(api, config);
-  } catch (error) {
-    // If detection failed or request failed, try both endpoints
-    console.warn('Smart detection failed, trying fallback approach');
-    
-    const endpoints = [
-      { url: LOCAL_API_URL, credentials: false },
-      { url: REMOTE_API_URL, credentials: true }
-    ];
-    
-    let lastError = error;
-    
-    for (const endpoint of endpoints) {
-      try {
-        console.log(`Trying endpoint: ${endpoint.url}`);
-        config.baseURL = endpoint.url;
-        config.withCredentials = endpoint.credentials;
-        
-        const response = await originalRequest.call(api, config);
-        console.log(`Success with endpoint: ${endpoint.url}`);
-        
-        // Update cache for future requests
-        getBaseURL.cache = endpoint.url;
-        getBaseURL.cacheTime = Date.now();
-        
-        return response;
-      } catch (endpointError) {
-        console.warn(`Failed with endpoint ${endpoint.url}:`, endpointError.message);
-        lastError = endpointError;
-      }
-    }
-    
-    throw lastError;
-  }
-};
-
-// Override the request method
-const originalRequest = api.request;
-api.request = smartRequest;
 
 // Always check for token before making a request
 const getAuthToken = () => {
@@ -130,10 +39,8 @@ api.interceptors.request.use(
       }
     }
     
-    // Store request ID in metadata but don't add as header to avoid CORS issues
+    // Store request ID in metadata
     const requestId = generateRequestId();
-    // Don't add custom headers that might trigger CORS preflight issues
-    // config.headers['X-Request-ID'] = requestId;
     
     // Store request start time for latency tracking
     config.metadata = { 
@@ -152,7 +59,7 @@ api.interceptors.request.use(
     return config;
   },
   error => {
-    const requestId = error.config?.headers?.['X-Request-ID'] || generateRequestId();
+    const requestId = generateRequestId();
     console.error(`API Request setup error [${requestId}]:`, error.message);
     return Promise.reject(error);
   }
@@ -162,7 +69,7 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   response => {
     // Calculate request duration
-    const requestId = response.config.headers['X-Request-ID'] || 'unknown';
+    const requestId = response.config.metadata?.requestId || 'unknown';
     const startTime = response.config.metadata?.startTime;
     const duration = startTime ? Date.now() - startTime : 'unknown';
     
@@ -183,7 +90,7 @@ api.interceptors.response.use(
   },
   error => {
     // Get request ID if it exists
-    const requestId = error.config?.headers?.['X-Request-ID'] || 'unknown-request';
+    const requestId = error.config?.metadata?.requestId || 'unknown-request';
     
     // Better error categorization and logging
     if (error.response) {
