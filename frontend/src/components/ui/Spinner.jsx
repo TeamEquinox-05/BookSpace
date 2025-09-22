@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTheme } from '../../context/ThemeContext';
 
-const Spinner = ({ size = 'md', color }) => {
+const Spinner = ({ size = 'md', color, centered = true }) => {
   const { darkMode } = useTheme();
 
   const sizeClasses = {
@@ -12,9 +12,15 @@ const Spinner = ({ size = 'md', color }) => {
 
   const spinnerColorClass = color ? `border-${color}-500` : (darkMode ? 'border-white' : 'border-blue-500');
 
+  const containerClasses = centered 
+    ? 'fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-20'
+    : 'flex justify-center items-center';
+
   return (
-    <div className={`inline-block animate-spin rounded-full border-4 border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite] ${sizeClasses[size]} ${spinnerColorClass}`} role="status">
-      <span className="!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]">Loading...</span>
+    <div className={containerClasses}>
+      <div className={`animate-spin rounded-full border-4 border-solid border-current border-r-transparent ${sizeClasses[size]} ${spinnerColorClass}`} role="status">
+        <span className="sr-only">Loading...</span>
+      </div>
     </div>
   );
 };
