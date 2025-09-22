@@ -4,7 +4,7 @@ const nodemailer = require('nodemailer');
 const createSendGridTransporter = () => {
   // Use SendGrid if API key is available
   if (process.env.SENDGRID_API_KEY) {
-    return nodemailer.createTransporter({
+    return nodemailer.createTransport({
       host: 'smtp.sendgrid.net',
       port: 587,
       secure: false,
@@ -38,7 +38,7 @@ const createGmailTransporter = () => {
 
 // Alternative SMTP configuration using Gmail's SSL port
 const createGmailSSLTransporter = () => {
-  return nodemailer.createTransporter({
+  return nodemailer.createTransport({
     host: 'smtp.gmail.com',
     port: 465,
     secure: true, // Use SSL
