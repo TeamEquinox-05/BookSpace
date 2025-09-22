@@ -68,16 +68,41 @@ router.post('/send-otp',
       };
       console.log(`OTP generated for ${email}:`, otp);
 
-      // Send the OTP email
-      const emailResult = await sendEmail(email, 'Your OTP for Signup', `Your OTP is: ${otp}`);
+      console.log('Sending OTP to email:', email);
+      
+      // Send the OTP email with improved error handling
+      const emailResult = await sendEmail(
+        email, 
+        'BookSpace - Your Verification Code', 
+        `Your verification code is: ${otp}\n\nThis code will expire in 10 minutes.\n\nIf you didn't request this code, please ignore this email.`
+      );
       
       if (!emailResult.success) {
-        console.error('Failed to send OTP email:', emailResult.error);
-        return res.status(500).json({ msg: 'Failed to send OTP email. Please try again later.' });
+        console.error('Failed to send OTP email:', {
+          error: emailResult.error,
+          code: emailResult.code,
+          email: email
+        });
+        
+        // Provide more specific error messages
+        let errorMessage = 'Failed to send verification email. Please try again later.';
+        if (emailResult.code === 'ETIMEDOUT') {
+          errorMessage = 'Email service is temporarily unavailable. Please try again in a few minutes.';
+        } else if (emailResult.code === 'EAUTH') {
+          errorMessage = 'Email authentication failed. Please contact support.';
+        }
+        
+        return res.status(500).json({ 
+          msg: errorMessage,
+          technical: process.env.NODE_ENV === 'development' ? emailResult.error : undefined
+        });
       }
       
-      console.log('OTP email sent successfully to:', email);
-      res.status(200).json({ msg: 'OTP sent successfully' });
+      console.log('OTP email sent successfully to:', email, 'MessageID:', emailResult.messageId);
+      res.status(200).json({ 
+        msg: 'Verification code sent to your email address',
+        messageId: emailResult.messageId 
+      });
     } catch (err) {
       console.error('Error in send-otp route:', err);
       res.status(500).json({ msg: 'Server error. Please try again later.' });
