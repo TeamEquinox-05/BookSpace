@@ -1,6 +1,26 @@
 const nodemailer = require('nodemailer');
 const sgMail = require('@sendgrid/mail');
 
+// Email provider strategy notes:
+// - Preferred: HTTP APIs (SendGrid, Resend, Mailgun) as many hosts block raw SMTP ports
+// - Fallback: Gmail SMTP (may timeout on some hosts)
+//
+// Required/optional env vars per provider:
+//   Common:
+//     EMAIL_FROM (recommended) - verified sender (e.g., no-reply@yourdomain.com)
+//     EMAIL_USER / EMAIL_PASS - Gmail credentials (App Password) for SMTP fallback
+//   SendGrid:
+//     SENDGRID_API_KEY
+//   Resend:
+//     RESEND_API_KEY
+//   Mailgun:
+//     MAILGUN_API_KEY, MAILGUN_DOMAIN (e.g., mg.yourdomain.com)
+
+const getFromAddress = () => {
+  // Prefer explicit EMAIL_FROM; fallback to EMAIL_USER; else a generic placeholder
+  return process.env.EMAIL_FROM || process.env.EMAIL_USER || 'noreply@bookspace.app';
+};
+
 // Gmail transporter functions (for fallback)
 const createGmailTransporter = () => {
   return nodemailer.createTransport({
@@ -50,12 +70,76 @@ const createGenericSMTPTransporter = () => {
   });
 };
 
-// Debugging environment variables
+// Debugging environment variables (summarized)
 console.log('Email service configuration:', {
+  emailFrom: process.env.EMAIL_FROM ? `${process.env.EMAIL_FROM}` : '(default)',
   emailUser: process.env.EMAIL_USER ? `${process.env.EMAIL_USER.substring(0, 3)}***` : 'NOT SET',
   emailPass: process.env.EMAIL_PASS ? 'SET' : 'NOT SET',
   sendGridKey: process.env.SENDGRID_API_KEY ? 'SET' : 'NOT SET',
+  resendKey: process.env.RESEND_API_KEY ? 'SET' : 'NOT SET',
+  mailgun: process.env.MAILGUN_API_KEY && process.env.MAILGUN_DOMAIN ? 'SET' : 'NOT SET'
 });
+
+// --- Provider: Resend HTTP API ---
+const sendViaResend = async ({ to, subject, text, html }) => {
+  if (!process.env.RESEND_API_KEY) return { used: false };
+  const from = getFromAddress();
+  try {
+    console.log('Attempting to send email via Resend Web API');
+    // Node 18+ has global fetch
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.RESEND_API_KEY}`
+      },
+      body: JSON.stringify({ from, to, subject, html, text })
+    });
+    if (!res.ok) {
+      const body = await res.text().catch(() => '');
+      console.error('✗ Failed to send email via Resend Web API:', res.status, res.statusText, body);
+      return { used: true, success: false, error: `Resend: ${res.status} ${res.statusText}` };
+    }
+    console.log('✓ Email sent successfully via Resend Web API to:', to);
+    return { used: true, success: true, method: 'Resend Web API' };
+  } catch (err) {
+    console.error('✗ Resend Web API error:', err.message);
+    return { used: true, success: false, error: err.message };
+  }
+};
+
+// --- Provider: Mailgun HTTP API ---
+const sendViaMailgun = async ({ to, subject, text, html }) => {
+  if (!process.env.MAILGUN_API_KEY || !process.env.MAILGUN_DOMAIN) return { used: false };
+  const from = getFromAddress();
+  try {
+    console.log('Attempting to send email via Mailgun Web API');
+    const form = new URLSearchParams();
+    form.append('from', from);
+    form.append('to', to);
+    form.append('subject', subject);
+    form.append('text', text);
+    form.append('html', html);
+
+    const res = await fetch(`https://api.mailgun.net/v3/${process.env.MAILGUN_DOMAIN}/messages`, {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Basic ' + Buffer.from(`api:${process.env.MAILGUN_API_KEY}`).toString('base64')
+      },
+      body: form
+    });
+    if (!res.ok) {
+      const body = await res.text().catch(() => '');
+      console.error('✗ Failed to send email via Mailgun Web API:', res.status, res.statusText, body);
+      return { used: true, success: false, error: `Mailgun: ${res.status} ${res.statusText}` };
+    }
+    console.log('✓ Email sent successfully via Mailgun Web API to:', to);
+    return { used: true, success: true, method: 'Mailgun Web API' };
+  } catch (err) {
+    console.error('✗ Mailgun Web API error:', err.message);
+    return { used: true, success: false, error: err.message };
+  }
+};
 
 const sendEmail = async (to, subject, text) => {
   const html = `<div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
@@ -66,31 +150,47 @@ const sendEmail = async (to, subject, text) => {
       </p>
     </div>`;
 
-  // --- STRATEGY 1: SendGrid Web API (Primary) ---
+  // Provider order: Resend -> SendGrid -> Mailgun -> Gmail SMTP fallbacks
+
+  // 1) Resend Web API
+  const r = await sendViaResend({ to, subject, text, html });
+  if (r.used) {
+    if (r.success) return { success: true, method: r.method };
+    // else continue to next provider
+  }
+
+  // 2) SendGrid Web API
   if (process.env.SENDGRID_API_KEY) {
     console.log('Attempting to send email via SendGrid Web API');
     sgMail.setApiKey(process.env.SENDGRID_API_KEY);
     const msg = {
-      to: to,
-      from: process.env.EMAIL_USER || 'noreply@bookspace.app', // Note: SendGrid requires a verified sender
-      subject: subject,
-      text: text,
-      html: html,
+      to,
+      from: getFromAddress(), // must be verified in SendGrid
+      subject,
+      text,
+      html,
     };
     try {
       await sgMail.send(msg);
       console.log('✓ Email sent successfully via SendGrid Web API to:', to);
       return { success: true, method: 'SendGrid Web API' };
     } catch (error) {
-      console.error('✗ Failed to send email via SendGrid Web API:', error.toString());
-      if (error.response) {
-        console.error('SendGrid Error Response Body:', error.response.body);
-      }
-      // Don't return yet, fall back to Nodemailer/Gmail
+      // Typical: 401 Unauthorized (credits exceeded or invalid sender)
+      const body = error.response?.body;
+      console.error('✗ Failed to send email via SendGrid Web API:', error.message || error.toString());
+      if (body) console.error('SendGrid Error Response Body:', body);
+      // continue
     }
   }
 
-  // --- STRATEGY 2: Nodemailer with Gmail (Fallback) ---
+  // 3) Mailgun Web API
+  const m = await sendViaMailgun({ to, subject, text, html });
+  if (m.used) {
+    if (m.success) return { success: true, method: m.method };
+    // else continue
+  }
+
+  // 4) Nodemailer with Gmail (Fallback)
   console.log('Falling back to Nodemailer with Gmail');
   if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
     console.error('No Gmail credentials provided for fallback.');
