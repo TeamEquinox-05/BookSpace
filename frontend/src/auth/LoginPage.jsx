@@ -6,6 +6,7 @@ import { Mail, Lock, Eye, EyeOff, Building2, Users, Calendar } from 'lucide-reac
 import { useAuth } from '../context/AuthContext';
 import { ForgotPasswordModal } from '../components/shared';
 import { Spinner } from '../components/ui';
+import api from '../utils/api';
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -28,14 +29,53 @@ const LoginPage = () => {
     setIsLoading(true);
     setError('');
     
+    // Validate inputs on frontend first
+    if (!email || !password) {
+      setError('Please provide both email and password');
+      setIsLoading(false);
+      return;
+    }
+    
     try {
-      const res = await axios.post('/auth/login', formData, {
-        withCredentials: true
-      });
+      console.log('Attempting login for:', email);
       
-      const { user, token } = res.data;
+      // Create the request data object
+      const loginData = { 
+        email: email.trim(), 
+        password: password 
+      };
+      
+      console.log('Login request payload:', JSON.stringify(loginData));
+      
+      // Use our API utility with better error handling
+      const res = await api.post('/auth/login', loginData);
+      
+      console.log('Login response:', res.data);
+      
+      // Extract user and token data from the response
+      // Handle both formats: { user, token } and { msg, token, user }
+      const responseData = res.data;
+      const user = responseData.user;
+      const token = responseData.token;
+      
+      if (!user) {
+        console.error('Invalid response format - missing user:', responseData);
+        throw new Error('Invalid response from server - missing user data');
+      }
+      
+      if (!token) {
+        console.error('Invalid response format - missing token:', responseData);
+        throw new Error('Invalid response from server - missing authentication token');
+      }
+      
+      console.log('Login successful. User:', user.name, 'Role:', user.role);
       login(user, token);
-      console.log('Login successful. User role:', user.role);
+      
+      // Verify the token has been stored
+      setTimeout(() => {
+        const storedToken = localStorage.getItem('token');
+        console.log('Stored token check:', storedToken ? 'Present' : 'Missing');
+      }, 100);
       
       // Short delay to ensure state updates before navigation
       await new Promise(resolve => setTimeout(resolve, 100));
@@ -49,7 +89,28 @@ const LoginPage = () => {
       }
     } catch (err) {
       console.error('Login error:', err);
-      setError(err.response?.data?.msg || 'Server error. Please try again later.');
+      
+      // Enhanced error handling
+      if (err.response) {
+        // Server responded with error
+        const errorMsg = err.response.data?.msg || 
+                       (err.response.status === 400 ? 'Invalid email or password' : 'Server error');
+                       
+        console.error('Server error response:', {
+          status: err.response.status,
+          statusText: err.response.statusText,
+          data: JSON.stringify(err.response.data),
+        });
+        
+        setError(errorMsg);
+      } else if (err.request) {
+        // Request was made but no response
+        setError('No response from server. Please check your internet connection.');
+        console.log('No response received from server');
+      } else {
+        // Error in request setup
+        setError(err.message || 'Failed to send login request');
+      }
     } finally {
       setIsLoading(false);
     }

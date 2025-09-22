@@ -39,17 +39,25 @@ router.post('/send-otp',
     body('email').isEmail().normalizeEmail().withMessage('Please provide a valid email')
   ],
   async (req, res) => {
+    console.log('Received request to send signup OTP:', req.body);
+    
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
+        console.log('Validation errors in send-otp:', errors.array());
+        return res.status(400).json({ 
+          msg: 'Please provide a valid email address', 
+          errors: errors.array() 
+        });
       }
 
       const { email } = req.body;
+      console.log('Processing OTP request for email:', email);
   
       // Check if user already exists
       let user = await User.findOne({ email });
       if (user) {
+        console.log('User already exists with email:', email);
         return res.status(400).json({ msg: 'An account with this email already exists and is pending approval.' });
       }
 
@@ -58,12 +66,21 @@ router.post('/send-otp',
         otp,
         timestamp: Date.now(),
       };
+      console.log(`OTP generated for ${email}:`, otp);
 
-      await sendEmail(email, 'Your OTP for Signup', `Your OTP is: ${otp}`);
+      // Send the OTP email
+      const emailResult = await sendEmail(email, 'Your OTP for Signup', `Your OTP is: ${otp}`);
+      
+      if (!emailResult.success) {
+        console.error('Failed to send OTP email:', emailResult.error);
+        return res.status(500).json({ msg: 'Failed to send OTP email. Please try again later.' });
+      }
+      
+      console.log('OTP email sent successfully to:', email);
       res.status(200).json({ msg: 'OTP sent successfully' });
     } catch (err) {
-      console.error(err.message);
-      res.status(500).send('Server error');
+      console.error('Error in send-otp route:', err);
+      res.status(500).json({ msg: 'Server error. Please try again later.' });
     }
   });
 

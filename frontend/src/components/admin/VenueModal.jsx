@@ -69,25 +69,25 @@ const VenueModal = ({ isOpen, onClose, onSave, venue }) => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">Venue Name</label>
-              <input type="text" name="name" value={formData.name || ''} onChange={handleChange} placeholder="e.g., Main Auditorium" className="w-full p-2.5 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 transition" />
+              <input type="text" name="name" value={formData.name || ''} onChange={handleChange} placeholder="e.g., Main Auditorium" className="w-full p-2.5 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-600 dark:text-slate-300 focus:ring-2 focus:ring-blue-500 transition" />
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">Capacity</label>
-              <input type="number" name="capacity" value={formData.capacity || ''} onChange={handleChange} placeholder="e.g., 200" className="w-full p-2.5 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 transition" />
+              <input type="number" name="capacity" value={formData.capacity || ''} onChange={handleChange} placeholder="e.g., 200" className="w-full p-2.5 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-600 dark:text-slate-300 focus:ring-2 focus:ring-blue-500 transition" />
             </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">Details</label>
-            <textarea name="details" value={formData.details || ''} onChange={handleChange} rows="3" placeholder="e.g., Perfect for conferences and large events" className="w-full p-2.5 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 transition"></textarea>
+            <textarea name="details" value={formData.details || ''} onChange={handleChange} rows="3" placeholder="e.g., Perfect for conferences and large events" className="w-full p-2.5 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-600 dark:text-slate-300 focus:ring-2 focus:ring-blue-500 transition"></textarea>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">Location</label>
-              <input type="text" name="location" value={formData.location || ''} onChange={handleChange} placeholder="e.g., 1st Floor, Main Building" className="w-full p-2.5 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 transition" />
+              <input type="text" name="location" value={formData.location || ''} onChange={handleChange} placeholder="e.g., 1st Floor, Main Building" className="w-full p-2.5 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-600 dark:text-slate-300 focus:ring-2 focus:ring-blue-500 transition" />
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">Status</label>
-              <select name="status" value={formData.status || 'available'} onChange={handleChange} className="w-full p-2.5 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 transition">
+              <select name="status" value={formData.status || 'available'} onChange={handleChange} className="w-full p-2.5 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-600 dark:text-slate-300 focus:ring-2 focus:ring-blue-500 transition">
                 <option value="available">Available</option>
                 <option value="unavailable">Unavailable</option>
                 <option value="under maintenance">Under Maintenance</option>
@@ -102,9 +102,9 @@ const VenueModal = ({ isOpen, onClose, onSave, venue }) => {
               {formData.facilities && formData.facilities.map((facility, index) => (
                 <div key={index} className="bg-slate-50 dark:bg-slate-700/50 p-3 rounded-lg flex items-start space-x-3">
                   <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <input type="text" value={facility.name} onChange={(e) => handleFacilityChange(index, 'name', e.target.value)} placeholder="Facility Name" className="w-full p-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 transition" />
-                    <input type="email" value={facility.email} onChange={(e) => handleFacilityChange(index, 'email', e.target.value)} placeholder="Contact Email" className="w-full p-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 transition" />
-                    <input type="text" value={facility.message} onChange={(e) => handleFacilityChange(index, 'message', e.target.value)} placeholder="Contact Message" className="w-full p-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 transition" />
+                    <input type="text" value={facility.name} onChange={(e) => handleFacilityChange(index, 'name', e.target.value)} placeholder="Facility Name" className="w-full p-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md text-slate-600 dark:text-slate-300 focus:ring-2 focus:ring-blue-500 transition" />
+                    <input type="email" value={facility.email} onChange={(e) => handleFacilityChange(index, 'email', e.target.value)} placeholder="Contact Email" className="w-full p-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md text-slate-600 dark:text-slate-300 focus:ring-2 focus:ring-blue-500 transition" />
+                    <input type="text" value={facility.message} onChange={(e) => handleFacilityChange(index, 'message', e.target.value)} placeholder="Contact Message" className="w-full p-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md text-slate-600 dark:text-slate-300 focus:ring-2 focus:ring-blue-500 transition" />
                   </div>
                   <button onClick={() => removeFacility(index)} className="p-2 text-slate-500 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/40 dark:hover:text-red-400 rounded-full transition-colors">
                     <Trash2 size={18} />

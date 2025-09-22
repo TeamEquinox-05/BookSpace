@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { PageHeader } from '../components/shared';
-import { Check, X, Calendar, Clock, User, MapPin, Package } from 'lucide-react';
-import { Spinner } from '../components/ui';
+import { Check, X, Calendar, Clock, User, MapPin, Package, Mail } from 'lucide-react';
+import { Spinner, useToast } from '../components/ui';
 export default function BookingRequestsPage() {
   const [pendingBookings, setPendingBookings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -14,6 +14,9 @@ export default function BookingRequestsPage() {
 
   const [rejectingBookingId, setRejectingBookingId] = useState(null);
   const [rejectionReasonInput, setRejectionReasonInput] = useState('');
+  
+  // Toast notification system
+  const { addToast, ToastContainer } = useToast();
 
   useEffect(() => {
     fetchPendingBookings();
@@ -38,11 +41,40 @@ export default function BookingRequestsPage() {
     setProcessingAction(status === 'approved' ? 'approve' : 'reject');
     
     try {
-      await axios.put(`/bookings/${bookingId}/status`, { status, reason });
+      const response = await axios.put(`/bookings/${bookingId}/status`, { status, reason });
 
       // Clear rejection state after successful update
       setRejectingBookingId(null);
       setRejectionReasonInput('');
+      
+      // Check email sending status
+      if (response.data.emailResults) {
+        const { userEmailSent, facilitiesNotified, facilitiesSuccess } = response.data.emailResults;
+        
+        // Show notification about email status
+        if (userEmailSent && (facilitiesNotified === 0 || facilitiesSuccess === facilitiesNotified)) {
+          // All emails sent successfully
+          addToast({
+            message: `All notifications sent successfully! User and ${facilitiesSuccess} facilities notified.`,
+            type: 'success',
+            duration: 6000
+          });
+        } else if (userEmailSent && facilitiesSuccess < facilitiesNotified) {
+          // User email sent but some facility emails failed
+          addToast({
+            message: `User notified, but only ${facilitiesSuccess}/${facilitiesNotified} facility emails delivered.`,
+            type: 'warning',
+            duration: 6000
+          });
+        } else {
+          // User email failed
+          addToast({
+            message: `Failed to send some notifications. Check logs for details.`,
+            type: 'error',
+            duration: 6000
+          });
+        }
+      }
       
       // Refresh the list of pending bookings
       fetchPendingBookings();
@@ -70,6 +102,7 @@ export default function BookingRequestsPage() {
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       <PageHeader title="Booking Requests" />
+      <ToastContainer />
       <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 dark:bg-gray-900 p-6">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Pending Booking Requests</h2>
         {loading ? (
@@ -111,7 +144,13 @@ export default function BookingRequestsPage() {
                       {booking.requestedFacilities?.length > 0 && (
                         <div className="flex items-start text-gray-600 dark:text-gray-300">
                           <Package size={18} className="mr-2 flex-shrink-0 mt-0.5" />
-                          <span>{booking.requestedFacilities?.map(f => f.name).join(', ')}</span>
+                          <div className="flex flex-col">
+                            <span>Requested facilities: {booking.requestedFacilities?.map(f => f.name).join(', ')}</span>
+                            <span className="text-sm text-gray-500 dark:text-gray-400 flex items-center mt-1">
+                              <Mail size={14} className="mr-1" />
+                              {booking.requestedFacilities.length} facility emails will be notified
+                            </span>
+                          </div>
                         </div>
                       )}
                     </div>

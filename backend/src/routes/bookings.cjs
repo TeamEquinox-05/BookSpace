@@ -109,7 +109,13 @@ router.put('/:id/status', auth, verifyRole('admin'), async (req, res) => {
   const { id } = req.params;
 
   try {
-    let booking = await Booking.findById(id).populate('userId', ['name', 'email']).populate('placeId', ['name']);
+    // Get full details of the booking, including user info and place details with facilities
+    let booking = await Booking.findById(id)
+      .populate('userId', ['name', 'email'])
+      .populate({
+        path: 'placeId',
+        select: 'name facilities', // Include facilities to get their emails
+      });
 
     if (!booking) {
       return res.status(404).json({ msg: 'Booking not found' });
@@ -124,18 +130,122 @@ router.put('/:id/status', auth, verifyRole('admin'), async (req, res) => {
     await booking.save();
 
     const userEmail = booking.userId.email;
+    const userName = booking.userId.name;
     const placeName = booking.placeId.name;
     const eventTitle = booking.eventTitle;
+    const startTime = new Date(booking.eventStartTime).toLocaleString();
+    const endTime = new Date(booking.eventEndTime).toLocaleString();
+    
+    // Track email sending results
+    const emailResults = {
+      user: null,
+      facilities: []
+    };
 
+    console.log(`Sending email notification to user ${userName} (${userEmail}) about booking status change to: ${status}`);
+
+    // Send email to the user
     if (status === 'approved') {
-      await sendEmail(userEmail, 'Booking Approved!', `Your booking for ${eventTitle} at ${placeName} has been approved.`);
+      const emailText = `Hello ${userName},
+
+Your booking request has been approved!
+
+Event Details:
+- Title: ${eventTitle}
+- Venue: ${placeName}
+- From: ${startTime}
+- To: ${endTime}
+
+Thank you for using BookSpace!`;
+
+      emailResults.user = await sendEmail(userEmail, 'Booking Approved!', emailText);
+      
+      // If approved, send emails to the requested facilities
+      if (booking.requestedFacilities && booking.requestedFacilities.length > 0) {
+        console.log(`Sending notifications to ${booking.requestedFacilities.length} requested facilities`);
+        
+        // Use the facilities directly from the booking since they already contain emails
+        const facilitiesToNotify = booking.requestedFacilities;
+
+        // Send emails to each facility
+        for (const facility of facilitiesToNotify) {
+          if (facility.email) {
+            const facilityEmailText = `Hello ${facility.name} Manager,
+
+A new booking has been approved that may require your services.
+
+Event Details:
+- Title: ${eventTitle}
+- Venue: ${placeName}
+- From: ${startTime}
+- To: ${endTime}
+- Booked by: ${userName} (${userEmail})
+
+${facility.message ? `Note: ${facility.message}` : ''}
+
+Please prepare accordingly.
+
+Thank you,
+BookSpace Administration`;
+
+            const facilityEmailResult = await sendEmail(
+              facility.email,
+              `New Booking Approved: ${eventTitle}`,
+              facilityEmailText
+            );
+
+            emailResults.facilities.push({
+              facility: facility.name,
+              email: facility.email,
+              success: facilityEmailResult.success,
+              error: facilityEmailResult.error || null
+            });
+            
+            console.log(`Email to facility "${facility.name}" (${facility.email}): ${facilityEmailResult.success ? 'Sent' : 'Failed'}`);
+          }
+        }
+      }
     } else if (status === 'rejected') {
-      await sendEmail(userEmail, 'Booking Rejected', `Your booking for ${eventTitle} at ${placeName} has been rejected. Reason: ${reason}`);
+      const emailText = `Hello ${userName},
+
+We regret to inform you that your booking request has been rejected.
+
+Event Details:
+- Title: ${eventTitle}
+- Venue: ${placeName}
+- From: ${startTime}
+- To: ${endTime}
+
+Reason for rejection: ${reason}
+
+If you have any questions, please contact the administration.
+
+Thank you for using BookSpace!`;
+
+      emailResults.user = await sendEmail(userEmail, 'Booking Request Rejected', emailText);
     }
 
-    res.json(booking);
+    // Log email sending results
+    if (emailResults.user && !emailResults.user.success) {
+      console.error(`Warning: Failed to send email notification to user ${userEmail}: ${emailResults.user.error}`);
+    }
+
+    const failedFacilityEmails = emailResults.facilities.filter(result => !result.success);
+    if (failedFacilityEmails.length > 0) {
+      console.error(`Warning: Failed to send email to ${failedFacilityEmails.length} facilities:`, 
+        failedFacilityEmails.map(f => `${f.facility} (${f.email}): ${f.error}`).join(', '));
+    }
+
+    res.json({
+      booking,
+      emailResults: {
+        userEmailSent: emailResults.user ? emailResults.user.success : false,
+        facilitiesNotified: emailResults.facilities.length,
+        facilitiesSuccess: emailResults.facilities.filter(r => r.success).length
+      }
+    });
   } catch (err) {
-    console.error(err.message);
+    console.error('Error updating booking status:', err.message);
     res.status(500).send('Server Error');
   }
 });

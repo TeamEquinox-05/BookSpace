@@ -30,22 +30,41 @@ export const AuthProvider = ({ children }) => {
     
     // Apply the same config to global axios instance
     axios.defaults.timeout = API_CONFIG.timeout;
+    axios.defaults.baseURL = API_CONFIG.baseURL;
+    axios.defaults.withCredentials = API_CONFIG.withCredentials;
     
     // Get authentication token from storage
     const token = localStorage.getItem('token');
-    console.log('Token in localStorage:', token ? 'Found' : 'Not found');
+    console.log('Token in localStorage:', token ? `Found (length: ${token.length})` : 'Not found');
     
     if (token) {
       console.log('Found token in localStorage, configuring auth headers');
-      const authHeader = `Bearer ${token}`;
       
-      // Add token to both axios instances
-      api.defaults.headers.common['Authorization'] = authHeader;
-      axios.defaults.headers.common['Authorization'] = authHeader;
-      
-      console.log('Initial setup: Auth headers configured with timeout:', API_CONFIG.timeout);
+      try {
+        // Validate token format (simple check - doesn't validate with server)
+        if (token.length < 10) {
+          console.warn('Token appears invalid (too short), clearing it');
+          localStorage.removeItem('token');
+          return;
+        }
+        
+        const authHeader = `Bearer ${token}`;
+        
+        // Add token to both axios instances
+        api.defaults.headers.common['Authorization'] = authHeader;
+        axios.defaults.headers.common['Authorization'] = authHeader;
+        
+        console.log('Initial setup: Auth headers configured');
+        
+      } catch (error) {
+        console.error('Error setting up authentication:', error);
+        localStorage.removeItem('token');
+      }
     } else {
       console.log('No token found in localStorage on initial setup');
+      // Clear any existing auth headers just to be safe
+      delete api.defaults.headers.common['Authorization'];
+      delete axios.defaults.headers.common['Authorization'];
     }
     
     // Add request interceptor for logging
@@ -53,6 +72,15 @@ export const AuthProvider = ({ children }) => {
       config => {
         // Log outgoing requests for debugging
         console.log(`Making ${config.method.toUpperCase()} request to: ${config.url}`);
+        
+        // For authentication endpoints, ensure we have the latest token
+        if (config.url?.includes('/auth/') === false) {
+          const currentToken = localStorage.getItem('token');
+          if (currentToken) {
+            config.headers['Authorization'] = `Bearer ${currentToken}`;
+          }
+        }
+        
         return config;
       },
       error => {
@@ -73,7 +101,12 @@ export const AuthProvider = ({ children }) => {
         // Handle authentication errors specially
         if (error.response?.status === 401) {
           console.log('Authentication error detected, clearing auth data');
-          localStorage.removeItem('token');
+          
+          // Don't clear token for login attempts
+          if (!error.config.url.includes('/auth/login')) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('userData');
+          }
         }
         
         return Promise.reject(error);
@@ -83,6 +116,15 @@ export const AuthProvider = ({ children }) => {
 
   const refreshUser = async () => {
     console.log('Starting user data refresh...');
+    
+    // Check for stored token first - if no token, don't even try to refresh
+    const storedToken = localStorage.getItem('token');
+    if (!storedToken) {
+      console.log('No authentication token found, skipping refresh');
+      setLoading(false);
+      setUser(null);
+      return false;
+    }
     
     // Check for stored user data to enable offline mode
     const storedUser = localStorage.getItem('userData');
@@ -99,6 +141,11 @@ export const AuthProvider = ({ children }) => {
     }
     
     try {
+      // Make sure the token is in the headers
+      const authHeader = `Bearer ${storedToken}`;
+      api.defaults.headers.common['Authorization'] = authHeader;
+      axios.defaults.headers.common['Authorization'] = authHeader;
+      
       // Set a short timeout to avoid blocking the UI
       const controller = new AbortController();
       const timeoutPromise = new Promise((_, reject) => {
@@ -106,7 +153,7 @@ export const AuthProvider = ({ children }) => {
       });
       
       // Race between the fetch request and the timeout
-      console.log('Fetching user data...');
+      console.log('Fetching user data with token...');
       const res = await Promise.race([
         api.get('/users/me'),
         timeoutPromise
@@ -122,28 +169,47 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error('Error refreshing user:', error);
       
-      // If we have cached user data, use it in offline mode
-      if (cachedUser) {
-        console.log('Using cached user data for offline mode');
-        setUser(cachedUser);
-        return true; // Continue with cached data
-      }
-      
       // Special handling based on error type
       if (error.code === 'ECONNABORTED' || error.message === 'Backend connection timed out') {
         console.warn('Connection timeout. Server may be down or network issues.');
+        
+        // If we have cached user data, use it in offline mode for timeouts
+        if (cachedUser) {
+          console.log('Using cached user data due to timeout');
+          setUser(cachedUser);
+          return true; // Continue with cached data
+        }
       } else if (error.response) {
         // The request was made and the server responded with a status code
         console.log('Server responded with status:', error.response.status);
         
-        if (error.response.status === 401) {
-          // Unauthorized - clear any stored token as it's invalid
+        if (error.response.status === 401 || error.response.status === 403) {
+          // Unauthorized/Forbidden - clear any stored token as it's invalid
+          console.log('Authentication error detected, clearing auth data');
           localStorage.removeItem('token');
           localStorage.removeItem('userData');
+          setUser(null);
+          
+          // Don't use cached data for auth errors
+          return false;
         }
       } else if (error.request) {
         // The request was made but no response was received
         console.warn('No response received from server');
+        
+        // For network errors, we can use cached data
+        if (cachedUser) {
+          console.log('Using cached user data due to network error');
+          setUser(cachedUser);
+          return true; // Continue with cached data
+        }
+      }
+      
+      // If we have cached user data as a fallback for other errors
+      if (cachedUser) {
+        console.log('Using cached user data as fallback');
+        setUser(cachedUser);
+        return true; // Continue with cached data
       }
       
       setUser(null);
@@ -183,18 +249,24 @@ export const AuthProvider = ({ children }) => {
   // Login function with improved token handling and offline support
   const login = (userData, token) => {
     console.log('Login: Setting user data and token');
-    console.log('Login: Token received:', token ? 'Yes' : 'No');
-    setUser(userData);
     
-    // Always cache the user data for offline access
-    if (userData) {
-      console.log('Login: Storing user data in localStorage for offline access');
-      localStorage.setItem('userData', JSON.stringify(userData));
+    if (!userData || !token) {
+      console.error('Login failed: Missing user data or token');
+      return;
     }
     
-    // If we receive a token, store it
-    if (token) {
-      console.log('Login: Storing auth token in localStorage with key "token"');
+    console.log(`Login: Token received (length: ${token.length})`);
+    
+    try {
+      // Store the user in state
+      setUser(userData);
+      
+      // Always cache the user data for offline access
+      console.log('Login: Storing user data in localStorage');
+      localStorage.setItem('userData', JSON.stringify(userData));
+      
+      // Store token in localStorage
+      console.log('Login: Storing auth token in localStorage');
       localStorage.setItem('token', token);
       
       // Set the token for both axios instances immediately
@@ -202,9 +274,22 @@ export const AuthProvider = ({ children }) => {
       api.defaults.headers.common['Authorization'] = authHeader;
       axios.defaults.headers.common['Authorization'] = authHeader;
       
-      console.log('Login: Auth headers set for both axios instances');
-    } else {
-      console.warn('Login: No token received from backend');
+      // Verify the headers are set correctly
+      console.log('Login: Auth headers set for API instances');
+      console.log('Login: Authorization header:', api.defaults.headers.common['Authorization'] ? 'Set' : 'Not set');
+      
+      // Test if the token works by making a simple authenticated request
+      setTimeout(async () => {
+        try {
+          await api.get('/users/me', { timeout: 5000 });
+          console.log('Login: Authentication verified successfully');
+        } catch (err) {
+          console.warn('Login: Auth verification failed, but proceeding anyway:', err.message);
+        }
+      }, 500);
+      
+    } catch (error) {
+      console.error('Login: Error during login process:', error);
     }
   };
 
