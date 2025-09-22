@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Mail, KeyRound, Lock, X, Loader2 } from 'lucide-react';
+import { Mail, KeyRound, Lock, X } from 'lucide-react';
 import axios from 'axios';
+import { Spinner } from '../ui';
 
 // Helper component for the step indicator
 const StepIndicator = ({ currentStep }) => {
@@ -139,7 +140,7 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
                 <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email Address" className="w-full pl-10 pr-3 py-3 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
             </div>
             <button onClick={() => handleSendOtp()} disabled={loading} className="w-full flex justify-center items-center mt-4 px-4 py-3 text-white bg-blue-600 rounded-lg font-semibold hover:bg-blue-700 disabled:bg-blue-400 transition-all">
-                {loading ? <Loader2 className="animate-spin" /> : 'Send OTP'}
+                {loading ? <Spinner centered={false} size="sm" text="Sending" color="white" /> : 'Send OTP'}
             </button>
           </>
         );
@@ -152,7 +153,7 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
                   <input type="text" value={otp} onChange={(e) => setOtp(e.target.value)} placeholder="Enter OTP" className="w-full pl-10 text-center tracking-[0.3em] font-semibold text-lg py-3 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
               </div>
               <button onClick={handleVerifyOtp} disabled={loading} className="w-full flex justify-center items-center mt-4 px-4 py-3 text-white bg-blue-600 rounded-lg font-semibold hover:bg-blue-700 disabled:bg-blue-400 transition-all">
-                  {loading ? <Loader2 className="animate-spin" /> : 'Verify OTP'}
+                  {loading ? <Spinner centered={false} size="sm" text="Verifying" color="white" /> : 'Verify OTP'}
               </button>
               <div className="text-center mt-4">
                   <button onClick={() => handleSendOtp(true)} disabled={isResendDisabled || timer > 0 || loading} className="text-sm font-medium text-blue-600 hover:underline disabled:text-slate-400 dark:disabled:text-slate-500 disabled:cursor-not-allowed">
@@ -176,7 +177,7 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
                     </div>
                 </div>
                 <button onClick={handleResetPassword} disabled={loading} className="w-full flex justify-center items-center mt-4 px-4 py-3 text-white bg-blue-600 rounded-lg font-semibold hover:bg-blue-700 disabled:bg-blue-400 transition-all">
-                  {loading ? <Loader2 className="animate-spin" /> : 'Reset Password'}
+                  {loading ? <Spinner centered={false} size="sm" text="Resetting" color="white" /> : 'Reset Password'}
               </button>
             </>
         );

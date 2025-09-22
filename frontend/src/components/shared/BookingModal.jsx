@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Calendar, Clock, MapPin, Users, FileText, Settings, CheckCircle, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
+import { Spinner } from '../ui';
 
 const BookingModal = ({ isOpen, onClose, places, onBookingSubmit, initialBooking }) => {
   const [bookingDetails, setBookingDetails] = useState({
@@ -501,10 +502,7 @@ const BookingModal = ({ isOpen, onClose, places, onBookingSubmit, initialBooking
                     }`}
                   >
                     {isSubmitting ? (
-                      <>
-                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        Processing...
-                      </>
+                      <Spinner centered={false} size="sm" text="Processing" />
                     ) : (
                       <>
                         <Calendar className="w-5 h-5" />

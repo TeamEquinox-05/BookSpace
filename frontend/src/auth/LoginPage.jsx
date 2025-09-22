@@ -5,6 +5,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, Building2, Users, Calendar } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { ForgotPasswordModal } from '../components/shared';
+import { Spinner } from '../components/ui';
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -211,10 +212,7 @@ const LoginPage = () => {
               transition={{ duration: 0.3, delay: 0.4 }}
             >
               {isLoading ? (
-                <div className="flex items-center justify-center space-x-2">
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                  <span>Signing in...</span>
-                </div>
+                <Spinner centered={false} size="sm" text="Signing in" />
               ) : (
                 'Sign In'
               )}
