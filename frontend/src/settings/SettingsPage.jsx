@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import { PageHeader } from '../components/shared';
 import FormSkeleton from '../components/ui/FormSkeleton';
 import { Spinner } from '../components/ui';
@@ -11,7 +11,7 @@ export default function SettingsPage() {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const res = await axios.get('/users/me');
+        const res = await api.get('/users/me');
         setUser(res.data);
       } catch (err) {
         setError(err.message);

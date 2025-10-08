@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 
 // Import components from their organized barrel files
 import { PageHeader } from '../components/shared';
@@ -30,9 +30,9 @@ export default function AdminDashboardPage() {
     const fetchDashboardData = async () => {
       try {
         const [statsRes, placesRes, chartRes] = await Promise.all([
-          axios.get('/stats'),
-          axios.get('/places'),
-          axios.get('/stats/bookings-by-month'),
+          api.get('/stats'),
+          api.get('/places'),
+          api.get('/stats/bookings-by-month'),
         ]);
 
         setStats(statsRes.data);

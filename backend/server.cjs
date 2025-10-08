@@ -65,6 +65,11 @@ app.use((req, res, next) => {
   next();
 });
 
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ status: 'ok', message: 'Server is running' });
+});
+
 // Define Routes
 app.use('/api/auth', require('./src/routes/auth.cjs'));
 app.use('/api/places', require('./src/routes/places.cjs'));

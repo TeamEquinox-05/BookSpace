@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import { PageHeader } from '../components/shared';
 import { Check, X, Calendar, Clock, User, MapPin, Package, Mail } from 'lucide-react';
 import { Spinner, useToast } from '../components/ui';
@@ -25,7 +25,7 @@ export default function BookingRequestsPage() {
   const fetchPendingBookings = async () => {
     try {
       setLoading(true);
-      const res = await axios.get('/bookings/pending');
+      const res = await api.get('/bookings/pending');
       setPendingBookings(res.data);
     } catch (err) {
       setError(err.message);
@@ -41,7 +41,7 @@ export default function BookingRequestsPage() {
     setProcessingAction(status === 'approved' ? 'approve' : 'reject');
     
     try {
-      const response = await axios.put(`/bookings/${bookingId}/status`, { status, reason });
+      const response = await api.put(`/bookings/${bookingId}/status`, { status, reason });
 
       // Clear rejection state after successful update
       setRejectingBookingId(null);

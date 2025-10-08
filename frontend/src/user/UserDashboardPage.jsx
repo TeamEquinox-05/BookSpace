@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import axios from 'axios';
+import api from '../utils/api';
 
 // Import shared components
 import { PageHeader, RecentBookings } from '../components/shared';
@@ -25,8 +25,8 @@ export default function UserDashboardPage() {
     try {
       setError(null);
       const [bookingsRes, placesRes] = await Promise.all([
-        axios.get('/bookings/my-bookings'), // Use user-specific endpoint instead of admin-only
-        axios.get('/places'),
+        api.get('/bookings/my-bookings'), // Use user-specific endpoint instead of admin-only
+        api.get('/places'),
       ]);
 
       setTodaysEvents(bookingsRes.data);
@@ -45,7 +45,7 @@ export default function UserDashboardPage() {
 
   const handleBookingSubmit = async (bookingDetails) => {
     try {
-      await axios.post('/bookings', bookingDetails);
+      await api.post('/bookings', bookingDetails);
 
       // Refresh data after successful booking
       fetchUserData();

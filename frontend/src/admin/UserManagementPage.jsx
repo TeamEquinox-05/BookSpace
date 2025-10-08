@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import { PageHeader, ConfirmationModal } from '../components/shared';
 import { Check, X, Trash2, Search, Filter, User as UserIcon } from 'lucide-react';
 import { Spinner } from '../components/ui';
@@ -19,7 +19,7 @@ export default function UserManagementPage() {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`/users?page=${currentPage}&limit=10&search=${search}&status=${status}`);
+      const res = await api.get(`/users?page=${currentPage}&limit=10&search=${search}&status=${status}`);
       setUsers(res.data.users);
       setTotalPages(res.data.totalPages);
     } catch (err) {
@@ -39,11 +39,11 @@ export default function UserManagementPage() {
 
     try {
       if (actionType === 'approve') {
-        await axios.put(`/users/${selectedUser._id}/approve`);
+        await api.put(`/users/${selectedUser._id}/approve`);
       } else if (actionType === 'reject') {
-        await axios.put(`/users/${selectedUser._id}/reject`);
+        await api.put(`/users/${selectedUser._id}/reject`);
       } else if (actionType === 'remove') {
-        await axios.delete(`/users/${selectedUser._id}`);
+        await api.delete(`/users/${selectedUser._id}`);
       }
       fetchUsers();
     } catch (err) {

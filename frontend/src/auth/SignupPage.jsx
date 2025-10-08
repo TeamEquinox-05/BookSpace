@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 import { User, Mail, Lock, Phone, Briefcase, Eye, EyeOff } from 'lucide-react';
 import api from '../utils/api';
@@ -63,11 +62,35 @@ const SignupPage = ({ onSignupSuccess }) => {
   };
 
   const handleSendOtp = async () => {
-    // Validate email first
+    // Validate all required fields before sending OTP
+    if (!name || name.trim().length < 2) {
+      setError('Name must be at least 2 characters long');
+      return;
+    }
+    
+    if (name.trim().length > 50) {
+      setError('Name must be less than 50 characters');
+      return;
+    }
+    
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!email || !emailRegex.test(email.trim())) {
       setError('Please enter a valid email address');
       return;
+    }
+    
+    if (!password || password.length < 6) {
+      setError('Password must be at least 6 characters long');
+      return;
+    }
+    
+    // Validate phone if provided
+    if (phone && phone.trim()) {
+      const phoneRegex = /^[0-9]{10,}$/;
+      if (!phoneRegex.test(phone.trim().replace(/[\s\-\(\)]/g, ''))) {
+        setError('Please enter a valid phone number (at least 10 digits)');
+        return;
+      }
     }
 
     setSendingOtp(true);
@@ -162,6 +185,15 @@ const SignupPage = ({ onSignupSuccess }) => {
         message: err.message
       };
       console.log('Detailed error info:', debugInfo);
+      
+      // Log specific validation errors if present
+      if (err.response?.data?.errors && Array.isArray(err.response.data.errors)) {
+        console.log('Validation errors:', err.response.data.errors);
+        // Show the first validation error to the user
+        const firstError = err.response.data.errors[0];
+        setError(firstError.msg || extractErrorMessage(err));
+        return;
+      }
       
       // Special handling for timeout errors
       if (err.code === 'ECONNABORTED' || err.message.includes('timeout')) {

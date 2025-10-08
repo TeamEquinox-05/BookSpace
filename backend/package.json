@@ -24,7 +24,6 @@
     "mongoose": "^8.17.0",
     "nodemailer": "^7.0.5",
     "nodemon": "^3.1.10",
-    "pdfkit": "^0.15.2",
-    "@sendgrid/mail": "^7.7.0"
+    "pdfkit": "^0.15.2"
   }
 }

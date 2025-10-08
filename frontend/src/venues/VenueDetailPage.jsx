@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import { useParams } from 'react-router-dom';
 import { PageHeader } from '../components/shared';
 import DetailViewSkeleton from '../components/ui/DetailViewSkeleton';
@@ -12,7 +12,7 @@ export default function VenueDetailPage({ role = 'user' }) {
   useEffect(() => {
     const fetchVenueDetails = async () => {
       try {
-        const res = await axios.get(`/places/${id}`);
+        const res = await api.get(`/places/${id}`);
         setVenue(res.data);
       } catch (err) {
         setError(err.message);

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import { PageHeader } from '../components/shared';
 import { Plus, Edit, Trash2, Eye } from 'lucide-react';
 import VenueModal from '../components/admin/VenueModal';
@@ -22,7 +22,7 @@ export default function VenueManagementPage() {
   const fetchVenues = async () => {
     try {
       setLoading(true);
-      const res = await axios.get('/places');
+      const res = await api.get('/places');
       setVenues(res.data);
     } catch (err) {
       setError(err.message);
@@ -36,7 +36,7 @@ export default function VenueManagementPage() {
     try {
       const method = venueData._id ? 'put' : 'post';
       const url = venueData._id ? `/places/${venueData._id}` : '/places';
-      await axios[method](url, venueData);
+      await api[method](url, venueData);
 
       fetchVenues(); // Refresh the list
       setIsModalOpen(false);
@@ -47,7 +47,7 @@ export default function VenueManagementPage() {
 
   const handleDelete = async () => {
     try {
-      await axios.delete(`/places/${venueToDelete}`);
+      await api.delete(`/places/${venueToDelete}`);
 
       fetchVenues(); // Refresh the list
       setIsConfirmModalOpen(false);

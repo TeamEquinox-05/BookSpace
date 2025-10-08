@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Mail, KeyRound, Lock, X } from 'lucide-react';
-import axios from 'axios';
 import { Spinner } from '../ui';
 import api from '../../utils/api';
 

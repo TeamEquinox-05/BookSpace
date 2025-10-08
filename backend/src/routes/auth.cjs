@@ -116,12 +116,15 @@ router.post('/signup', [
   body('name').isLength({ min: 2, max: 50 }).trim().escape().withMessage('Name must be 2-50 characters'),
   body('email').isEmail().normalizeEmail().withMessage('Please include a valid email'),
   body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
-  body('phone').optional().isMobilePhone().withMessage('Please include a valid phone number'),
+  body('phone').optional({ checkFalsy: true }).isMobilePhone().withMessage('Please include a valid phone number'),
   body('otp').isLength({ min: 6, max: 6 }).isNumeric().withMessage('OTP must be 6 digits')
 ], async (req, res) => {
+  console.log('Received signup request:', req.body);
+  
   // Check for validation errors
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
+    console.log('Validation errors in signup:', errors.array());
     return res.status(400).json({ 
       msg: 'Validation failed', 
       errors: errors.array() 
@@ -277,8 +280,26 @@ router.post('/forgot-password', async (req, res) => {
     await user.save();
     console.log('User saved with OTP');
 
-    await sendEmail(email, 'Your OTP for Password Reset', `Your OTP for password reset is: ${otp}`);
-    console.log('OTP email sent to:', email);
+    const emailResult = await sendEmail(
+      email, 
+      'Your OTP for Password Reset', 
+      `Your OTP for password reset is: ${otp}\n\nThis code will expire in 10 minutes.\n\nIf you didn't request this code, please ignore this email.`
+    );
+    
+    if (!emailResult.success) {
+      console.error('Failed to send OTP email for password reset:', {
+        error: emailResult.error,
+        code: emailResult.code,
+        email: email
+      });
+      
+      return res.status(500).json({ 
+        msg: 'Failed to send OTP email. Please try again later.',
+        error: emailResult.error 
+      });
+    }
+    
+    console.log('OTP email sent successfully to:', email);
     res.status(200).json({ msg: 'OTP sent to your email' });
   } catch (err) {
     console.error('Error in forgot-password route:', err.message);

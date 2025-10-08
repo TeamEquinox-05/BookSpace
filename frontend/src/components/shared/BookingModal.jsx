@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Calendar, Clock, MapPin, Users, FileText, Settings, CheckCircle, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import axios from 'axios';
+import api from '../../utils/api';
 import { Spinner } from '../ui';
 
 const BookingModal = ({ isOpen, onClose, places, onBookingSubmit, initialBooking }) => {
@@ -98,7 +98,7 @@ const BookingModal = ({ isOpen, onClose, places, onBookingSubmit, initialBooking
         return;
       }
 
-      const res = await axios.post('/bookings/check-availability', {
+      const res = await api.post('/bookings/check-availability', {
         placeId: bookingDetails.placeId,
         eventStartTime: startDate.toISOString(),
         eventEndTime: endDate.toISOString(),

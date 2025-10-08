@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import { useParams, useNavigate } from 'react-router-dom';
 import { PageHeader, BookingModal } from '../components/shared';
 import { Spinner } from '../components/ui';
@@ -38,8 +38,8 @@ export default function PlaceDetailsPage() {
     const fetchPlaceDetails = async () => {
       try {
         const [placeRes, bookingsRes] = await Promise.all([
-          axios.get(`/places/${id}`),
-          axios.get(`/places/${id}/bookings`),
+          api.get(`/places/${id}`),
+          api.get(`/places/${id}/bookings`),
         ]);
         setPlace(placeRes.data);
         setBookings(bookingsRes.data);
@@ -58,7 +58,7 @@ export default function PlaceDetailsPage() {
   const fetchBookings = async () => {
     try {
       setBookingsLoading(true);
-      const bookingsRes = await axios.get(`/places/${id}/bookings`);
+      const bookingsRes = await api.get(`/places/${id}/bookings`);
       setBookings(bookingsRes.data);
     } catch (err) {
       console.error('Error fetching bookings:', err);
@@ -69,7 +69,7 @@ export default function PlaceDetailsPage() {
 
   const handleBookingSubmit = async (bookingDetails) => {
     try {
-      await axios.post('/bookings', bookingDetails);
+      await api.post('/bookings', bookingDetails);
       // Refresh bookings after successful booking
       await fetchBookings();
       setBookingModalOpen(false);

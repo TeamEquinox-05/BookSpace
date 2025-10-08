@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import { PageHeader } from '../components/shared';
 import BookingModal from '../components/shared/BookingModal';
 import ConfirmationModal from '../components/shared/ConfirmationModal';
@@ -18,8 +18,8 @@ const MyBookingsPage = () => {
     setLoading(true);
     try {
       const [bookingsRes, placesRes] = await Promise.all([
-        axios.get('/bookings/my-bookings'),
-        axios.get('/places'),
+        api.get('/bookings/my-bookings'),
+        api.get('/places'),
       ]);
 
       setBookings(bookingsRes.data);
@@ -49,7 +49,7 @@ const MyBookingsPage = () => {
   const handleUpdateBooking = async (updatedDetails) => {
     console.log('Attempting to update booking with ID:', currentBooking._id);
     try {
-      await axios.put(`/bookings/${currentBooking._id}`, updatedDetails);
+      await api.put(`/bookings/${currentBooking._id}`, updatedDetails);
 
       setIsEditModalOpen(false);
       fetchBookingsAndPlaces(); // Refresh the list
@@ -61,7 +61,7 @@ const MyBookingsPage = () => {
 
   const handleDeleteBooking = async () => {
     try {
-      await axios.delete(`/bookings/${currentBooking._id}`);
+      await api.delete(`/bookings/${currentBooking._id}`);
 
       setIsDeleteModalOpen(false);
       fetchBookingsAndPlaces(); // Refresh the list

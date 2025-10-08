@@ -64,26 +64,30 @@ router.get('/', auth, async (req, res) => {
 // @access  Private (Admin only)
 router.put('/:id/approve', 
   auth, 
-  [
-    body('id').isMongoId().withMessage('Invalid user ID')
-  ],
   async (req, res) => {
     if (req.user.role !== 'admin') {
       return res.status(403).json({ msg: 'Access denied' });
     }
 
     try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
-
       const user = await User.findByIdAndUpdate(req.params.id, { status: 'active' }, { new: true });
       if (!user) {
         return res.status(404).json({ msg: 'User not found' });
       }
       
-      sendEmail(user.email, 'Account Approved', 'Your account has been approved. You can now log in.');
+      // Send approval email (don't block response on email)
+      sendEmail(user.email, 'Account Approved', 'Your account has been approved. You can now log in.')
+        .then(result => {
+          if (result.success) {
+            console.log(`✓ Approval email sent to ${user.email}`);
+          } else {
+            console.error(`✗ Failed to send approval email to ${user.email}:`, result.error);
+          }
+        })
+        .catch(err => {
+          console.error(`✗ Error sending approval email to ${user.email}:`, err);
+        });
+      
       res.json(user);
     } catch (err) {
       console.error(err.message);
@@ -96,27 +100,31 @@ router.put('/:id/approve',
 // @access  Private (Admin only)
 router.put('/:id/reject', 
   auth, 
-  [
-    body('id').isMongoId().withMessage('Invalid user ID')
-  ],
   async (req, res) => {
     if (req.user.role !== 'admin') {
       return res.status(403).json({ msg: 'Access denied' });
     }
 
     try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
-
       const user = await User.findByIdAndUpdate(req.params.id, { status: 'rejected' }, { new: true });
       if (!user) {
         return res.status(404).json({ msg: 'User not found' });
       }
       
-      sendEmail(user.email, 'Account Rejected', 'Your account has been rejected. Please contact an administrator for more information.');
-    res.json(user);
+      // Send rejection email (don't block response on email)
+      sendEmail(user.email, 'Account Rejected', 'Your account has been rejected. Please contact an administrator for more information.')
+        .then(result => {
+          if (result.success) {
+            console.log(`✓ Rejection email sent to ${user.email}`);
+          } else {
+            console.error(`✗ Failed to send rejection email to ${user.email}:`, result.error);
+          }
+        })
+        .catch(err => {
+          console.error(`✗ Error sending rejection email to ${user.email}:`, err);
+        });
+      
+      res.json(user);
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server Error');
@@ -133,7 +141,20 @@ router.delete('/:id', auth, async (req, res) => {
 
   try {
     const user = await User.findByIdAndUpdate(req.params.id, { isDeleted: true }, { new: true });
-    sendEmail(user.email, 'Account Removed', 'Your account has been removed from the platform.');
+    
+    // Send removal email (don't block response on email)
+    sendEmail(user.email, 'Account Removed', 'Your account has been removed from the platform.')
+      .then(result => {
+        if (result.success) {
+          console.log(`✓ Account removal email sent to ${user.email}`);
+        } else {
+          console.error(`✗ Failed to send removal email to ${user.email}:`, result.error);
+        }
+      })
+      .catch(err => {
+        console.error(`✗ Error sending removal email to ${user.email}:`, err);
+      });
+    
     res.json({ msg: 'User removed' });
   } catch (err) {
     console.error(err.message);

@@ -1,7 +1,5 @@
 import axios from 'axios';
-
-// Backend URL - using only Render backend
-const API_URL = 'https://bookspace-be.onrender.com/api';
+import { API_URL } from '../config/api-config.js';
 
 // Create custom axios instance for the API
 const api = axios.create({

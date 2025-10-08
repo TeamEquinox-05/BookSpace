@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import moment from 'moment';
 import { PageHeader } from '../components/shared';
 import { Spinner, TableSkeleton } from '../components/ui';
@@ -84,7 +84,7 @@ const DownloadReport = ({ filters, sortConfig, disabled }) => {
       sortKey: sortConfig.key,
       sortDirection: sortConfig.direction,
     }).toString();
-    const response = await axios.get(`/bookings?${query}`);
+    const response = await api.get(`/bookings?${query}`);
     const bookings = response.data;
 
     let csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n";
@@ -119,7 +119,7 @@ const DownloadReport = ({ filters, sortConfig, disabled }) => {
         sortDirection: sortConfig.direction,
       }).toString();
 
-      const response = await axios.get(`/bookings/report?${query}`, {
+      const response = await api.get(`/bookings/report?${query}`, {
         responseType: 'blob',
       });
 
@@ -182,8 +182,8 @@ const AllBookingsPage = () => {
       try {
         setLoading(true);
         const [bookingsRes, placesRes] = await Promise.all([
-          axios.get('/bookings'),
-          axios.get('/places')
+          api.get('/bookings'),
+          api.get('/places')
         ]);
         setBookings(bookingsRes.data);
         setPlaces(placesRes.data);

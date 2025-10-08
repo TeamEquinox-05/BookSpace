@@ -6,11 +6,18 @@ import './index.css';
 import App from './App.jsx';
 import { ThemeProvider } from './context/ThemeContext.jsx';
 import { AuthProvider } from './context/AuthContext.jsx';
+import { getApiUrl } from './config/api-config.js';
 
 // Configure axios defaults
-axios.defaults.baseURL = 'https://bookspace-be.onrender.com/api';
-axios.defaults.withCredentials = true;
-axios.defaults.timeout = 60000; // 60 second timeout to match AuthContext config
+const initializeAxios = async () => {
+  const apiUrl = await getApiUrl();
+  axios.defaults.baseURL = apiUrl;
+  axios.defaults.withCredentials = true;
+  axios.defaults.timeout = 60000; // 60 second timeout to match AuthContext config
+};
+
+// Initialize axios configuration
+initializeAxios();
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
