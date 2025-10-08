@@ -12,6 +12,9 @@ export const ThemeProvider = ({ children }) => {
   // Actual dark mode state based on theme mode and system preference
   const [darkMode, setDarkMode] = useState(false);
 
+  // Track if initial load is complete
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+
   // Function to get system preference
   const getSystemPreference = () => {
     return window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -32,10 +35,23 @@ export const ThemeProvider = ({ children }) => {
 
       setDarkMode(shouldBeDark);
 
+      // Disable transitions during initial load
+      if (isInitialLoad) {
+        document.documentElement.classList.add('no-transition');
+      }
+
       if (shouldBeDark) {
         document.documentElement.classList.add('dark');
       } else {
         document.documentElement.classList.remove('dark');
+      }
+
+      // Re-enable transitions after initial load
+      if (isInitialLoad) {
+        setTimeout(() => {
+          document.documentElement.classList.remove('no-transition');
+          setIsInitialLoad(false);
+        }, 100);
       }
     };
 

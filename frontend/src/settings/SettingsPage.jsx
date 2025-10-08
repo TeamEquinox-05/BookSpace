@@ -4,7 +4,6 @@ import { PageHeader } from '../components/shared';
 import FormSkeleton from '../components/ui/FormSkeleton';
 import { Spinner } from '../components/ui';
 import { useTheme } from '../context/ThemeContext';
-import { Moon, Sun, Monitor } from 'lucide-react';
 
 export default function SettingsPage() {
   const [user, setUser] = useState(null);
@@ -51,69 +50,22 @@ export default function SettingsPage() {
                 <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-6">
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Theme Preference
+                      <label htmlFor="theme-select" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Theme
                       </label>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                      <select
+                        id="theme-select"
+                        value={themeMode}
+                        onChange={(e) => setTheme(e.target.value)}
+                        className="mt-1 block w-full md:w-64 px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
+                      >
+                        <option value="light">Light</option>
+                        <option value="dark">Dark</option>
+                        <option value="system">System (Auto)</option>
+                      </select>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
                         Choose how BookSpace looks to you. Select a single theme, or sync with your system preferences.
                       </p>
-                      
-                      {/* Theme Options */}
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {/* Light Theme */}
-                        <button
-                          onClick={() => setTheme('light')}
-                          className={`flex flex-col items-center p-4 rounded-lg border-2 transition-all ${
-                            themeMode === 'light'
-                              ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                              : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
-                          }`}
-                        >
-                          <Sun size={32} className={`mb-2 ${themeMode === 'light' ? 'text-blue-500' : 'text-gray-600 dark:text-gray-400'}`} />
-                          <span className={`font-medium ${themeMode === 'light' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'}`}>
-                            Light
-                          </span>
-                          <span className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                            Always light theme
-                          </span>
-                        </button>
-
-                        {/* Dark Theme */}
-                        <button
-                          onClick={() => setTheme('dark')}
-                          className={`flex flex-col items-center p-4 rounded-lg border-2 transition-all ${
-                            themeMode === 'dark'
-                              ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                              : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
-                          }`}
-                        >
-                          <Moon size={32} className={`mb-2 ${themeMode === 'dark' ? 'text-blue-500' : 'text-gray-600 dark:text-gray-400'}`} />
-                          <span className={`font-medium ${themeMode === 'dark' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'}`}>
-                            Dark
-                          </span>
-                          <span className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                            Always dark theme
-                          </span>
-                        </button>
-
-                        {/* System Theme */}
-                        <button
-                          onClick={() => setTheme('system')}
-                          className={`flex flex-col items-center p-4 rounded-lg border-2 transition-all ${
-                            themeMode === 'system'
-                              ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                              : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
-                          }`}
-                        >
-                          <Monitor size={32} className={`mb-2 ${themeMode === 'system' ? 'text-blue-500' : 'text-gray-600 dark:text-gray-400'}`} />
-                          <span className={`font-medium ${themeMode === 'system' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'}`}>
-                            System
-                          </span>
-                          <span className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                            Sync with system
-                          </span>
-                        </button>
-                      </div>
                     </div>
                   </div>
                 </div>

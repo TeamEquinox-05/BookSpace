@@ -1,11 +1,37 @@
-import React, { useEffect } from 'react';
-import { Bell, Search, Moon, Sun, Menu, X, Monitor } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Moon, Sun, Monitor, LogOut, Settings, User } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
 
 const PageHeader = ({ title, children }) => {
   const { darkMode, themeMode, toggleDarkMode } = useTheme();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
+  const handleSettings = () => {
+    setIsDropdownOpen(false);
+    navigate('/settings');
+  };
 
   // Note: Theme class application is already handled in ThemeContext.jsx
   // We don't need to apply it here again
@@ -49,15 +75,6 @@ const PageHeader = ({ title, children }) => {
         {/* Right Side */}
         <div className="flex items-center space-x-2 sm:space-x-4">
           {children} {/* Custom action buttons */}
-          
-          <div className="relative hidden md:block">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={18} />
-            <input 
-              type="text" 
-              placeholder="Search..." 
-              className="pl-10 pr-4 py-2 w-40 sm:w-64 bg-slate-100 dark:bg-slate-700 border-transparent rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-            />
-          </div>
 
           <button 
             onClick={handleToggle} 
@@ -67,14 +84,49 @@ const PageHeader = ({ title, children }) => {
           >
             {icon}
           </button>
-          
-          <button className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors relative">
-            <Bell size={20} className="text-slate-600 dark:text-slate-400" />
-            <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 border-2 border-white dark:border-slate-800 rounded-full text-xs text-white flex items-center justify-center"></span>
-          </button>
 
-          <div className="w-9 h-9 bg-blue-600 rounded-full flex items-center justify-center cursor-pointer">
-            <span className="text-white font-semibold text-sm">{(user?.name || ' ').charAt(0).toUpperCase()}</span>
+          {/* User Profile Dropdown */}
+          <div className="relative" ref={dropdownRef}>
+            <button
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              className="w-9 h-9 bg-blue-600 hover:bg-blue-700 rounded-full flex items-center justify-center cursor-pointer transition-colors"
+            >
+              <span className="text-white font-semibold text-sm">
+                {(user?.name || ' ').charAt(0).toUpperCase()}
+              </span>
+            </button>
+
+            {/* Dropdown Menu */}
+            {isDropdownOpen && (
+              <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 py-1 z-50">
+                {/* User Info */}
+                <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-700">
+                  <p className="text-sm font-medium text-slate-800 dark:text-white">
+                    {user?.name}
+                  </p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                    {user?.email}
+                  </p>
+                </div>
+
+                {/* Menu Items */}
+                <button
+                  onClick={handleSettings}
+                  className="w-full flex items-center px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                >
+                  <Settings size={16} className="mr-3" />
+                  Settings
+                </button>
+
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                >
+                  <LogOut size={16} className="mr-3" />
+                  Logout
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

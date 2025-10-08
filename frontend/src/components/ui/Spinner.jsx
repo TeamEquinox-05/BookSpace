@@ -15,7 +15,7 @@ const Spinner = ({ size = 'md', color, centered = true, text = "Loading" }) => {
                       (darkMode ? 'text-white' : 'text-blue-600');
 
   const containerClasses = centered 
-    ? 'fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-20'
+    ? `fixed inset-0 flex items-center justify-center z-50 ${darkMode ? 'bg-slate-900/50' : 'bg-white/80'} backdrop-blur-sm`
     : 'inline-flex justify-center items-center w-full';
 
   return (
