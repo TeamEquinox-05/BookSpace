@@ -1,10 +1,10 @@
 import React, { useEffect } from 'react';
-import { Bell, Search, Moon, Sun, Menu, X } from 'lucide-react';
+import { Bell, Search, Moon, Sun, Menu, X, Monitor } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
 
 const PageHeader = ({ title, children }) => {
-  const { darkMode, toggleDarkMode } = useTheme();
+  const { darkMode, themeMode, toggleDarkMode } = useTheme();
   const { user } = useAuth();
 
   // Note: Theme class application is already handled in ThemeContext.jsx
@@ -13,6 +13,28 @@ const PageHeader = ({ title, children }) => {
   const handleToggle = () => {
     toggleDarkMode();
   }
+
+  // Get the appropriate icon and tooltip based on theme mode
+  const getThemeIcon = () => {
+    if (themeMode === 'system') {
+      return {
+        icon: <Monitor size={20} className="text-gray-600 dark:text-gray-400" />,
+        tooltip: `System theme (currently ${darkMode ? 'dark' : 'light'})`
+      };
+    } else if (darkMode) {
+      return {
+        icon: <Sun size={20} className="text-yellow-400" />,
+        tooltip: 'Switch to light mode'
+      };
+    } else {
+      return {
+        icon: <Moon size={20} className="text-slate-600" />,
+        tooltip: 'Switch to dark mode'
+      };
+    }
+  };
+
+  const { icon, tooltip } = getThemeIcon();
 
   return (
     <header className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-10">
@@ -40,9 +62,10 @@ const PageHeader = ({ title, children }) => {
           <button 
             onClick={handleToggle} 
             className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-            aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"}
+            aria-label={tooltip}
+            title={tooltip}
           >
-            {darkMode ? <Sun size={20} className="text-yellow-400" /> : <Moon size={20} className="text-slate-600" />}
+            {icon}
           </button>
           
           <button className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors relative">

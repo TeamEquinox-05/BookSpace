@@ -9,10 +9,9 @@ import { Menu } from 'lucide-react';
 const Layout = () => {
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
-  const { darkMode } = useTheme();
 
   return (
-    <div className={`flex h-screen ${darkMode ? 'dark' : ''}`}>
+    <div className="flex h-screen bg-slate-50 dark:bg-slate-900">
       {/* Desktop Sidebar */}
       <div className="hidden md:flex">
         <Sidebar isExpanded={isSidebarExpanded} setIsExpanded={setIsSidebarExpanded} onMouseEnter={() => setIsSidebarExpanded(true)} onMouseLeave={() => setIsSidebarExpanded(false)} />
