@@ -326,7 +326,7 @@ const BookingModal = ({ isOpen, onClose, places, onBookingSubmit, initialBooking
                     className="space-y-3"
                   >
                     <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
-                      <Users size={16} className="text-orange-500" />
+                      <Users size={16} className="text-yellow-500" />
                       Availability Status
                     </label>
                     <div className={`p-4 rounded-xl border-2 transition-all duration-200 ${

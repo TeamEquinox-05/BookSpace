@@ -156,7 +156,9 @@ router.get('/', async (req, res) => {
 // @access  Public
 router.get('/:id/bookings', async (req, res) => {
   try {
-    const bookings = await Booking.find({ placeId: req.params.id });
+    const bookings = await Booking.find({ placeId: req.params.id })
+      .populate('userId', ['name', 'email'])
+      .populate('placeId', ['name', 'location', 'capacity']);
     res.json(bookings);
   } catch (err) {
     console.error(err.message);

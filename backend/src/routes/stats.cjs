@@ -10,24 +10,43 @@ const verifyRole = require('../middleware/verifyRole.cjs');
 // @access  Private/Admin
 router.get('/', auth, verifyRole('admin'), async (req, res) => {
   try {
+    // Get total places count
     const totalPlaces = await Place.countDocuments();
+    
+    // Get active (approved) bookings count
     const activeBookings = await Booking.countDocuments({ status: 'approved' });
+    
+    // Get pending approvals count
     const pendingApprovals = await Booking.countDocuments({ status: 'pending' });
 
-    // For simplicity, these are placeholders. A real implementation would involve more complex queries.
-    const todayBookings = 0;
-    const monthlyGrowth = '0%';
-    const utilizationRate = '0%';
-    const issuesReported = 0;
+    // Get today's bookings - bookings that are happening today (start or end date is today)
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    const endOfToday = new Date();
+    endOfToday.setHours(23, 59, 59, 999);
+    
+    const todayBookings = await Booking.countDocuments({
+      status: { $in: ['approved', 'confirmed'] },
+      $or: [
+        { eventStartTime: { $gte: startOfToday, $lte: endOfToday } },
+        { eventEndTime: { $gte: startOfToday, $lte: endOfToday } },
+        { eventStartTime: { $lte: startOfToday }, eventEndTime: { $gte: endOfToday } }
+      ]
+    });
+
+    // Get total bookings count (all statuses)
+    const totalBookings = await Booking.countDocuments();
+    
+    // Get rejected bookings count
+    const rejectedBookings = await Booking.countDocuments({ status: 'rejected' });
 
     res.json({
-      totalPlaces: { value: totalPlaces, change: '' },
-      activeBookings: { value: activeBookings, change: '' },
-      pendingApprovals: { value: pendingApprovals, change: '' },
-      todayBookings: { value: todayBookings, change: '' },
-      monthlyGrowth: { value: monthlyGrowth, change: '' },
-      utilizationRate: { value: utilizationRate, change: '' },
-      issuesReported: { value: issuesReported, change: '' },
+      totalPlaces: { value: totalPlaces },
+      activeBookings: { value: activeBookings },
+      pendingApprovals: { value: pendingApprovals },
+      todayBookings: { value: todayBookings },
+      totalBookings: { value: totalBookings },
+      rejectedBookings: { value: rejectedBookings },
     });
   } catch (err) {
     console.error(err.message);

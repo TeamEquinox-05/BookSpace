@@ -59,14 +59,21 @@ const Sidebar = ({ isExpanded, setIsExpanded, onMouseEnter, onMouseLeave }) => {
       {/* Header */}
       <div className="flex items-center h-16 px-4 border-b border-slate-200 dark:border-slate-700">
         <div className="flex items-center gap-3 min-w-0"> {/* Added min-w-0 to prevent overflow */}
-          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
-            <div className="w-4 h-4 bg-white rounded-sm" />
+          <div className="w-10 h-10 flex items-center justify-center flex-shrink-0">
+            <img 
+              src="/cropped-NEW-PCCE-LOGO.png" 
+              alt="PCCE Logo" 
+              className="w-full h-full object-contain"
+            />
           </div>
           {isExpanded && (
             <div className="overflow-hidden min-w-0"> {/* Added min-w-0 for proper text truncation */}
-              <h1 className="text-slate-900 dark:text-white font-semibold text-lg whitespace-nowrap overflow-hidden text-ellipsis">
-                BookSpace
+              <h1 className="text-slate-900 dark:text-white font-bold text-lg whitespace-nowrap overflow-hidden text-ellipsis">
+                PCCE VenueHub
               </h1>
+              <p className="text-xs text-slate-600 dark:text-slate-400 whitespace-nowrap overflow-hidden text-ellipsis">
+                Venue Booking System
+              </p>
             </div>
           )}
         </div>
@@ -100,9 +107,9 @@ const Sidebar = ({ isExpanded, setIsExpanded, onMouseEnter, onMouseLeave }) => {
                       isExpanded 
                         ? "gap-3 px-3 py-2.5" 
                         : "justify-center px-2 py-2.5 w-12 h-12 mx-auto",
-                      "hover:bg-blue-100 dark:hover:bg-blue-900/30 hover:shadow-md",
+                      "hover:bg-yellow-100 dark:hover:bg-yellow-900/20 hover:shadow-md",
                       isActive
-                        ? "bg-blue-600 text-white shadow-md"
+                        ? "bg-yellow-500 text-gray-900 shadow-md font-semibold"
                         : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
                     )
                   }

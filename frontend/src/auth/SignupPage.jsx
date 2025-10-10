@@ -212,10 +212,16 @@ const SignupPage = ({ onSignupSuccess }) => {
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 flex items-center justify-center p-4">
       <div className="w-full max-w-4xl bg-white dark:bg-slate-800 rounded-2xl shadow-lg flex overflow-hidden">
         {/* Left Side: Branding */}
-        <div className="hidden md:flex flex-col justify-center items-center w-1/2 bg-blue-600 text-white p-12">
-          [Image of diverse team collaborating]
-          <h1 className="text-4xl font-bold mb-3">Join BookSpace</h1>
-          <p className="text-center text-blue-100">Start organizing your events and bookings seamlessly.</p>
+        <div className="hidden md:flex flex-col justify-center items-center w-1/2 bg-gradient-to-br from-blue-900 to-blue-700 text-white p-12">
+          <div className="w-32 h-32 mb-6 bg-white rounded-2xl flex items-center justify-center p-4 shadow-xl">
+            <img 
+              src="/cropped-NEW-PCCE-LOGO.png" 
+              alt="PCCE Logo" 
+              className="w-full h-full object-contain"
+            />
+          </div>
+          <h1 className="text-4xl font-bold mb-3">Join PCCE VenueHub</h1>
+          <p className="text-center text-blue-100">Start booking venues at Padre Conceição College of Engineering.</p>
         </div>
 
         {/* Right Side: Form */}

@@ -139,15 +139,20 @@ const LoginPage = () => {
             transition={{ duration: 0.6, delay: 0.2 }}
           >
             <motion.div 
-              className="w-20 h-20 mx-auto mb-6 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center"
-              whileHover={{ scale: 1.1, rotate: 5 }}
+              className="w-24 h-24 mx-auto mb-6 bg-white rounded-2xl flex items-center justify-center p-3 shadow-xl"
+              whileHover={{ scale: 1.05 }}
               transition={{ type: "spring", stiffness: 300 }}
             >
-              <Building2 className="w-10 h-10 text-white" />
+              <img 
+                src="/cropped-NEW-PCCE-LOGO.png" 
+                alt="PCCE Logo" 
+                className="w-full h-full object-contain"
+              />
             </motion.div>
-            <h1 className="text-4xl font-bold mb-4">BookSpace</h1>
+            <h1 className="text-4xl font-bold mb-2">PCCE VenueHub</h1>
             <p className="text-blue-100 mb-8 text-lg leading-relaxed">
-              Effortlessly manage and book your ideal venues with our modern platform.
+              Padre Conceição College of Engineering<br />
+              Venue Booking & Management System
             </p>
             
             {/* Feature highlights */}
@@ -161,15 +166,7 @@ const LoginPage = () => {
                 <Calendar className="w-5 h-5 text-blue-200" />
                 <span className="text-blue-100">Smart booking management</span>
               </motion.div>
-              <motion.div 
-                className="flex items-center space-x-3"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.5, delay: 0.5 }}
-              >
-                <Users className="w-5 h-5 text-blue-200" />
-                <span className="text-blue-100">Team collaboration tools</span>
-              </motion.div>
+              
               <motion.div 
                 className="flex items-center space-x-3"
                 initial={{ opacity: 0, x: -20 }}

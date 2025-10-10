@@ -2,6 +2,26 @@
 
 @variant dark (html.dark &);
 
+@theme {
+  /* PCCE Color Palette (Padre Conceição College of Engineering, Goa) */
+  --color-pcce-navy: #003366;        /* Primary: Deep Navy Blue */
+  --color-pcce-gold: #f7b731;        /* Secondary: Golden Yellow */
+  --color-pcce-maroon: #8b0000;      /* Accent: Maroon Red */
+  --color-pcce-light-blue: #4a90e2;  /* Light Blue accent */
+  
+  /* Override default colors with PCCE brand */
+  --color-primary-50: #fffbeb;
+  --color-primary-100: #fef3c7;
+  --color-primary-200: #fde68a;
+  --color-primary-300: #fcd34d;
+  --color-primary-400: #fbbf24;
+  --color-primary-500: #f7b731;      /* PCCE Gold */
+  --color-primary-600: #d97706;
+  --color-primary-700: #b45309;
+  --color-primary-800: #92400e;
+  --color-primary-900: #78350f;
+}
+
 /* Smooth theme transition */
 * {
   transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
@@ -47,22 +67,38 @@
 
 
 :root {
+  /* PCCE Brand Colors - Light Mode */
+  --pcce-navy: #003366;
+  --pcce-gold: #f7b731;
+  --pcce-maroon: #8b0000;
+  --pcce-light-blue: #4a90e2;
+  --pcce-light-bg: #f5f8fb;
+  
+  /* Sidebar - Light Mode */
   --sidebar-background: #ffffff;
-  --sidebar-foreground: #1f2a44;
+  --sidebar-foreground: #003366;
   --sidebar-muted-foreground: #64748b;
-  --sidebar-primary: #3b82f6;
-  --sidebar-primary-foreground: #ffffff;
+  --sidebar-primary: #f7b731;
+  --sidebar-primary-foreground: #003366;
   --sidebar-accent: #f1f5f9;
   --sidebar-border: #e2e8f0;
 }
 
 .dark {
-  --sidebar-background: #1f2a44;
+  /* PCCE Brand Colors - Dark Mode */
+  --pcce-navy: #004080;
+  --pcce-gold: #fbbf24;
+  --pcce-maroon: #b91c1c;
+  --pcce-light-blue: #60a5fa;
+  --pcce-dark-bg: #0f1419;
+  
+  /* Sidebar - Dark Mode */
+  --sidebar-background: #003366;
   --sidebar-foreground: #e2e8f0;
   --sidebar-muted-foreground: #94a3b8;
-  --sidebar-primary: #60a5fa;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #2d3748;
+  --sidebar-primary: #fbbf24;
+  --sidebar-primary-foreground: #003366;
+  --sidebar-accent: #004080;
   --sidebar-border: #4b5563;
 }
 
@@ -92,4 +128,87 @@
 
 .ellipsis-dot:nth-child(3) {
   animation: ellipsisDot3 1.8s infinite;
+}
+
+/* PCCE Brand Utilities */
+.bg-brand-navy {
+  background-color: #003366;
+}
+
+.bg-brand-gold {
+  background-color: #f7b731;
+}
+
+.bg-brand-maroon {
+  background-color: #8b0000;
+}
+
+.text-brand-navy {
+  color: #003366;
+}
+
+.text-brand-gold {
+  color: #f7b731;
+}
+
+.text-brand-maroon {
+  color: #8b0000;
+}
+
+.hover\:bg-brand-gold:hover {
+  background-color: #f7b731;
+}
+
+.border-brand-navy {
+  border-color: #003366;
+}
+
+.border-brand-gold {
+  border-color: #f7b731;
+}
+
+.hover\:bg-brand-gold-dark:hover {
+  background-color: #d97706;
+}
+
+.hover\:bg-brand-navy-light:hover {
+  background-color: #004080;
+}
+
+/* Dark mode brand colors */
+.dark .text-brand-gold {
+  color: #fbbf24;
+}
+
+.dark .bg-brand-navy {
+  background-color: #004080;
+}
+
+.bg-brand-navy {
+  background-color: #1e3a5f;
+}
+
+.text-brand-navy {
+  color: #1e3a5f;
+}
+
+.bg-brand-blue {
+  background-color: #5b9bd5;
+}
+
+.text-brand-blue {
+  color: #5b9bd5;
+}
+
+/* Dark mode brand colors */
+.dark .bg-brand-primary {
+  background-color: #ffa726;
+}
+
+.dark .hover\:bg-brand-primary:hover {
+  background-color: #ffa726;
+}
+
+.dark .text-brand-primary {
+  color: #ffa726;
 }

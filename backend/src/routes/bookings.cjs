@@ -319,6 +319,7 @@ router.delete('/:id', auth, async (req, res) => {
 router.get('/my-bookings', auth, async (req, res) => {
   try {
     const bookings = await Booking.find({ userId: req.user.id })
+      .populate('userId', ['name', 'email'])
       .populate('placeId', ['name', 'location']);
     res.json(bookings);
   } catch (err) {

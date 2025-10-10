@@ -361,3 +361,65 @@
     transform: translate(-50%, -50%) rotate(360deg);
   }
 }
+
+/* Custom Event Tooltip Styles */
+.rbc-event .group:hover .hidden {
+  display: block !important;
+}
+
+/* Week View Event Time Display */
+.rbc-time-slot .rbc-event {
+  padding: 4px 8px;
+  overflow: visible;
+}
+
+.rbc-time-slot .rbc-event-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 11px;
+  line-height: 1.2;
+}
+
+/* Better event spacing in week/day view */
+.rbc-time-content > * + * > * {
+  margin-left: 2px;
+}
+
+.rbc-events-container {
+  margin-right: 2px;
+}
+
+/* Tooltip positioning fix */
+.rbc-event {
+  position: relative;
+  overflow: visible;
+  z-index: 1;
+}
+
+.rbc-event:hover {
+  z-index: 10;
+}
+
+/* Week view time labels */
+.rbc-label {
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 8px;
+}
+
+.dark .rbc-label {
+  color: #9ca3af;
+}
+
+/* Week view event container improvements */
+.rbc-day-slot .rbc-event {
+  border-left-width: 3px;
+}
+
+.rbc-day-slot .rbc-event-label {
+  font-size: 10px;
+  font-weight: 600;
+  opacity: 0.9;
+}

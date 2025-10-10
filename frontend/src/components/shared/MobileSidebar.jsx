@@ -66,10 +66,17 @@ const MobileSidebar = ({ isOpen, onClose }) => {
         {/* Header */}
         <div className="flex items-center justify-between h-16 px-4 border-b border-slate-200 dark:border-slate-700">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
-              <div className="w-4 h-4 bg-white rounded-sm" />
+            <div className="w-10 h-10 flex items-center justify-center flex-shrink-0">
+              <img 
+                src="/cropped-NEW-PCCE-LOGO.png" 
+                alt="PCCE Logo" 
+                className="w-full h-full object-contain"
+              />
             </div>
-            <h1 className="text-slate-900 dark:text-white font-semibold text-lg">BookSpace</h1>
+            <div>
+              <h1 className="text-slate-900 dark:text-white font-bold text-lg leading-tight">PCCE VenueHub</h1>
+              <p className="text-xs text-slate-600 dark:text-slate-400 leading-tight">Venue Booking</p>
+            </div>
           </div>
           <button onClick={onClose} className="p-2 rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
             <X size={20} />

@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 
-const StatCard = ({ icon: Icon, title, value, change, color = 'bg-blue-500', isLoading = false }) => {
+const StatCard = ({ icon: Icon, title, value, change, lightColor = 'bg-blue-500', darkColor = 'dark:bg-blue-600', isLoading = false }) => {
   const getTrendColor = () => {
     if (change > 0) return 'text-green-500';
     if (change < 0) return 'text-red-500';
@@ -40,7 +40,7 @@ const StatCard = ({ icon: Icon, title, value, change, color = 'bg-blue-500', isL
               >
                 {typeof value === 'number' ? value.toLocaleString() : value}
               </motion.p>
-              {change !== undefined && (
+              {change !== undefined && change !== '' && (
                 <motion.div 
                   className={`flex items-center space-x-2 text-sm ${getTrendColor()}`}
                   initial={{ opacity: 0, x: -10 }}
@@ -61,7 +61,7 @@ const StatCard = ({ icon: Icon, title, value, change, color = 'bg-blue-500', isL
           )}
         </div>
         <motion.div 
-          className={`p-4 rounded-xl ${color} text-white shadow-lg group-hover:shadow-xl`}
+          className={`p-4 rounded-xl ${lightColor} ${darkColor} text-white shadow-lg group-hover:shadow-xl`}
           whileHover={{ scale: 1.1, rotate: 5 }}
           transition={{ type: "spring", stiffness: 300 }}
         >

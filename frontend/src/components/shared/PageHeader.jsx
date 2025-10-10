@@ -44,7 +44,7 @@ const PageHeader = ({ title, children }) => {
   const getThemeIcon = () => {
     if (themeMode === 'system') {
       return {
-        icon: <Monitor size={20} className="text-gray-600 dark:text-gray-400" />,
+        icon: <Monitor size={20} className="text-yellow-400" />,
         tooltip: `System theme (currently ${darkMode ? 'dark' : 'light'})`
       };
     } else if (darkMode) {
@@ -54,7 +54,7 @@ const PageHeader = ({ title, children }) => {
       };
     } else {
       return {
-        icon: <Moon size={20} className="text-slate-600" />,
+        icon: <Moon size={20} className="text-yellow-400" />,
         tooltip: 'Switch to dark mode'
       };
     }
@@ -63,11 +63,11 @@ const PageHeader = ({ title, children }) => {
   const { icon, tooltip } = getThemeIcon();
 
   return (
-    <header className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-10">
+    <header className="bg-gradient-to-r from-blue-900 to-blue-800 dark:from-blue-950 dark:to-blue-900 border-b border-blue-700 dark:border-blue-800 sticky top-0 z-10 shadow-md">
       <div className="flex items-center justify-between px-4 sm:px-6 h-16">
         {/* Left Side */}
         <div className="flex items-center space-x-4">
-          <h1 className="text-xl md:text-2xl font-bold text-slate-800 dark:text-white">
+          <h1 className="text-xl md:text-2xl font-bold text-white">
             {title}
           </h1>
         </div>
@@ -78,7 +78,7 @@ const PageHeader = ({ title, children }) => {
 
           <button 
             onClick={handleToggle} 
-            className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+            className="p-2 rounded-full hover:bg-blue-700/50 dark:hover:bg-blue-800/50 transition-colors"
             aria-label={tooltip}
             title={tooltip}
           >
@@ -89,9 +89,9 @@ const PageHeader = ({ title, children }) => {
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="w-9 h-9 bg-blue-600 hover:bg-blue-700 rounded-full flex items-center justify-center cursor-pointer transition-colors"
+              className="w-9 h-9 bg-yellow-500 hover:bg-yellow-600 rounded-full flex items-center justify-center cursor-pointer transition-colors shadow-lg"
             >
-              <span className="text-white font-semibold text-sm">
+              <span className="text-gray-900 font-bold text-sm">
                 {(user?.name || ' ').charAt(0).toUpperCase()}
               </span>
             </button>

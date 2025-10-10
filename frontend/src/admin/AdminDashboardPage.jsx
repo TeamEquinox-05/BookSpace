@@ -13,13 +13,12 @@ import { useAuth } from '../context/AuthContext';
 export default function AdminDashboardPage() {
   const { user } = useAuth();
   const [stats, setStats] = useState({
-    totalPlaces: { value: 0, change: '' },
-    activeBookings: { value: 0, change: '' },
-    pendingApprovals: { value: 0, change: '' },
-    todayBookings: { value: 0, change: '' },
-    monthlyGrowth: { value: '0%', change: '' },
-    utilizationRate: { value: '0%', change: '' },
-    issuesReported: { value: 0, change: '' },
+    totalPlaces: { value: 0 },
+    activeBookings: { value: 0 },
+    pendingApprovals: { value: 0 },
+    todayBookings: { value: 0 },
+    totalBookings: { value: 0 },
+    rejectedBookings: { value: 0 },
   });
   const [availablePlaces, setAvailablePlaces] = useState([]);
   const [loading, setLoading] = useState(true);
