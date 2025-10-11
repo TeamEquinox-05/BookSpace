@@ -74,7 +74,7 @@ const MobileSidebar = ({ isOpen, onClose }) => {
               />
             </div>
             <div>
-              <h1 className="text-slate-900 dark:text-white font-bold text-lg leading-tight">PCCE VenueHub</h1>
+              <h1 className="text-slate-900 dark:text-white font-bold text-lg leading-tight">PCCE BookSpace</h1>
               <p className="text-xs text-slate-600 dark:text-slate-400 leading-tight">Venue Booking</p>
             </div>
           </div>

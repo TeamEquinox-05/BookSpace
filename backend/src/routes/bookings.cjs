@@ -386,7 +386,7 @@ router.get('/', auth, verifyRole('admin'), async (req, res) => {
 // @desc    Generate a report of bookings
 // @access  Private/Admin
 router.get('/report', auth, verifyRole('admin'), async (req, res) => {
-  const { format, status, placeId, date, sortKey, sortDirection } = req.query;
+  const { format, status, placeId, dateFrom, dateTo, search, sortKey, sortDirection } = req.query;
 
   try {
     let query = Booking.find();
@@ -394,10 +394,15 @@ router.get('/report', auth, verifyRole('admin'), async (req, res) => {
     // Filtering
     if (status && status !== '') query = query.where('status').equals(status);
     if (placeId && placeId !== '') query = query.where('placeId').equals(placeId);
-    if (date && date !== '') {
-      const start = moment(date).startOf('day');
-      const end = moment(date).endOf('day');
-      query = query.where('eventStartTime').gte(start).lte(end);
+    
+    // Date range filtering
+    if (dateFrom && dateFrom !== '') {
+      const start = moment(dateFrom).startOf('day');
+      query = query.where('eventStartTime').gte(start);
+    }
+    if (dateTo && dateTo !== '') {
+      const end = moment(dateTo).endOf('day');
+      query = query.where('eventStartTime').lte(end);
     }
 
     // Sorting
@@ -407,55 +412,139 @@ router.get('/report', auth, verifyRole('admin'), async (req, res) => {
       query = query.sort(sort);
     }
 
-    console.log('Report generation triggered with filters:', { status, placeId, date });
+    console.log('Report generation triggered with filters:', { status, placeId, dateFrom, dateTo, search });
 
-    const bookings = await query.populate('userId', 'name').populate('placeId', 'name').exec();
+    let bookings = await query.populate('userId', 'name email').populate('placeId', 'name').exec();
+
+    // Apply search filter after population (since we need to search in populated fields)
+    if (search && search !== '') {
+      const searchLower = search.toLowerCase();
+      bookings = bookings.filter(booking => 
+        (booking.eventTitle && booking.eventTitle.toLowerCase().includes(searchLower)) ||
+        (booking.userId?.name && booking.userId.name.toLowerCase().includes(searchLower)) ||
+        (booking.userId?.email && booking.userId.email.toLowerCase().includes(searchLower)) ||
+        (booking._id && booking._id.toString().toLowerCase().includes(searchLower))
+      );
+    }
 
     console.log(`Found ${bookings.length} bookings to report.`);
 
     if (format === 'pdf') {
-      const doc = new PDFDocument({ margin: 50 });
+      const doc = new PDFDocument({ margin: 50, size: 'A4' });
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', 'attachment; filename=bookings-report.pdf');
       doc.pipe(res);
 
-      doc.fontSize(20).text('Bookings Report', { align: 'center' });
-      doc.moveDown();
+      // Title
+      doc.fontSize(24).font('Helvetica-Bold').text('Bookings Report', { align: 'center' });
+      doc.moveDown(0.5);
+      
+      // Report metadata
+      doc.fontSize(10).font('Helvetica');
+      doc.text(`Generated: ${moment().format('MMMM DD, YYYY HH:mm')}`, { align: 'center' });
+      if (status || placeId || dateFrom || dateTo || search) {
+        doc.text('Filters Applied:', { align: 'center' });
+        if (status) doc.text(`  Status: ${status}`, { align: 'center' });
+        if (placeId) {
+          const place = await require('../models/Place.cjs').findById(placeId);
+          doc.text(`  Place: ${place?.name || placeId}`, { align: 'center' });
+        }
+        if (dateFrom && dateTo) {
+          doc.text(`  Date Range: ${moment(dateFrom).format('YYYY-MM-DD')} to ${moment(dateTo).format('YYYY-MM-DD')}`, { align: 'center' });
+        } else if (dateFrom) {
+          doc.text(`  From Date: ${moment(dateFrom).format('YYYY-MM-DD')}`, { align: 'center' });
+        } else if (dateTo) {
+          doc.text(`  To Date: ${moment(dateTo).format('YYYY-MM-DD')}`, { align: 'center' });
+        }
+        if (search) doc.text(`  Search: "${search}"`, { align: 'center' });
+      }
+      doc.text(`Total Records: ${bookings.length}`, { align: 'center' });
+      doc.moveDown(2);
 
       const tableTop = doc.y;
       const itemX = 50;
+      const pageHeight = doc.page.height - 100; // Leave margin at bottom
 
-      const drawRow = (y, items) => {
+      const drawRow = (y, items, isBold = false) => {
         let currentX = itemX;
+        doc.font(isBold ? 'Helvetica-Bold' : 'Helvetica');
         items.forEach(item => {
-          doc.fontSize(10).text(item.text, currentX, y, { width: item.width, align: 'left' });
+          doc.fontSize(9).text(item.text, currentX, y, { 
+            width: item.width, 
+            align: 'left',
+            ellipsis: true // Truncate long text
+          });
           currentX += item.width;
         });
       };
 
+      // Table headers
       const headers = [
-        { text: 'Event', width: 150 },
-        { text: 'Place', width: 100 },
-        { text: 'User', width: 100 },
-        { text: 'Start Time', width: 120 },
-        { text: 'Status', width: 80 },
+        { text: 'Event', width: 95 },
+        { text: 'Place', width: 70 },
+        { text: 'User', width: 70 },
+        { text: 'Start', width: 75 },
+        { text: 'End', width: 75 },
+        { text: 'Dur.', width: 40 },
+        { text: 'Status', width: 50 },
       ];
 
-      drawRow(tableTop, headers.map(h => ({...h, text: h.text.toUpperCase()})) );
-      doc.moveTo(itemX, tableTop + 20).lineTo(550, tableTop + 20).stroke();
+      let y = tableTop;
+      
+      // Draw header
+      drawRow(y, headers, true);
+      doc.moveTo(itemX, y + 15).lineTo(itemX + 475, y + 15).stroke();
+      y += 25;
 
-      let y = tableTop + 25;
-      bookings.forEach(booking => {
+      // Draw rows with pagination
+      bookings.forEach((booking, index) => {
+        // Check if we need a new page
+        if (y > pageHeight) {
+          doc.addPage();
+          y = 50;
+          // Redraw headers on new page
+          drawRow(y, headers, true);
+          doc.moveTo(itemX, y + 15).lineTo(itemX + 475, y + 15).stroke();
+          y += 25;
+        }
+
+        // Calculate duration
+        const duration = moment.duration(moment(booking.eventEndTime).diff(moment(booking.eventStartTime)));
+        const hours = Math.floor(duration.asHours());
+        const minutes = duration.minutes();
+        const durationText = hours > 0 ? `${hours}h${minutes}m` : `${minutes}m`;
+
         const items = [
-          { text: booking.eventTitle, width: 150 },
-          { text: booking.placeId?.name || 'N/A', width: 100 },
-          { text: booking.userId?.name || 'N/A', width: 100 },
-          { text: moment(booking.eventStartTime).format('YYYY-MM-DD HH:mm'), width: 120 },
-          { text: booking.status, width: 80 },
+          { text: booking.eventTitle || 'N/A', width: 95 },
+          { text: booking.placeId?.name || 'N/A', width: 70 },
+          { text: booking.userId?.name || 'N/A', width: 70 },
+          { text: moment(booking.eventStartTime).format('MMM DD HH:mm'), width: 75 },
+          { text: moment(booking.eventEndTime).format('MMM DD HH:mm'), width: 75 },
+          { text: durationText, width: 40 },
+          { text: booking.status || 'N/A', width: 50 },
         ];
+        
+        // Alternate row background for better readability
+        if (index % 2 === 0) {
+          doc.rect(itemX - 5, y - 2, 480, 20).fillOpacity(0.05).fill('#000000');
+          doc.fillOpacity(1);
+        }
+        
         drawRow(y, items);
         y += 25;
       });
+
+      // Footer
+      const pageCount = doc.bufferedPageRange().count;
+      for (let i = 0; i < pageCount; i++) {
+        doc.switchToPage(i);
+        doc.fontSize(8).text(
+          `Page ${i + 1} of ${pageCount}`,
+          50,
+          doc.page.height - 50,
+          { align: 'center' }
+        );
+      }
 
       doc.end();
 

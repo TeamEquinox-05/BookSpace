@@ -12,12 +12,89 @@ const FilterControls = ({ places, filters, setFilters }) => {
   };
 
   const clearFilters = () => {
-    setFilters({ status: '', placeId: '', date: '' });
+    setFilters({ status: '', placeId: '', dateFrom: '', dateTo: '', search: '' });
   };
+
+  const setDatePreset = (preset) => {
+    const today = moment();
+    let dateFrom = '';
+    let dateTo = '';
+
+    switch(preset) {
+      case 'today':
+        dateFrom = today.format('YYYY-MM-DD');
+        dateTo = today.format('YYYY-MM-DD');
+        break;
+      case 'week':
+        dateFrom = today.startOf('week').format('YYYY-MM-DD');
+        dateTo = today.endOf('week').format('YYYY-MM-DD');
+        break;
+      case 'month':
+        dateFrom = today.startOf('month').format('YYYY-MM-DD');
+        dateTo = today.endOf('month').format('YYYY-MM-DD');
+        break;
+      case 'last30':
+        dateFrom = today.subtract(30, 'days').format('YYYY-MM-DD');
+        dateTo = moment().format('YYYY-MM-DD');
+        break;
+    }
+
+    setFilters(prev => ({ ...prev, dateFrom, dateTo }));
+  };
+
+  const activeFilterCount = Object.values(filters).filter(v => v !== '').length;
 
   return (
     <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-t-lg border-b border-gray-200 dark:border-gray-700">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Quick Date Presets */}
+      <div className="flex flex-wrap gap-2 mb-4">
+        <button
+          onClick={() => setDatePreset('today')}
+          className="px-3 py-1 text-xs font-medium rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200 hover:bg-blue-200 dark:hover:bg-blue-800"
+        >
+          Today
+        </button>
+        <button
+          onClick={() => setDatePreset('week')}
+          className="px-3 py-1 text-xs font-medium rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200 hover:bg-blue-200 dark:hover:bg-blue-800"
+        >
+          This Week
+        </button>
+        <button
+          onClick={() => setDatePreset('month')}
+          className="px-3 py-1 text-xs font-medium rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200 hover:bg-blue-200 dark:hover:bg-blue-800"
+        >
+          This Month
+        </button>
+        <button
+          onClick={() => setDatePreset('last30')}
+          className="px-3 py-1 text-xs font-medium rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200 hover:bg-blue-200 dark:hover:bg-blue-800"
+        >
+          Last 30 Days
+        </button>
+        {activeFilterCount > 0 && (
+          <span className="px-3 py-1 text-xs font-medium rounded-full bg-[#f7b731] text-gray-900">
+            {activeFilterCount} filter{activeFilterCount > 1 ? 's' : ''} active
+          </span>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+        {/* Search Box */}
+        <div className="w-full xl:col-span-2">
+          <label htmlFor="search-filter" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Search</label>
+          <input
+            type="text"
+            id="search-filter"
+            name="search"
+            value={filters.search}
+            onChange={handleInputChange}
+            placeholder="Event, user, or ID..."
+            className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
+          />
+        </div>
+
+        {/* Status Filter */}
         <div className="w-full">
           <label htmlFor="status-filter" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status</label>
           <select
@@ -33,6 +110,8 @@ const FilterControls = ({ places, filters, setFilters }) => {
             <option value="rejected">Rejected</option>
           </select>
         </div>
+
+        {/* Place Filter */}
         <div className="w-full">
           <label htmlFor="place-filter" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Place</label>
           <select
@@ -48,25 +127,42 @@ const FilterControls = ({ places, filters, setFilters }) => {
             ))}
           </select>
         </div>
+
+        {/* Date From */}
         <div className="w-full">
-          <label htmlFor="date-filter" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
+          <label htmlFor="date-from-filter" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">From Date</label>
           <input
             type="date"
-            id="date-filter"
-            name="date"
-            value={filters.date}
+            id="date-from-filter"
+            name="dateFrom"
+            value={filters.dateFrom}
             onChange={handleInputChange}
             className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
           />
         </div>
-        <div className="w-full flex items-end">
-          <button
-            onClick={clearFilters}
-            className="w-full justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
-          >
-            Clear Filters
-          </button>
+
+        {/* Date To */}
+        <div className="w-full">
+          <label htmlFor="date-to-filter" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">To Date</label>
+          <input
+            type="date"
+            id="date-to-filter"
+            name="dateTo"
+            value={filters.dateTo}
+            onChange={handleInputChange}
+            className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+          />
         </div>
+      </div>
+
+      {/* Clear Filters Button */}
+      <div className="mt-4">
+        <button
+          onClick={clearFilters}
+          className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+        >
+          Clear All Filters
+        </button>
       </div>
     </div>
   );
@@ -78,7 +174,7 @@ const DownloadReport = ({ filters, sortConfig, disabled }) => {
   const downloadCSV = async () => {
     setIsDownloading(true);
     // This is a simplified CSV generation. For a real app, a library like papaparse would be better.
-    const headers = ['Event', 'Place', 'User', 'Start Time', 'Status'];
+    const headers = ['Event', 'Place', 'User', 'Start Time', 'End Time', 'Duration', 'Status'];
     const query = new URLSearchParams({
       ...filters,
       sortKey: sortConfig.key,
@@ -89,12 +185,19 @@ const DownloadReport = ({ filters, sortConfig, disabled }) => {
 
     let csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n";
     bookings.forEach(b => {
+      const duration = moment.duration(moment(b.eventEndTime).diff(moment(b.eventStartTime)));
+      const hours = Math.floor(duration.asHours());
+      const minutes = duration.minutes();
+      const durationText = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+
       const row = [
-        `"${b.eventTitle}"`, // Corrected: escaped quotes within template literals
-        `"${b.placeId?.name || 'N/A'}"`, // Corrected: escaped quotes within template literals
-        `"${b.userId?.name || 'N/A'}"`, // Corrected: escaped quotes within template literals
-        `"${moment(b.eventStartTime).format('YYYY-MM-DD HH:mm')}"`, // Corrected: escaped quotes within template literals
-        `"${b.status}"` // Corrected: escaped quotes within template literals
+        `"${b.eventTitle}"`,
+        `"${b.placeId?.name || 'N/A'}"`,
+        `"${b.userId?.name || 'N/A'}"`,
+        `"${moment(b.eventStartTime).format('YYYY-MM-DD HH:mm')}"`,
+        `"${moment(b.eventEndTime).format('YYYY-MM-DD HH:mm')}"`,
+        `"${durationText}"`,
+        `"${b.status}"`
       ].join(",");
       csvContent += row + "\n";
     });
@@ -143,7 +246,7 @@ const DownloadReport = ({ filters, sortConfig, disabled }) => {
         <button
           type="button"
           disabled={disabled || isDownloading}
-          className="inline-flex justify-center w-full rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="inline-flex justify-center w-full rounded-md border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-700 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isDownloading ? (
             <><Spinner size="sm" className="mr-2" /> Downloading...</>
@@ -151,17 +254,29 @@ const DownloadReport = ({ filters, sortConfig, disabled }) => {
             <><Download className="mr-2 h-5 w-5" /> Download Report</>
           )}
         </button>
-        <div className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-200 z-10">
+        <div className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white dark:bg-gray-700 ring-1 ring-black ring-opacity-5 dark:ring-gray-600 opacity-0 invisible group-hover:opacity-100 group-hover:visible focus-within:opacity-100 focus-within:visible transition-all duration-200 z-10">
           <div className="py-1" role="menu" aria-orientation="vertical">
-            <a href="#" onClick={() => downloadCSV()} className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">
+            <button 
+              onClick={(e) => { e.preventDefault(); downloadCSV(); }} 
+              className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600" 
+              role="menuitem"
+            >
               <FileJson className="mr-3 h-5 w-5" /> Download as CSV
-            </a>
-            <a href="#" onClick={() => downloadFromServer('pdf')} className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">
+            </button>
+            <button 
+              onClick={(e) => { e.preventDefault(); downloadFromServer('pdf'); }} 
+              className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600" 
+              role="menuitem"
+            >
               <FileType className="mr-3 h-5 w-5" /> Download as PDF
-            </a>
-            <a href="#" onClick={() => downloadFromServer('docx')} className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">
+            </button>
+            <button 
+              onClick={(e) => { e.preventDefault(); downloadFromServer('docx'); }} 
+              className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600" 
+              role="menuitem"
+            >
               <FileText className="mr-3 h-5 w-5" /> Download as DOCX
-            </a>
+            </button>
           </div>
         </div>
       </div>
@@ -175,7 +290,7 @@ const AllBookingsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [sortConfig, setSortConfig] = useState({ key: 'eventStartTime', direction: 'descending' });
-  const [filters, setFilters] = useState({ status: '', placeId: '', date: '' });
+  const [filters, setFilters] = useState({ status: '', placeId: '', dateFrom: '', dateTo: '', search: '' });
 
   useEffect(() => {
     const fetchData = async () => {
@@ -201,14 +316,37 @@ const AllBookingsPage = () => {
   const filteredAndSortedBookings = useMemo(() => {
     let filteredItems = [...bookings];
 
+    // Status filter
     if (filters.status) {
       filteredItems = filteredItems.filter(item => item.status === filters.status);
     }
+
+    // Place filter
     if (filters.placeId) {
       filteredItems = filteredItems.filter(item => item.placeId?._id === filters.placeId);
     }
-    if (filters.date) {
-      filteredItems = filteredItems.filter(item => moment(item.eventStartTime).isSame(filters.date, 'day'));
+
+    // Date range filter
+    if (filters.dateFrom) {
+      filteredItems = filteredItems.filter(item => 
+        moment(item.eventStartTime).isSameOrAfter(filters.dateFrom, 'day')
+      );
+    }
+    if (filters.dateTo) {
+      filteredItems = filteredItems.filter(item => 
+        moment(item.eventStartTime).isSameOrBefore(filters.dateTo, 'day')
+      );
+    }
+
+    // Search filter (event title, user name, or booking ID)
+    if (filters.search) {
+      const searchLower = filters.search.toLowerCase();
+      filteredItems = filteredItems.filter(item => 
+        item.eventTitle?.toLowerCase().includes(searchLower) ||
+        item.userId?.name?.toLowerCase().includes(searchLower) ||
+        item.userId?.email?.toLowerCase().includes(searchLower) ||
+        item._id?.toLowerCase().includes(searchLower)
+      );
     }
 
     if (sortConfig !== null) {
@@ -257,7 +395,10 @@ const AllBookingsPage = () => {
     return (
       <>
         <FilterControls places={places} filters={filters} setFilters={setFilters} />
-        <div className="p-4 flex justify-end">
+        <div className="px-4 py-3 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+          <div className="text-sm text-gray-700 dark:text-gray-300">
+            Showing <span className="font-semibold text-[#003366] dark:text-[#f7b731]">{filteredAndSortedBookings.length}</span> of <span className="font-semibold">{bookings.length}</span> bookings
+          </div>
           <DownloadReport filters={filters} sortConfig={sortConfig} disabled={filteredAndSortedBookings.length === 0} />
         </div>
         {filteredAndSortedBookings.length === 0 ? (
@@ -282,25 +423,40 @@ const AllBookingsPage = () => {
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer" onClick={() => requestSort('eventStartTime')}>
                     Start Time{getSortIndicator('eventStartTime')}
                   </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer" onClick={() => requestSort('eventEndTime')}>
+                    End Time{getSortIndicator('eventEndTime')}
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    Duration
+                  </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer" onClick={() => requestSort('status')}>
                     Status{getSortIndicator('status')}
                   </th>
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-                {filteredAndSortedBookings.map((booking) => (
-                  <tr key={booking._id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{booking.eventTitle}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{booking.placeId?.name || 'N/A'}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{booking.userId?.name || 'N/A'}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{moment(booking.eventStartTime).format('YYYY-MM-DD HH:mm')}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${booking.status === 'approved' ? 'bg-green-100 text-green-800' : booking.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'}`}>
-                        {booking.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
+                {filteredAndSortedBookings.map((booking) => {
+                  const duration = moment.duration(moment(booking.eventEndTime).diff(moment(booking.eventStartTime)));
+                  const hours = Math.floor(duration.asHours());
+                  const minutes = duration.minutes();
+                  const durationText = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+                  
+                  return (
+                    <tr key={booking._id}>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{booking.eventTitle}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{booking.placeId?.name || 'N/A'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{booking.userId?.name || 'N/A'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{moment(booking.eventStartTime).format('MMM DD, HH:mm')}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{moment(booking.eventEndTime).format('MMM DD, HH:mm')}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{durationText}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${booking.status === 'approved' ? 'bg-green-100 text-green-800' : booking.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'}`}>
+                          {booking.status}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

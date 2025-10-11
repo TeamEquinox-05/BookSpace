@@ -230,13 +230,42 @@ export default function PlaceDetailsPage() {
     );
   };
 
-  // Custom Week Event Component (shows time)
+  // Custom Week Event Component (shows start and end time)
   const WeekEventComponent = ({ event }) => {
+    const startTime = moment(event.start).format('h:mm A');
+    const endTime = moment(event.end).format('h:mm A');
+    const isSameDay = moment(event.start).isSame(event.end, 'day');
+    
     return (
-      <div className="h-full flex flex-col justify-between p-1">
-        <div className="font-semibold truncate text-xs">{event.title}</div>
-        <div className="text-xs opacity-90 mt-0.5">
-          {moment(event.start).format('h:mm A')}
+      <div className="h-full flex flex-col justify-between p-1 overflow-hidden">
+        <div className="font-semibold truncate text-[10px] leading-tight mb-0.5">{event.title}</div>
+        <div className="text-[9px] opacity-90 leading-tight space-y-0.5">
+          <div className="font-medium">{startTime}</div>
+          {isSameDay ? (
+            <div>{endTime}</div>
+          ) : (
+            <div className="text-[8px]">
+              {moment(event.end).format('MMM D, h:mm A')}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  // Custom Week/Day Header Component (shows day name + date)
+  const CustomDayHeader = ({ date, label }) => {
+    const dayName = moment(date).format('ddd');
+    const dateNum = moment(date).format('D/M');
+    const isToday = moment(date).isSame(new Date(), 'day');
+    
+    return (
+      <div className="flex flex-col items-center py-2">
+        <div className={`text-xs font-semibold ${isToday ? 'text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'}`}>
+          {dayName}
+        </div>
+        <div className={`text-[10px] mt-0.5 ${isToday ? 'text-blue-500 dark:text-blue-400 font-bold' : 'text-gray-500 dark:text-gray-400'}`}>
+          {dateNum}
         </div>
       </div>
     );
@@ -314,21 +343,50 @@ export default function PlaceDetailsPage() {
 
   if (error) return <div className="text-center text-red-500 dark:text-red-400">Error: {error}</div>;
 
+  // Only show approved bookings on the calendar (public view for all users including admins)
   const events = bookings
     .filter(booking => {
       const start = new Date(booking.eventStartTime);
       const end = new Date(booking.eventEndTime);
-      // Only show confirmed/approved bookings on the calendar
-      const isApproved = booking.status === 'confirmed' || booking.status === 'approved';
+      // Only show approved bookings (not pending or rejected)
+      const isApproved = booking.status === 'approved';
       return !isNaN(start) && !isNaN(end) && isApproved;
     })
-    .map(booking => ({
-      id: booking._id,
-      title: booking.eventTitle || 'Untitled Event',
-      start: new Date(booking.eventStartTime),
-      end: new Date(booking.eventEndTime),
-      status: booking.status || 'pending',
-    }));
+    .map(booking => {
+      // Parse dates with moment to ensure proper time handling
+      const startMoment = moment(booking.eventStartTime);
+      const endMoment = moment(booking.eventEndTime);
+      
+      const startDate = startMoment.toDate();
+      const endDate = endMoment.toDate();
+      
+      // Check if event spans multiple days or has specific time
+      const startHour = startMoment.hour();
+      const startMinute = startMoment.minute();
+      const isAllDay = (startHour === 0 && startMinute === 0 && endMoment.diff(startMoment, 'hours') >= 23);
+      
+      console.log('Event mapping:', {
+        title: booking.eventTitle,
+        start: startDate,
+        end: endDate,
+        startHour: startHour,
+        startMinute: startMinute,
+        isAllDay: isAllDay,
+        startTimeStr: startMoment.format('YYYY-MM-DD HH:mm:ss'),
+        endTimeStr: endMoment.format('YYYY-MM-DD HH:mm:ss'),
+        duration: moment.duration(endMoment.diff(startMoment)).asHours() + ' hours'
+      });
+
+      return {
+        id: booking._id,
+        title: booking.eventTitle || 'Untitled Event',
+        start: startDate,
+        end: endDate,
+        status: booking.status || 'pending',
+        allDay: isAllDay, // Set based on whether it's truly an all-day event
+        resource: booking, // Store full booking data
+      };
+    });
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
@@ -416,41 +474,11 @@ export default function PlaceDetailsPage() {
                     </motion.button>
                   </div>
                 </div>
-
-                {/* Booking Legend */}
-                <motion.div 
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.2 }}
-                  className="mt-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700"
-                >
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                    Booking Status
-                  </h3>
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3">
-                      <div className="flex gap-1">
-                        <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                        <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
-                        <div className="w-3 h-3 bg-teal-500 rounded-full"></div>
-                      </div>
-                      <span className="text-gray-700 dark:text-gray-300">Confirmed (Various Colors)</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="w-4 h-4 bg-yellow-500 rounded-full shadow-sm"></div>
-                      <span className="text-gray-700 dark:text-gray-300">Pending Approval</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="w-4 h-4 bg-red-500 rounded-full shadow-sm"></div>
-                      <span className="text-gray-700 dark:text-gray-300">Cancelled</span>
-                    </div>
-                  </div>
-                  <p className="mt-4 text-xs text-gray-500 dark:text-gray-400">
-                    Each confirmed booking has a unique color for easy identification
+                  <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
+                    Each approved booking has a unique color for easy identification
                   </p>
-                </motion.div>
               </motion.div>
-
+                  
               {/* Calendar Section */}
               <motion.div 
                 initial={{ opacity: 0, x: 20 }}
@@ -483,8 +511,11 @@ export default function PlaceDetailsPage() {
                         className="text-center py-12 bg-gray-50 dark:bg-gray-700 rounded-lg"
                       >
                         <CalendarIcon className="mx-auto text-gray-400 mb-4" size={48} />
-                        <p className="text-gray-600 dark:text-gray-400 mb-4">
-                          No bookings available for this place.
+                        <p className="text-gray-600 dark:text-gray-400 mb-2">
+                          No approved bookings for this venue yet.
+                        </p>
+                        <p className="text-sm text-gray-500 dark:text-gray-500 mb-4">
+                          Only approved bookings are displayed on the calendar.
                         </p>
                         <motion.button
                           whileHover={{ scale: 1.05 }}
@@ -493,7 +524,7 @@ export default function PlaceDetailsPage() {
                           className="inline-flex items-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-2 rounded-lg transition-colors"
                         >
                           <Plus size={18} />
-                          Create First Booking
+                          Create Booking Request
                         </motion.button>
                       </motion.div>
                     ) : (
@@ -516,21 +547,42 @@ export default function PlaceDetailsPage() {
                           onView={handleViewChange}
                           onSelectEvent={handleEventClick}
                           eventPropGetter={eventPropGetter}
+                          step={30}
+                          timeslots={2}
+                          defaultView="month"
+                          views={['month', 'week', 'day', 'agenda']}
                           components={{
                             toolbar: () => null, // Hide default toolbar since we have custom one
                             event: EventComponent, // Custom event for month/day view with tooltip
                             week: {
+                              header: CustomDayHeader, // Custom header with dates
                               event: WeekEventComponent, // Custom event for week view with time
+                            },
+                            day: {
+                              header: CustomDayHeader, // Custom header with dates
+                              event: WeekEventComponent, // Use same component for day view
                             },
                           }}
                           popup
                           popupOffset={{ x: 30, y: 20 }}
                           formats={{
                             dateFormat: 'DD',
+                            // Month view - just show day name
                             dayFormat: (date, culture, localizer) =>
                               localizer.format(date, 'dddd', culture),
-                            weekdayFormat: (date, culture, localizer) =>
-                              localizer.format(date, 'dddd', culture),
+                            // Week view header - show day name + date
+                            dayHeaderFormat: (date, culture, localizer) =>
+                              localizer.format(date, 'ddd MM/DD', culture),
+                            // Week view column header - show day name + date
+                            weekdayFormat: (date, culture, localizer) => {
+                              if (view === 'week') {
+                                return localizer.format(date, 'ddd M/D', culture);
+                              }
+                              return localizer.format(date, 'dddd', culture);
+                            },
+                            // Day view header - show full date
+                            dayRangeHeaderFormat: ({ start, end }, culture, localizer) =>
+                              localizer.format(start, 'MMMM DD', culture) + ' - ' + localizer.format(end, 'MMMM DD, YYYY', culture),
                             eventTimeRangeFormat: ({ start, end }, culture, localizer) =>
                               localizer.format(start, 'h:mm A', culture) + ' - ' + localizer.format(end, 'h:mm A', culture),
                             timeGutterFormat: (date, culture, localizer) =>

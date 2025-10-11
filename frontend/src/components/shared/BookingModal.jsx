@@ -278,9 +278,7 @@ const BookingModal = ({ isOpen, onClose, places, onBookingSubmit, initialBooking
                               onChange={() => handleFacilityChange(facility)} 
                               className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-2 border-gray-300 dark:border-gray-500 rounded-md bg-white dark:bg-gray-600"
                             />
-                            {selectedFacilities.some(f => f.name === facility.name) && (
-                              <CheckCircle className="absolute -top-1 -right-1 w-3 h-3 text-blue-500" />
-                            )}
+                            
                           </div>
                           <span className="text-sm font-medium flex-1">{facility.name}</span>
                         </motion.label>

@@ -69,7 +69,7 @@ const Sidebar = ({ isExpanded, setIsExpanded, onMouseEnter, onMouseLeave }) => {
           {isExpanded && (
             <div className="overflow-hidden min-w-0"> {/* Added min-w-0 for proper text truncation */}
               <h1 className="text-slate-900 dark:text-white font-bold text-lg whitespace-nowrap overflow-hidden text-ellipsis">
-                PCCE VenueHub
+                PCCE BookSpace
               </h1>
               <p className="text-xs text-slate-600 dark:text-slate-400 whitespace-nowrap overflow-hidden text-ellipsis">
                 Venue Booking System
@@ -107,10 +107,9 @@ const Sidebar = ({ isExpanded, setIsExpanded, onMouseEnter, onMouseLeave }) => {
                       isExpanded 
                         ? "gap-3 px-3 py-2.5" 
                         : "justify-center px-2 py-2.5 w-12 h-12 mx-auto",
-                      "hover:bg-yellow-100 dark:hover:bg-yellow-900/20 hover:shadow-md",
                       isActive
                         ? "bg-yellow-500 text-gray-900 shadow-md font-semibold"
-                        : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
+                        : "text-slate-600 dark:text-slate-300 hover:bg-yellow-100 dark:hover:bg-yellow-900/20 hover:shadow-md hover:text-slate-900 dark:hover:text-white"
                     )
                   }
                 >

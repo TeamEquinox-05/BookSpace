@@ -27,6 +27,22 @@
   border-bottom-color: #4b5563;
 }
 
+/* Week view header with dates */
+.rbc-time-header .rbc-header {
+  padding: 12px 8px;
+  font-size: 13px;
+  line-height: 1.4;
+  text-transform: none;
+}
+
+.rbc-time-header .rbc-header span {
+  display: block;
+}
+
+.rbc-time-header .rbc-header .rbc-header-gutter {
+  min-width: 60px;
+}
+
 /* Calendar Grid */
 .rbc-month-view {
   background-color: transparent;
@@ -379,6 +395,28 @@
   gap: 2px;
   font-size: 11px;
   line-height: 1.2;
+  overflow: hidden;
+}
+
+/* Better event height in week view */
+.rbc-day-slot .rbc-event {
+  border-left-width: 3px;
+  min-height: 60px;
+  padding: 6px 8px;
+}
+
+.rbc-day-slot .rbc-event-label {
+  font-size: 10px;
+  font-weight: 600;
+  opacity: 0.9;
+  display: block;
+  margin-bottom: 2px;
+}
+
+.rbc-day-slot .rbc-event-content {
+  font-size: 11px;
+  line-height: 1.3;
+  word-wrap: break-word;
 }
 
 /* Better event spacing in week/day view */
@@ -411,15 +449,4 @@
 
 .dark .rbc-label {
   color: #9ca3af;
-}
-
-/* Week view event container improvements */
-.rbc-day-slot .rbc-event {
-  border-left-width: 3px;
-}
-
-.rbc-day-slot .rbc-event-label {
-  font-size: 10px;
-  font-weight: 600;
-  opacity: 0.9;
 }

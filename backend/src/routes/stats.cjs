@@ -13,8 +13,12 @@ router.get('/', auth, verifyRole('admin'), async (req, res) => {
     // Get total places count
     const totalPlaces = await Place.countDocuments();
     
-    // Get active (approved) bookings count
-    const activeBookings = await Booking.countDocuments({ status: 'approved' });
+    // Get active bookings count - approved bookings that haven't ended yet (current or future)
+    const now = new Date();
+    const activeBookings = await Booking.countDocuments({ 
+      status: 'approved',
+      eventEndTime: { $gte: now } // Event end time is in the future or ongoing
+    });
     
     // Get pending approvals count
     const pendingApprovals = await Booking.countDocuments({ status: 'pending' });

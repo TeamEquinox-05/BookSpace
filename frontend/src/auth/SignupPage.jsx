@@ -220,7 +220,7 @@ const SignupPage = ({ onSignupSuccess }) => {
               className="w-full h-full object-contain"
             />
           </div>
-          <h1 className="text-4xl font-bold mb-3">Join PCCE VenueHub</h1>
+          <h1 className="text-4xl font-bold mb-3">Join PCCE BookSpace</h1>
           <p className="text-center text-blue-100">Start booking venues at Padre Conceição College of Engineering.</p>
         </div>
 

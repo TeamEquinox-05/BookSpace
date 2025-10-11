@@ -149,7 +149,7 @@ const LoginPage = () => {
                 className="w-full h-full object-contain"
               />
             </motion.div>
-            <h1 className="text-4xl font-bold mb-2">PCCE VenueHub</h1>
+            <h1 className="text-4xl font-bold mb-2">PCCE BookSpace</h1>
             <p className="text-blue-100 mb-8 text-lg leading-relaxed">
               Padre Conceição College of Engineering<br />
               Venue Booking & Management System
