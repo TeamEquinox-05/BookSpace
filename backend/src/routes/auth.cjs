@@ -28,6 +28,29 @@ const otpLimiter = rateLimit({
 // In-memory storage for OTPs (for demonstration purposes)
 const otpStore = {};
 
+// OTP expiration time in milliseconds (10 minutes)
+const OTP_EXPIRATION_TIME = 10 * 60 * 1000;
+
+// Cleanup expired OTPs every 5 minutes to prevent memory leak
+const cleanupExpiredOtps = () => {
+  const now = Date.now();
+  let cleanedCount = 0;
+  
+  for (const email in otpStore) {
+    if (now - otpStore[email].timestamp > OTP_EXPIRATION_TIME) {
+      delete otpStore[email];
+      cleanedCount++;
+    }
+  }
+  
+  if (cleanedCount > 0) {
+    console.log(`Cleaned up ${cleanedCount} expired OTPs from memory`);
+  }
+};
+
+// Run cleanup every 5 minutes
+setInterval(cleanupExpiredOtps, 5 * 60 * 1000);
+
 
 
 // @route   POST api/auth/send-otp
@@ -261,7 +284,21 @@ router.post('/login',
 // @route   POST api/auth/forgot-password
 // @desc    Send OTP for password reset
 // @access  Public
-router.post('/forgot-password', async (req, res) => {
+router.post('/forgot-password', 
+  otpLimiter,
+  [
+    body('email').isEmail().normalizeEmail().withMessage('Please provide a valid email')
+  ],
+  async (req, res) => {
+  // Check for validation errors
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ 
+      msg: 'Validation failed', 
+      errors: errors.array() 
+    });
+  }
+
   const { email } = req.body;
   console.log('Forgot password request received for email:', email);
 
@@ -310,7 +347,22 @@ router.post('/forgot-password', async (req, res) => {
 // @route   POST api/auth/verify-otp
 // @desc    Verify OTP for password reset
 // @access  Public
-router.post('/verify-otp', async (req, res) => {
+router.post('/verify-otp', 
+  otpLimiter,
+  [
+    body('email').isEmail().normalizeEmail().withMessage('Please provide a valid email'),
+    body('otp').isLength({ min: 6, max: 6 }).isNumeric().withMessage('OTP must be 6 digits')
+  ],
+  async (req, res) => {
+  // Check for validation errors
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ 
+      msg: 'Validation failed', 
+      errors: errors.array() 
+    });
+  }
+
   const { email, otp } = req.body;
   console.log('Verify OTP request received for email:', email, 'with OTP:', otp);
 
@@ -338,7 +390,20 @@ router.post('/verify-otp', async (req, res) => {
 // @route   POST api/auth/reset-password
 // @desc    Reset user password
 // @access  Public
-router.post('/reset-password', async (req, res) => {
+router.post('/reset-password', [
+  body('email').isEmail().normalizeEmail().withMessage('Please provide a valid email'),
+  body('otp').isLength({ min: 6, max: 6 }).isNumeric().withMessage('OTP must be 6 digits'),
+  body('newPassword').isLength({ min: 6 }).withMessage('Password must be at least 6 characters')
+], async (req, res) => {
+  // Check for validation errors
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ 
+      msg: 'Validation failed', 
+      errors: errors.array() 
+    });
+  }
+
   const { email, otp, newPassword } = req.body;
   console.log('Reset password request received for email:', email);
 

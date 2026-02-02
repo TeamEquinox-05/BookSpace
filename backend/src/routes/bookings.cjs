@@ -64,10 +64,16 @@ router.post('/', [
 
   const { placeId, eventTitle, description, eventStartTime, eventEndTime, requestedFacilities } = req.body;
 
+  // Use a session for atomic operation to prevent race conditions
+  const session = await Booking.startSession();
+  
   try {
+    session.startTransaction();
+    
     const newEventStartTime = new Date(eventStartTime);
     const newEventEndTime = new Date(eventEndTime);
 
+    // Check for overlapping bookings within the transaction
     const overlappingBookings = await Booking.find({
       placeId,
       status: 'approved',
@@ -77,9 +83,11 @@ router.post('/', [
         { eventStartTime: { $lte: newEventStartTime }, eventEndTime: { $gte: newEventEndTime } },
         { eventStartTime: { $gte: newEventStartTime }, eventEndTime: { $lte: newEventEndTime } }
       ]
-    });
+    }).session(session);
 
     if (overlappingBookings.length > 0) {
+      await session.abortTransaction();
+      session.endSession();
       return res.status(400).json({ msg: 'Booking overlaps with an existing approved booking for this place.' });
     }
 
@@ -93,9 +101,15 @@ router.post('/', [
       requestedFacilities,
     });
 
-    const booking = await newBooking.save();
+    const booking = await newBooking.save({ session });
+    
+    await session.commitTransaction();
+    session.endSession();
+    
     res.json(booking);
   } catch (err) {
+    await session.abortTransaction();
+    session.endSession();
     console.error(err.message);
     res.status(500).send('Server Error');
   }
@@ -549,8 +563,55 @@ router.get('/report', auth, verifyRole('admin'), async (req, res) => {
       doc.end();
 
     } else if (format === 'docx') {
-      // ... DOCX generation logic ...
-      const buffer = await Packer.toBuffer(doc);
+      // Create DOCX document
+      const docxDoc = new Document({
+        sections: [{
+          properties: {},
+          children: [
+            new Paragraph({
+              text: 'Bookings Report',
+              heading: 'Heading1',
+            }),
+            new Paragraph({
+              text: `Generated: ${moment().format('MMMM DD, YYYY HH:mm')}`,
+            }),
+            new Paragraph({
+              text: `Total Records: ${bookings.length}`,
+            }),
+            new Paragraph({ text: '' }), // Spacer
+            // Create table with booking data
+            new Table({
+              width: { size: 100, type: WidthType.PERCENTAGE },
+              rows: [
+                // Header row
+                new TableRow({
+                  children: [
+                    new TableCell({ children: [new Paragraph({ text: 'Event' })] }),
+                    new TableCell({ children: [new Paragraph({ text: 'Place' })] }),
+                    new TableCell({ children: [new Paragraph({ text: 'User' })] }),
+                    new TableCell({ children: [new Paragraph({ text: 'Start' })] }),
+                    new TableCell({ children: [new Paragraph({ text: 'End' })] }),
+                    new TableCell({ children: [new Paragraph({ text: 'Status' })] }),
+                  ],
+                }),
+                // Data rows
+                ...bookings.map(booking => new TableRow({
+                  children: [
+                    new TableCell({ children: [new Paragraph({ text: booking.eventTitle || 'N/A' })] }),
+                    new TableCell({ children: [new Paragraph({ text: booking.placeId?.name || 'N/A' })] }),
+                    new TableCell({ children: [new Paragraph({ text: booking.userId?.name || 'N/A' })] }),
+                    new TableCell({ children: [new Paragraph({ text: moment(booking.eventStartTime).format('MMM DD HH:mm') })] }),
+                    new TableCell({ children: [new Paragraph({ text: moment(booking.eventEndTime).format('MMM DD HH:mm') })] }),
+                    new TableCell({ children: [new Paragraph({ text: booking.status || 'N/A' })] }),
+                  ],
+                })),
+              ],
+            }),
+          ],
+        }],
+      });
+
+      const buffer = await Packer.toBuffer(docxDoc);
       res.setHeader('Content-Disposition', 'attachment; filename=bookings-report.docx');
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
       res.send(buffer);

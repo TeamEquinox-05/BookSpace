@@ -85,7 +85,7 @@ const MyBookingsPage = () => {
               {bookings.map(booking => (
                 <div key={booking._id} className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
                   <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{booking.eventTitle}</h3>
-                  <p className="text-gray-600 dark:text-gray-400 mb-4">{booking.placeId.name}</p>
+                  <p className="text-gray-600 dark:text-gray-400 mb-4">{booking.placeId?.name || 'Unknown Venue'}</p>
                   <div className="text-sm text-gray-500 dark:text-gray-300">
                     <p><strong>Status:</strong> {booking.status}</p>
                     <p><strong>From:</strong> {new Date(booking.eventStartTime).toLocaleString()}</p>
@@ -135,7 +135,7 @@ const MyBookingsPage = () => {
           onClose={() => setIsDeleteModalOpen(false)}
           onConfirm={handleDeleteBooking}
           title="Confirm Deletion"
-          message={`Are you sure you want to delete the booking for \"${currentBooking.eventTitle}\" at ${currentBooking.placeId.name}? This action cannot be undone.`}
+          message={`Are you sure you want to delete the booking for "${currentBooking.eventTitle}" at ${currentBooking.placeId?.name || 'Unknown Venue'}? This action cannot be undone.`}
         />
       )}
     </>

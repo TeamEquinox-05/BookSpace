@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Mail, KeyRound, Lock, X } from 'lucide-react';
 import { Spinner } from '../ui';
 import api from '../../utils/api';
+import axios from 'axios';
 
 // Helper component for the step indicator
 const StepIndicator = ({ currentStep }) => {

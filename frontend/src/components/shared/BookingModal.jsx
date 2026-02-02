@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X, Calendar, Clock, MapPin, Users, FileText, Settings, CheckCircle, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../utils/api';
@@ -18,6 +18,11 @@ const BookingModal = ({ isOpen, onClose, places, onBookingSubmit, initialBooking
   const [isAvailable, setIsAvailable] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [availabilityMessage, setAvailabilityMessage] = useState('');
+  
+  // Ref to track if component is mounted (to prevent state updates on unmounted component)
+  const isMountedRef = useRef(true);
+  // Ref to store abort controller for cancelling pending requests
+  const abortControllerRef = useRef(null);
   
   // Determine if this is an edit mode (existing booking with an ID)
   const isEditMode = initialBooking && initialBooking._id;
@@ -80,7 +85,7 @@ const BookingModal = ({ isOpen, onClose, places, onBookingSubmit, initialBooking
     setSelectedFacilities(prev => prev.some(f => f.name === facility.name) ? prev.filter(f => f.name !== facility.name) : [...prev, facility]);
   };
 
-  const checkAvailability = async () => {
+  const checkAvailability = async (signal) => {
     if (!bookingDetails.placeId || !bookingDetails.eventStartTime || !bookingDetails.eventEndTime) {
       setIsAvailable(true);
       setAvailabilityMessage('');
@@ -102,21 +107,58 @@ const BookingModal = ({ isOpen, onClose, places, onBookingSubmit, initialBooking
         placeId: bookingDetails.placeId,
         eventStartTime: startDate.toISOString(),
         eventEndTime: endDate.toISOString(),
-      });
-      setIsAvailable(res.data.available);
-      setAvailabilityMessage(res.data.msg);
+      }, { signal });
+      
+      // Only update state if component is still mounted
+      if (isMountedRef.current) {
+        setIsAvailable(res.data.available);
+        setAvailabilityMessage(res.data.msg);
+      }
     } catch (err) {
+      // Ignore abort errors (expected when component unmounts or request is cancelled)
+      if (err.name === 'AbortError' || err.name === 'CanceledError') {
+        return;
+      }
       console.error('Error checking availability:', err);
-      setIsAvailable(false);
-      setAvailabilityMessage('Error checking availability.');
+      if (isMountedRef.current) {
+        setIsAvailable(false);
+        setAvailabilityMessage('Error checking availability.');
+      }
     }
   };
 
   useEffect(() => {
+    // Set mounted ref
+    isMountedRef.current = true;
+    
+    // Cleanup function to abort pending requests and mark component as unmounted
+    return () => {
+      isMountedRef.current = false;
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    // Cancel any pending request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    
+    // Create new abort controller for this request
+    abortControllerRef.current = new AbortController();
+    
     const timeoutId = setTimeout(() => {
-      checkAvailability();
+      checkAvailability(abortControllerRef.current.signal);
     }, 500); // Debounce for 500ms
-    return () => clearTimeout(timeoutId);
+    
+    return () => {
+      clearTimeout(timeoutId);
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
   }, [bookingDetails.placeId, bookingDetails.eventStartTime, bookingDetails.eventEndTime]);
 
   const handleSubmit = async (e) => {

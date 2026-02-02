@@ -26,7 +26,8 @@ const allowedOrigins = [
   'https://book-space-3xmh.vercel.app',
   'https://book-space.vercel.app',
   'http://localhost:3000',
-  'http://localhost:5173'  // Add Vite default development port
+  'http://localhost:5173',  // Add Vite default development port
+  'http://127.0.0.1:5173'   // Also allow 127.0.0.1 (same as localhost)
 ];
 
 // Simplify the CORS configuration - use a single approach

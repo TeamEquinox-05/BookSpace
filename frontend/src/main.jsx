@@ -16,20 +16,25 @@ const initializeAxios = async () => {
   axios.defaults.timeout = 60000; // 60 second timeout to match AuthContext config
 };
 
-// Initialize axios configuration
-initializeAxios();
+// Initialize axios configuration and then render the app
+const startApp = async () => {
+  // Wait for axios to be configured before rendering
+  await initializeAxios();
+  
+  createRoot(document.getElementById('root')).render(
+    <StrictMode>
+      <BrowserRouter>
+        <ThemeProvider>
+          <AuthProvider>
+            <App />
+          </AuthProvider>
+        </ThemeProvider>
+      </BrowserRouter>
+    </StrictMode>,
+  );
+};
 
-createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    <BrowserRouter>
-      <ThemeProvider>
-        <AuthProvider>
-          <App />
-        </AuthProvider>
-      </ThemeProvider>
-    </BrowserRouter>
-  </StrictMode>,
-);
+startApp();
 
 // If you want to start measuring performance in your app, pass a function
 // to log results (for example: reportWebVitals(console.log))

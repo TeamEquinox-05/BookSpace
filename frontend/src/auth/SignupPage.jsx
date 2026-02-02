@@ -107,21 +107,9 @@ const SignupPage = ({ onSignupSuccess }) => {
       console.log(`OTP sent successfully, response:`, otpResponse.data);
       setOtpSent(true);
       
-      // Set timer for resend
+      // Set timer for resend - the useEffect will handle the countdown
       setOtpTimer(60);
       setIsResendDisabled(true);
-      
-      // Start countdown timer
-      const interval = setInterval(() => {
-        setOtpTimer(prevTimer => {
-          if (prevTimer <= 1) {
-            clearInterval(interval);
-            setIsResendDisabled(false);
-            return 0;
-          }
-          return prevTimer - 1;
-        });
-      }, 1000);
       
     } catch (err) {
       console.error(`Error sending OTP:`, err);

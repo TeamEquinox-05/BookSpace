@@ -142,6 +142,11 @@ router.delete('/:id', auth, async (req, res) => {
   try {
     const user = await User.findByIdAndUpdate(req.params.id, { isDeleted: true }, { new: true });
     
+    // Check if user exists before trying to send email
+    if (!user) {
+      return res.status(404).json({ msg: 'User not found' });
+    }
+    
     // Send removal email (don't block response on email)
     sendEmail(user.email, 'Account Removed', 'Your account has been removed from the platform.')
       .then(result => {
