@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../utils/api';
+import logger from '../utils/logger';
 import { useParams, useNavigate } from 'react-router-dom';
 import { PageHeader, BookingModal } from '../components/shared';
 import { Spinner } from '../components/ui';
@@ -49,7 +50,7 @@ export default function PlaceDetailsPage() {
         setBookings(bookingsRes.data);
       } catch (err) {
         setError(err.message);
-        console.error('Error fetching place details:', err);
+        logger.error('Error fetching place details:', err);
       } finally {
         setLoading(false);
         setBookingsLoading(false);
@@ -63,11 +64,11 @@ export default function PlaceDetailsPage() {
     try {
       setBookingsLoading(true);
       const bookingsRes = await api.get(`/places/${id}/bookings`);
-      console.log('Fetched bookings:', bookingsRes.data);
-      console.log('First booking user data:', bookingsRes.data[0]?.userId);
+      logger.debug('Fetched bookings:', bookingsRes.data);
+      logger.debug('First booking user data:', bookingsRes.data[0]?.userId);
       setBookings(bookingsRes.data);
     } catch (err) {
-      console.error('Error fetching bookings:', err);
+      logger.error('Error fetching bookings:', err);
     } finally {
       setBookingsLoading(false);
     }
@@ -80,23 +81,23 @@ export default function PlaceDetailsPage() {
       await fetchBookings();
       setBookingModalOpen(false);
     } catch (error) {
-      console.error('Booking failed:', error);
+      logger.error('Booking failed:', error);
       // Re-throw to be caught by the modal
       throw error;
     }
   };
 
-  const handleNavigate = (newDate, view, action) => {
+  const handleNavigate = (newDate, currentView, _action) => {
     let targetDate = newDate;
     
     // Handle string actions from toolbar
     if (typeof newDate === 'string') {
       switch (newDate) {
         case 'PREV':
-          targetDate = moment(date).subtract(1, view === 'day' ? 'day' : view === 'week' ? 'week' : 'month').toDate();
+          targetDate = moment(date).subtract(1, currentView === 'day' ? 'day' : currentView === 'week' ? 'week' : 'month').toDate();
           break;
         case 'NEXT':
-          targetDate = moment(date).add(1, view === 'day' ? 'day' : view === 'week' ? 'week' : 'month').toDate();
+          targetDate = moment(date).add(1, currentView === 'day' ? 'day' : currentView === 'week' ? 'week' : 'month').toDate();
           break;
         case 'TODAY':
           targetDate = new Date();
@@ -118,9 +119,9 @@ export default function PlaceDetailsPage() {
   const handleEventClick = (event) => {
     // Find the full booking details from the bookings array
     const fullBooking = bookings.find(b => b._id === event.id);
-    console.log('Clicked event:', event);
-    console.log('Full booking details:', fullBooking);
-    console.log('User data in booking:', fullBooking?.userId);
+    logger.debug('Clicked event:', event);
+    logger.debug('Full booking details:', fullBooking);
+    logger.debug('User data in booking:', fullBooking?.userId);
     if (fullBooking) {
       setSelectedEvent(fullBooking);
       setIsEventDetailsOpen(true);
@@ -254,10 +255,10 @@ export default function PlaceDetailsPage() {
   };
 
   // Custom Week/Day Header Component (shows day name + date)
-  const CustomDayHeader = ({ date, label }) => {
-    const dayName = moment(date).format('ddd');
-    const dateNum = moment(date).format('D/M');
-    const isToday = moment(date).isSame(new Date(), 'day');
+  const CustomDayHeader = ({ date: headerDate, label: _label }) => {
+    const dayName = moment(headerDate).format('ddd');
+    const dateNum = moment(headerDate).format('D/M');
+    const isToday = moment(headerDate).isSame(new Date(), 'day');
     
     return (
       <div className="flex flex-col items-center py-2">
@@ -322,7 +323,7 @@ export default function PlaceDetailsPage() {
             { key: 'month', label: 'Month', icon: CalendarIcon },
             { key: 'week', label: 'Week', icon: Clock },
             { key: 'day', label: 'Day', icon: Users }
-          ].map(({ key, label, icon: Icon }) => (
+          ].map(({ key, label: btnLabel, icon: BtnIcon }) => (
             <button
               key={key}
               onClick={() => onView(key)}
@@ -332,8 +333,8 @@ export default function PlaceDetailsPage() {
                   : 'text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
               }`}
             >
-              <Icon size={16} />
-              <span className="hidden xs:inline sm:inline">{label}</span>
+              <BtnIcon size={16} />
+              <span className="hidden xs:inline sm:inline">{btnLabel}</span>
             </button>
           ))}
         </div>
@@ -365,7 +366,7 @@ export default function PlaceDetailsPage() {
       const startMinute = startMoment.minute();
       const isAllDay = (startHour === 0 && startMinute === 0 && endMoment.diff(startMoment, 'hours') >= 23);
       
-      console.log('Event mapping:', {
+      logger.debug('Event mapping:', {
         title: booking.eventTitle,
         start: startDate,
         end: endDate,
@@ -650,8 +651,6 @@ export default function PlaceDetailsPage() {
                         : 'bg-red-500 text-white'
                     }`}>
                       {selectedEvent.status?.toUpperCase()}
-                      {console.log('Rendering modal with selectedEvent:', selectedEvent)}
-                      {console.log('selectedEvent.userId:', selectedEvent.userId)}
                     </span>
                   </div>
                 </div>

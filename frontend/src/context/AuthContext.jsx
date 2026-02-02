@@ -1,6 +1,7 @@
 import { createContext, useState, useEffect, useRef } from 'react';
 import { useContext } from 'react';
 import axios from 'axios';
+import logger from '../utils/logger';
 
 // Define base URL for API - use environment variable with fallback
 // In Vite, environment variables are accessed via import.meta.env
@@ -29,22 +30,25 @@ export const AuthProvider = ({ children }) => {
   
   // Ref to track login verification timeout for cleanup
   const loginVerifyTimeoutRef = useRef(null);
+  
+  // Ref to track if a refresh is already in progress to prevent duplicate calls
+  const isRefreshingRef = useRef(false);
 
   // Setup axios and API configuration
   useEffect(() => {
-    console.log('Setting up API and authentication configuration');
+    logger.auth('Setting up API and authentication configuration');
     
     // Get authentication token from storage
     const token = localStorage.getItem('token');
-    console.log('Token in localStorage:', token ? `Found (length: ${token.length})` : 'Not found');
+    logger.auth('Token in localStorage:', token ? `Found (length: ${token.length})` : 'Not found');
     
     if (token) {
-      console.log('Found token in localStorage, configuring auth headers');
+      logger.auth('Found token in localStorage, configuring auth headers');
       
       try {
         // Validate token format (simple check - doesn't validate with server)
         if (token.length < 10) {
-          console.warn('Token appears invalid (too short), clearing it');
+          logger.warn('Token appears invalid (too short), clearing it');
           localStorage.removeItem('token');
           return;
         }
@@ -54,14 +58,14 @@ export const AuthProvider = ({ children }) => {
         // Add token to the api instance
         api.defaults.headers.common['Authorization'] = authHeader;
         
-        console.log('Initial setup: Auth headers configured');
+        logger.auth('Initial setup: Auth headers configured');
         
       } catch (error) {
-        console.error('Error setting up authentication:', error);
+        logger.error('Error setting up authentication:', error);
         localStorage.removeItem('token');
       }
     } else {
-      console.log('No token found in localStorage on initial setup');
+      logger.auth('No token found in localStorage on initial setup');
       // Clear any existing auth headers just to be safe
       delete api.defaults.headers.common['Authorization'];
     }
@@ -70,7 +74,7 @@ export const AuthProvider = ({ children }) => {
     const requestInterceptor = api.interceptors.request.use(
       config => {
         // Log outgoing requests for debugging
-        console.log(`Making ${config.method.toUpperCase()} request to: ${config.url}`);
+        logger.api(`Making ${config.method.toUpperCase()} request to: ${config.url}`);
         
         // For non-authentication endpoints, ensure we have the latest token
         if (config.url?.includes('/auth/') === false) {
@@ -83,7 +87,7 @@ export const AuthProvider = ({ children }) => {
         return config;
       },
       error => {
-        console.error('Request error:', error.message);
+        logger.error('Request error:', error.message);
         return Promise.reject(error);
       }
     );
@@ -91,15 +95,15 @@ export const AuthProvider = ({ children }) => {
     // Add response interceptor to handle errors
     const responseInterceptor = api.interceptors.response.use(
       response => {
-        console.log('API response successful:', response.config.url);
+        logger.api('API response successful:', response.config.url);
         return response;
       },
       error => {
-        console.error(`API Error (${error.config?.url || 'unknown endpoint'}):`, error.message);
+        logger.error(`API Error (${error.config?.url || 'unknown endpoint'}):`, error.message);
         
         // Handle authentication errors specially
         if (error.response?.status === 401) {
-          console.log('Authentication error detected, clearing auth data');
+          logger.auth('Authentication error detected, clearing auth data');
           
           // Don't clear token for login attempts
           if (!error.config.url.includes('/auth/login')) {
@@ -120,14 +124,22 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const refreshUser = async () => {
-    console.log('Starting user data refresh...');
+    // Prevent duplicate refresh calls
+    if (isRefreshingRef.current) {
+      logger.auth('Refresh already in progress, skipping duplicate call');
+      return false;
+    }
+    
+    logger.auth('Starting user data refresh...');
+    isRefreshingRef.current = true;
     
     // Check for stored token first - if no token, don't even try to refresh
     const storedToken = localStorage.getItem('token');
     if (!storedToken) {
-      console.log('No authentication token found, skipping refresh');
+      logger.auth('No authentication token found, skipping refresh');
       setLoading(false);
       setUser(null);
+      isRefreshingRef.current = false;
       return false;
     }
     
@@ -138,9 +150,9 @@ export const AuthProvider = ({ children }) => {
     if (storedUser) {
       try {
         cachedUser = JSON.parse(storedUser);
-        console.log('Found cached user data:', cachedUser.name);
-      } catch (e) {
-        console.error('Failed to parse stored user data');
+        logger.auth('Found cached user data:', cachedUser.name);
+      } catch (_e) {
+        logger.error('Failed to parse stored user data');
         localStorage.removeItem('userData');
       }
     }
@@ -156,13 +168,13 @@ export const AuthProvider = ({ children }) => {
       });
       
       // Race between the fetch request and the timeout
-      console.log('Fetching user data with token...');
+      logger.auth('Fetching user data with token...');
       const res = await Promise.race([
         api.get('/users/me'),
         timeoutPromise
       ]);
       
-      console.log('User data received successfully');
+      logger.auth('User data received successfully');
       setUser(res.data);
       
       // Cache the user data for offline access
@@ -170,25 +182,25 @@ export const AuthProvider = ({ children }) => {
       
       return true; // Success
     } catch (error) {
-      console.error('Error refreshing user:', error);
+      logger.error('Error refreshing user:', error);
       
       // Special handling based on error type
       if (error.code === 'ECONNABORTED' || error.message === 'Backend connection timed out') {
-        console.warn('Connection timeout. Server may be down or network issues.');
+        logger.warn('Connection timeout. Server may be down or network issues.');
         
         // If we have cached user data, use it in offline mode for timeouts
         if (cachedUser) {
-          console.log('Using cached user data due to timeout');
+          logger.auth('Using cached user data due to timeout');
           setUser(cachedUser);
           return true; // Continue with cached data
         }
       } else if (error.response) {
         // The request was made and the server responded with a status code
-        console.log('Server responded with status:', error.response.status);
+        logger.auth('Server responded with status:', error.response.status);
         
         if (error.response.status === 401 || error.response.status === 403) {
           // Unauthorized/Forbidden - clear any stored token as it's invalid
-          console.log('Authentication error detected, clearing auth data');
+          logger.auth('Authentication error detected, clearing auth data');
           localStorage.removeItem('token');
           localStorage.removeItem('userData');
           setUser(null);
@@ -198,11 +210,11 @@ export const AuthProvider = ({ children }) => {
         }
       } else if (error.request) {
         // The request was made but no response was received
-        console.warn('No response received from server');
+        logger.warn('No response received from server');
         
         // For network errors, we can use cached data
         if (cachedUser) {
-          console.log('Using cached user data due to network error');
+          logger.auth('Using cached user data due to network error');
           setUser(cachedUser);
           return true; // Continue with cached data
         }
@@ -210,7 +222,7 @@ export const AuthProvider = ({ children }) => {
       
       // If we have cached user data as a fallback for other errors
       if (cachedUser) {
-        console.log('Using cached user data as fallback');
+        logger.auth('Using cached user data as fallback');
         setUser(cachedUser);
         return true; // Continue with cached data
       }
@@ -219,6 +231,7 @@ export const AuthProvider = ({ children }) => {
       return false; // Failed to authenticate
     } finally {
       setLoading(false);
+      isRefreshingRef.current = false;
     }
   };
 
@@ -230,9 +243,9 @@ export const AuthProvider = ({ children }) => {
       try {
         const cachedUser = JSON.parse(storedUser);
         setUser(cachedUser);
-        console.log('Temporarily using cached user data while refreshing');
-      } catch (e) {
-        console.error('Failed to parse stored user data');
+        logger.auth('Temporarily using cached user data while refreshing');
+      } catch (_e) {
+        logger.error('Failed to parse stored user data');
       }
     }
     
@@ -241,7 +254,7 @@ export const AuthProvider = ({ children }) => {
       const success = await refreshUser();
       
       if (!success) {
-        console.log('Using offline mode. Some features may be limited.');
+        logger.info('Using offline mode. Some features may be limited.');
         // We're already showing the cached user if available, so no additional action needed
       }
     };
@@ -251,25 +264,25 @@ export const AuthProvider = ({ children }) => {
 
   // Login function with improved token handling and offline support
   const login = (userData, token) => {
-    console.log('Login: Setting user data and token');
+    logger.auth('Login: Setting user data and token');
     
     if (!userData || !token) {
-      console.error('Login failed: Missing user data or token');
+      logger.error('Login failed: Missing user data or token');
       return;
     }
     
-    console.log(`Login: Token received (length: ${token.length})`);
+    logger.auth(`Login: Token received (length: ${token.length})`);
     
     try {
       // Store the user in state
       setUser(userData);
       
       // Always cache the user data for offline access
-      console.log('Login: Storing user data in localStorage');
+      logger.auth('Login: Storing user data in localStorage');
       localStorage.setItem('userData', JSON.stringify(userData));
       
       // Store token in localStorage
-      console.log('Login: Storing auth token in localStorage');
+      logger.auth('Login: Storing auth token in localStorage');
       localStorage.setItem('token', token);
       
       // Set the token for the api instance
@@ -277,8 +290,8 @@ export const AuthProvider = ({ children }) => {
       api.defaults.headers.common['Authorization'] = authHeader;
       
       // Verify the headers are set correctly
-      console.log('Login: Auth headers set for API instance');
-      console.log('Login: Authorization header:', api.defaults.headers.common['Authorization'] ? 'Set' : 'Not set');
+      logger.auth('Login: Auth headers set for API instance');
+      logger.auth('Login: Authorization header:', api.defaults.headers.common['Authorization'] ? 'Set' : 'Not set');
       
       // Clear any previous verification timeout
       if (loginVerifyTimeoutRef.current) {
@@ -289,20 +302,20 @@ export const AuthProvider = ({ children }) => {
       loginVerifyTimeoutRef.current = setTimeout(async () => {
         try {
           await api.get('/users/me', { timeout: 5000 });
-          console.log('Login: Authentication verified successfully');
+          logger.auth('Login: Authentication verified successfully');
         } catch (err) {
-          console.warn('Login: Auth verification failed, but proceeding anyway:', err.message);
+          logger.warn('Login: Auth verification failed, but proceeding anyway:', err.message);
         }
       }, 500);
       
     } catch (error) {
-      console.error('Login: Error during login process:', error);
+      logger.error('Login: Error during login process:', error);
     }
   };
 
   // Enhanced logout function
   const logout = async () => {
-    console.log('Logout: Starting...');
+    logger.auth('Logout: Starting...');
     
     // Clear any pending login verification timeout
     if (loginVerifyTimeoutRef.current) {
@@ -313,13 +326,13 @@ export const AuthProvider = ({ children }) => {
     try {
       // Call backend logout endpoint using the api instance
       await api.post('/auth/logout');
-      console.log('Logout: Successfully called backend logout endpoint');
+      logger.auth('Logout: Successfully called backend logout endpoint');
     } catch (err) {
-      console.error('Logout: Backend logout failed:', err.message);
+      logger.error('Logout: Backend logout failed:', err.message);
       // Continue with frontend cleanup even if backend call fails
     } finally {
       // Clean up all authentication data
-      console.log('Logout: Cleaning up frontend auth state');
+      logger.auth('Logout: Cleaning up frontend auth state');
       
       // Clear user state
       setUser(null);
@@ -335,7 +348,7 @@ export const AuthProvider = ({ children }) => {
       // Add a small delay to ensure state updates are processed
       await new Promise(resolve => setTimeout(resolve, 100));
       
-      console.log('Logout: Completed');
+      logger.auth('Logout: Completed');
     }
   };
 

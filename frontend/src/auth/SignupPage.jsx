@@ -3,9 +3,10 @@ import { useNavigate, Link } from 'react-router-dom';
 import { User, Mail, Lock, Phone, Briefcase, Eye, EyeOff } from 'lucide-react';
 import api from '../utils/api';
 import { Spinner } from '../components/ui';
+import logger from '../utils/logger';
 
-const SignupPage = ({ onSignupSuccess }) => {
-  const navigate = useNavigate();
+const SignupPage = ({ onSignupSuccess: _onSignupSuccess }) => {
+  const _navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -87,7 +88,7 @@ const SignupPage = ({ onSignupSuccess }) => {
     // Validate phone if provided
     if (phone && phone.trim()) {
       const phoneRegex = /^[0-9]{10,}$/;
-      if (!phoneRegex.test(phone.trim().replace(/[\s\-\(\)]/g, ''))) {
+      if (!phoneRegex.test(phone.trim().replace(/[\s\-()]/g, ''))) {
         setError('Please enter a valid phone number (at least 10 digits)');
         return;
       }
@@ -97,14 +98,14 @@ const SignupPage = ({ onSignupSuccess }) => {
     setError('');
     
     const trimmedEmail = email.trim();
-    console.log(`Sending OTP to email: ${trimmedEmail}`);
+    logger.auth(`Sending OTP to email: ${trimmedEmail}`);
     
     try {
       // Use the smart API utility that automatically detects local vs remote backend
       const otpResponse = await api.post('/auth/send-otp', { email: trimmedEmail });
-      console.log('OTP sent successfully via smart API detection');
+      logger.debug('OTP sent successfully via smart API detection');
       
-      console.log(`OTP sent successfully, response:`, otpResponse.data);
+      logger.debug(`OTP sent successfully, response:`, otpResponse.data);
       setOtpSent(true);
       
       // Set timer for resend - the useEffect will handle the countdown
@@ -112,7 +113,7 @@ const SignupPage = ({ onSignupSuccess }) => {
       setIsResendDisabled(true);
       
     } catch (err) {
-      console.error(`Error sending OTP:`, err);
+      logger.error(`Error sending OTP:`, err);
       
       // More detailed error logging
       const debugInfo = {
@@ -121,7 +122,7 @@ const SignupPage = ({ onSignupSuccess }) => {
         data: err.response?.data,
         message: err.message
       };
-      console.log('Detailed error info:', debugInfo);
+      logger.debug('Detailed error info:', debugInfo);
       
       // Provide specific guidance based on the error type
       if (err.code === 'ECONNABORTED' || err.message.includes('timeout')) {
@@ -158,12 +159,12 @@ const SignupPage = ({ onSignupSuccess }) => {
     try {
       // Use the smart API utility that automatically detects local vs remote backend
       const signupResponse = await api.post('/auth/signup', formData);
-      console.log('Signup successful via smart API detection');
+      logger.debug('Signup successful via smart API detection');
       
-      console.log('Signup successful, response:', signupResponse.data);
+      logger.debug('Signup successful, response:', signupResponse.data);
       setSignupSuccess(true);
     } catch (err) {
-      console.error('Error during signup:', err);
+      logger.error('Error during signup:', err);
       
       // More detailed error logging
       const debugInfo = {
@@ -172,11 +173,11 @@ const SignupPage = ({ onSignupSuccess }) => {
         data: err.response?.data,
         message: err.message
       };
-      console.log('Detailed error info:', debugInfo);
+      logger.debug('Detailed error info:', debugInfo);
       
       // Log specific validation errors if present
       if (err.response?.data?.errors && Array.isArray(err.response.data.errors)) {
-        console.log('Validation errors:', err.response.data.errors);
+        logger.debug('Validation errors:', err.response.data.errors);
         // Show the first validation error to the user
         const firstError = err.response.data.errors[0];
         setError(firstError.msg || extractErrorMessage(err));

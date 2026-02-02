@@ -4,6 +4,7 @@ const Booking = require('../models/Booking.cjs');
 const Place = require('../models/Place.cjs');
 const auth = require('../middleware/auth.cjs');
 const verifyRole = require('../middleware/verifyRole.cjs');
+const logger = require('../utils/logger.cjs');
 
 // @route   GET api/stats
 // @desc    Get admin dashboard stats
@@ -53,8 +54,8 @@ router.get('/', auth, verifyRole('admin'), async (req, res) => {
       rejectedBookings: { value: rejectedBookings },
     });
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server Error');
+    logger.error(err.message);
+    res.status(500).json({ msg: 'Server Error' });
   }
 });
 
@@ -98,8 +99,8 @@ router.get('/bookings-by-month', auth, verifyRole('admin'), async (req, res) => 
 
     res.json(chartData);
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server Error');
+    logger.error(err.message);
+    res.status(500).json({ msg: 'Server Error' });
   }
 });
 

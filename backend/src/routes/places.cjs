@@ -6,6 +6,7 @@ const Place = require('../models/Place.cjs');
 const Booking = require('../models/Booking.cjs');
 const auth = require('../middleware/auth.cjs');
 const verifyRole = require('../middleware/verifyRole.cjs');
+const logger = require('../utils/logger.cjs');
 
 // Middleware to validate MongoDB ObjectId
 const validateObjectId = (req, res, next) => {
@@ -40,8 +41,8 @@ router.post('/',
       const place = await newPlace.save();
       res.json(place);
     } catch (err) {
-      console.error(err.message);
-      res.status(500).send('Server Error');
+      logger.error(err.message);
+      res.status(500).json({ msg: 'Server Error' });
     }
   });
 
@@ -74,7 +75,7 @@ router.put('/:id',
       place = await Place.findByIdAndUpdate(req.params.id, { $set: req.body }, { new: true });
     res.json(place);
   } catch (err) {
-    console.error(err.message);
+    logger.error(err.message);
     res.status(500).send('Server Error');
   }
 });
@@ -108,7 +109,7 @@ router.delete('/:id', auth, verifyRole('admin'), validateObjectId, async (req, r
     await Place.findByIdAndDelete(req.params.id);
     res.json({ msg: 'Place removed' });
   } catch (err) {
-    console.error(err.message);
+    logger.error(err.message);
     res.status(500).send('Server Error');
   }
 });
@@ -144,7 +145,7 @@ router.get('/popular', async (req, res) => {
     ]);
     res.json(popularPlaces);
   } catch (err) {
-    console.error(err.message);
+    logger.error(err.message);
     res.status(500).send('Server Error');
   }
 });
@@ -160,7 +161,7 @@ router.get('/:id', validateObjectId, async (req, res) => {
     }
     res.json(place);
   } catch (err) {
-    console.error(err.message);
+    logger.error(err.message);
     res.status(500).send('Server Error');
   }
 });
@@ -173,7 +174,7 @@ router.get('/', async (req, res) => {
     const places = await Place.find();
     res.json(places);
   } catch (err) {
-    console.error(err.message);
+    logger.error(err.message);
     res.status(500).send('Server Error');
   }
 });
@@ -188,7 +189,7 @@ router.get('/:id/bookings', auth, validateObjectId, async (req, res) => {
       .populate('placeId', ['name', 'location', 'capacity']);
     res.json(bookings);
   } catch (err) {
-    console.error(err.message);
+    logger.error(err.message);
     res.status(500).send('Server Error');
   }
 });

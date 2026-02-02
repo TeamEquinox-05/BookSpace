@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
+import React, { createContext, useState, useEffect, useContext, useRef } from 'react';
 
 const ThemeContext = createContext();
 
@@ -12,8 +12,8 @@ export const ThemeProvider = ({ children }) => {
   // Actual dark mode state based on theme mode and system preference
   const [darkMode, setDarkMode] = useState(false);
 
-  // Track if initial load is complete
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  // Track if initial load is complete using a ref to avoid dependency issues
+  const isInitialLoadRef = useRef(true);
 
   // Function to get system preference
   const getSystemPreference = () => {
@@ -36,7 +36,7 @@ export const ThemeProvider = ({ children }) => {
       setDarkMode(shouldBeDark);
 
       // Disable transitions during initial load
-      if (isInitialLoad) {
+      if (isInitialLoadRef.current) {
         document.documentElement.classList.add('no-transition');
       }
 
@@ -47,10 +47,10 @@ export const ThemeProvider = ({ children }) => {
       }
 
       // Re-enable transitions after initial load
-      if (isInitialLoad) {
+      if (isInitialLoadRef.current) {
         setTimeout(() => {
           document.documentElement.classList.remove('no-transition');
-          setIsInitialLoad(false);
+          isInitialLoadRef.current = false;
         }, 100);
       }
     };

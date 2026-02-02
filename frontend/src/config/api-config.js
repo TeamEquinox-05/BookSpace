@@ -1,6 +1,8 @@
 // API Configuration
 // This file contains the centralized API URL configuration used across the application
 
+import logger from '../utils/logger';
+
 /**
  * Get the API base URL
  * In production: use Render backend
@@ -19,11 +21,11 @@ export const getApiUrl = async () => {
     });
     
     if (response.ok) {
-      console.log('✅ Using local backend at http://localhost:10000/api');
+      logger.api('Using local backend at http://localhost:10000/api');
       return 'http://localhost:10000/api';
     }
   } catch {
-    console.log('⚠️ Local backend not available, falling back to Render backend');
+    logger.warn('Local backend not available, falling back to Render backend');
   }
   
   return 'https://bookspace-be.onrender.com/api';

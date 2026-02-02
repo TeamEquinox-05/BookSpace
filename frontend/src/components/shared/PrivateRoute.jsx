@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { Spinner } from '../ui';
+import logger from '../../utils/logger';
 
 const PrivateRoute = ({ adminOnly }) => {
   const { user, loading, refreshUser } = useAuth();
@@ -12,7 +13,10 @@ const PrivateRoute = ({ adminOnly }) => {
     // Only attempt refresh once per mount if not loading and no user
     if (!loading && !user && !hasAttemptedRefresh.current) {
       hasAttemptedRefresh.current = true;
-      refreshUser();
+      // Add error handling for refreshUser call
+      refreshUser().catch((err) => {
+        logger.error('PrivateRoute: Error refreshing user:', err);
+      });
     }
   }, [loading, user, refreshUser]);
 
@@ -27,20 +31,20 @@ const PrivateRoute = ({ adminOnly }) => {
 
   // 1. Check if user is logged in at all. If not, redirect to login with replace=true
   if (!user) {
-    console.log('PrivateRoute: No authenticated user, redirecting to login');
+    logger.debug('PrivateRoute: No authenticated user, redirecting to login');
     return <Navigate to="/login" replace={true} />;
   }
 
   // 2. Check if the route is for admins and if the user has the correct role.
   if (adminOnly && user.role !== 'admin') {
-    console.log('PrivateRoute: User is not admin, redirecting to dashboard');
+    logger.debug('PrivateRoute: User is not admin, redirecting to dashboard');
     // If a non-admin tries to access an admin route, send them to their own dashboard.
     return <Navigate to="/dashboard" replace={true} />;
   }
 
   // 3. Prevent admins from accessing non-admin specific routes (like user dashboard)
   if (!adminOnly && user.role === 'admin') {
-    console.log('PrivateRoute: Admin accessing user route, redirecting to admin dashboard');
+    logger.debug('PrivateRoute: Admin accessing user route, redirecting to admin dashboard');
     return <Navigate to="/admin" replace={true} />;
   }
 

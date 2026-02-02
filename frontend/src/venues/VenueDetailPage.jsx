@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../utils/api';
+import logger from '../utils/logger';
 import { useParams } from 'react-router-dom';
 import { PageHeader } from '../components/shared';
 import DetailViewSkeleton from '../components/ui/DetailViewSkeleton';
@@ -16,7 +17,7 @@ export default function VenueDetailPage({ role = 'user' }) {
         setVenue(res.data);
       } catch (err) {
         setError(err.message);
-        console.error("Error fetching venue details:", err);
+        logger.error('Error fetching venue details:', err);
       } finally {
         setLoading(false);
       }

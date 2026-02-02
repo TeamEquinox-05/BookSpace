@@ -3,6 +3,7 @@ import api from '../utils/api';
 import { PageHeader } from '../components/shared';
 import { Check, X, Calendar, Clock, User, MapPin, Package, Mail } from 'lucide-react';
 import { Spinner, useToast } from '../components/ui';
+import logger from '../utils/logger';
 export default function BookingRequestsPage() {
   const [pendingBookings, setPendingBookings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -31,7 +32,7 @@ export default function BookingRequestsPage() {
       } catch (err) {
         if (isMounted) {
           setError(err.message);
-          console.error("Error fetching pending bookings:", err);
+          logger.error('Error fetching pending bookings:', err);
         }
       } finally {
         if (isMounted) {
@@ -54,7 +55,7 @@ export default function BookingRequestsPage() {
       setPendingBookings(res.data);
     } catch (err) {
       setError(err.message);
-      console.error("Error fetching pending bookings:", err);
+      logger.error('Error fetching pending bookings:', err);
     } finally {
       setLoading(false);
     }
@@ -105,7 +106,7 @@ export default function BookingRequestsPage() {
       fetchPendingBookings();
     } catch (err) {
       setError(err.message);
-      console.error("Error updating booking status:", err);
+      logger.error('Error updating booking status:', err);
     } finally {
       // Clear processing state
       setProcessingBookingId(null);

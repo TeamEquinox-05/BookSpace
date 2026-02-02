@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../utils/api';
+import logger from '../utils/logger';
 import { PageHeader } from '../components/shared';
 import FormSkeleton from '../components/ui/FormSkeleton';
 import { Spinner } from '../components/ui';
@@ -18,7 +19,7 @@ export default function SettingsPage() {
         setUser(res.data);
       } catch (err) {
         setError(err.message);
-        console.error("Error fetching user data:", err);
+        logger.error('Error fetching user data:', err);
       } finally {
         setLoading(false);
       }

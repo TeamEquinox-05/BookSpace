@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import api from '../utils/api';
+import logger from '../utils/logger';
 import { PageHeader } from '../components/shared';
 import BookingModal from '../components/shared/BookingModal';
 import ConfirmationModal from '../components/shared/ConfirmationModal';
@@ -8,7 +9,7 @@ import CardGridSkeleton from '../components/ui/CardGridSkeleton';
 const MyBookingsPage = () => {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [_error, setError] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [currentBooking, setCurrentBooking] = useState(null);
@@ -26,7 +27,7 @@ const MyBookingsPage = () => {
       setAvailablePlaces(placesRes.data.filter(place => place.status === 'available'));
     } catch (err) {
       setError(err.message);
-      console.error('Error fetching data:', err);
+      logger.error('Error fetching bookings data:', err);
     } finally {
       setLoading(false);
     }
@@ -47,7 +48,7 @@ const MyBookingsPage = () => {
   };
 
   const handleUpdateBooking = async (updatedDetails) => {
-    console.log('Attempting to update booking with ID:', currentBooking._id);
+    logger.debug('Attempting to update booking with ID:', currentBooking._id);
     try {
       await api.put(`/bookings/${currentBooking._id}`, updatedDetails);
 

@@ -6,6 +6,10 @@ const { body, validationResult } = require('express-validator');
 const rateLimit = require('express-rate-limit');
 const { sendEmail } = require('../utils/email.cjs');
 const User = require('../models/User.cjs');
+const logger = require('../utils/logger.cjs');
+
+// Check if running in production
+const isProduction = process.env.NODE_ENV === 'production';
 
 // Rate limiting for authentication endpoints
 const authLimiter = rateLimit({
@@ -44,7 +48,7 @@ const cleanupExpiredOtps = () => {
   }
   
   if (cleanedCount > 0) {
-    console.log(`Cleaned up ${cleanedCount} expired OTPs from memory`);
+    logger.info(`Cleaned up ${cleanedCount} expired OTPs from memory`);
   }
 };
 
@@ -66,12 +70,12 @@ router.post('/send-otp',
     body('email').isEmail().normalizeEmail().withMessage('Please provide a valid email')
   ],
   async (req, res) => {
-    console.log('Received request to send signup OTP:', req.body);
+    logger.auth('Received request to send signup OTP', req.body.email);
     
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
-        console.log('Validation errors in send-otp:', errors.array());
+        logger.debug('Validation errors in send-otp:', errors.array());
         return res.status(400).json({ 
           msg: 'Please provide a valid email address', 
           errors: errors.array() 
@@ -79,12 +83,12 @@ router.post('/send-otp',
       }
 
       const { email } = req.body;
-      console.log('Processing OTP request for email:', email);
+      logger.auth('Processing OTP request', email);
   
       // Check if user already exists
       let user = await User.findOne({ email });
       if (user) {
-        console.log('User already exists with email:', email);
+        logger.auth('User already exists', email);
         return res.status(400).json({ msg: 'An account with this email already exists and is pending approval.' });
       }
 
@@ -93,9 +97,14 @@ router.post('/send-otp',
         otp,
         timestamp: Date.now(),
       };
-      console.log(`OTP generated for ${email}:`, otp);
+      // Only log OTP in development mode for debugging
+      if (!isProduction) {
+        logger.debug(`[DEV] OTP generated for ${email}:`, otp);
+      } else {
+        logger.auth('OTP generated', email);
+      }
 
-      console.log('Sending OTP to email:', email);
+      logger.auth('Sending OTP to email', email);
       
       // Send the OTP email with improved error handling
       const emailResult = await sendEmail(
@@ -105,7 +114,7 @@ router.post('/send-otp',
       );
       
       if (!emailResult.success) {
-        console.error('Failed to send OTP email:', {
+        logger.error('Failed to send OTP email:', {
           error: emailResult.error,
           code: emailResult.code,
           email: email
@@ -125,13 +134,13 @@ router.post('/send-otp',
         });
       }
       
-      console.log('OTP email sent successfully to:', email, 'MessageID:', emailResult.messageId);
+      logger.auth('OTP email sent successfully', email);
       res.status(200).json({ 
         msg: 'Verification code sent to your email address',
         messageId: emailResult.messageId 
       });
     } catch (err) {
-      console.error('Error in send-otp route:', err);
+      logger.error('Error in send-otp route:', err);
       res.status(500).json({ msg: 'Server error. Please try again later.' });
     }
   });
@@ -146,12 +155,12 @@ router.post('/signup', [
   body('phone').optional({ checkFalsy: true }).isMobilePhone().withMessage('Please include a valid phone number'),
   body('otp').isLength({ min: 6, max: 6 }).isNumeric().withMessage('OTP must be 6 digits')
 ], async (req, res) => {
-  console.log('Received signup request:', req.body);
+  logger.auth('Received signup request', req.body.email);
   
   // Check for validation errors
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    console.log('Validation errors in signup:', errors.array());
+    logger.debug('Validation errors in signup:', errors.array());
     return res.status(400).json({ 
       msg: 'Validation failed', 
       errors: errors.array() 
@@ -192,8 +201,8 @@ router.post('/signup', [
 
     res.status(200).json({ msg: 'Signup successful. Your account is pending approval.' });
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server error');
+    logger.error(err.message);
+    res.status(500).json({ msg: 'Server error' });
   }
 });
 
@@ -217,27 +226,30 @@ router.post('/login',
   }
 
   const { email, password } = req.body;
-  console.log('Login attempt for email:', email);
+  logger.auth('Login attempt', email);
 
   try {
     // Check if user exists
     let user = await User.findOne({ email });
     if (!user || user.isDeleted) {
-      console.log('Login failed: User not registered or is deleted for email:', email);
+      logger.auth('Login failed: User not registered or is deleted', email);
       return res.status(400).json({ msg: 'User not registered' });
     }
-    console.log('User found:', user.email);
+    logger.debug('User found:', user.email);
 
     // Check if user is active
     if (user.status !== 'active') {
-      console.log('Login failed: User not active for email:', email);
-      return res.status(400).json({ msg: `Your account is ${user.status}. Please contact an administrator.` });
+      logger.auth('Login failed: User not active', email);
+      // Sanitize status to prevent XSS - only allow known valid statuses in response
+      const validStatuses = ['pending', 'active', 'rejected', 'suspended'];
+      const displayStatus = validStatuses.includes(user.status) ? user.status : 'unavailable';
+      return res.status(400).json({ msg: `Your account is ${displayStatus}. Please contact an administrator.` });
     }
 
     // Check password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      console.log('Login failed: Password not matching for email:', email);
+      logger.auth('Login failed: Password not matching', email);
       return res.status(400).json({ msg: 'Password not matching' });
     }
 
@@ -257,7 +269,7 @@ router.post('/login',
       { expiresIn: '24h' }, // Extended token expiration to 24 hours for testing
       (err, token) => {
         if (err) {
-          console.error('JWT sign error:', err.message);
+          logger.error('JWT sign error:', err.message);
           return res.status(500).json({ msg: 'Error generating authentication token' });
         }
         
@@ -271,9 +283,9 @@ router.post('/login',
           path: '/',
         });
         
-        console.log('Login successful, token set in cookie');
-        console.log('Origin header:', req.headers.origin);
-        console.log('Referer header:', req.headers.referer);
+        logger.auth('Login successful, token set in cookie', email);
+        logger.debug('Origin header:', req.headers.origin);
+        logger.debug('Referer header:', req.headers.referer);
         
         res.status(200).json({ 
           msg: 'Logged in successfully', 
@@ -283,8 +295,8 @@ router.post('/login',
       }
     );
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server error');
+    logger.error(err.message);
+    res.status(500).json({ msg: 'Server error' });
   }
 });
 
@@ -307,22 +319,35 @@ router.post('/forgot-password',
   }
 
   const { email } = req.body;
-  console.log('Forgot password request received for email:', email);
+  logger.auth('Forgot password request received', email);
 
   try {
+    // Always return the same response to prevent user enumeration attacks
+    // Attackers cannot determine if an email exists in the system
+    const successMessage = 'If an account exists with this email, an OTP has been sent.';
+    
     let user = await User.findOne({ email });
+    
+    // If user doesn't exist, still return success message but don't send email
     if (!user) {
-      console.log('User not found for email:', email);
-      return res.status(400).json({ msg: 'User not found' });
+      logger.debug('Forgot password: User not found for email (not revealed to client):', email);
+      // Return success message even though no email was sent (prevents enumeration)
+      return res.status(200).json({ msg: successMessage });
     }
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    console.log('Generated OTP:', otp);
+    // Only log OTP in development mode
+    if (!isProduction) {
+      logger.debug(`[DEV] Generated OTP for password reset:`, otp);
+    } else {
+      logger.auth('Generated OTP for password reset', email);
+    }
+    
     user.resetPasswordOtp = otp;
     user.resetPasswordOtpExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
 
     await user.save();
-    console.log('User saved with OTP');
+    logger.debug('User saved with OTP');
 
     const emailResult = await sendEmail(
       email, 
@@ -331,23 +356,23 @@ router.post('/forgot-password',
     );
     
     if (!emailResult.success) {
-      console.error('Failed to send OTP email for password reset:', {
+      logger.error('Failed to send OTP email for password reset:', {
         error: emailResult.error,
         code: emailResult.code,
         email: email
       });
       
-      return res.status(500).json({ 
-        msg: 'Failed to send OTP email. Please try again later.',
-        error: emailResult.error 
-      });
+      // Still return success message to prevent enumeration
+      // Log the error internally but don't reveal to user
+      return res.status(200).json({ msg: successMessage });
     }
     
-    console.log('OTP email sent successfully to:', email);
-    res.status(200).json({ msg: 'OTP sent to your email' });
+    logger.auth('OTP email sent successfully', email);
+    res.status(200).json({ msg: successMessage });
   } catch (err) {
-    console.error('Error in forgot-password route:', err.message);
-    res.status(500).send('Server error');
+    logger.error('Error in forgot-password route:', err.message);
+    // Return generic success message even on error to prevent enumeration
+    res.status(200).json({ msg: 'If an account exists with this email, an OTP has been sent.' });
   }
 });
 
@@ -371,26 +396,30 @@ router.post('/verify-otp',
   }
 
   const { email, otp } = req.body;
-  console.log('Verify OTP request received for email:', email, 'with OTP:', otp);
+  logger.auth('Verify OTP request received', email);
 
   try {
     let user = await User.findOne({ email });
     if (!user) {
-      console.log('User not found for email:', email);
+      logger.debug('User not found for email:', email);
       return res.status(400).json({ msg: 'User not found' });
     }
 
-    console.log('Stored OTP:', user.resetPasswordOtp, 'Stored OTP Expires:', user.resetPasswordOtpExpires, 'Current Time:', Date.now());
+    // Don't log actual OTP values in production
+    if (!isProduction) {
+      logger.debug('[DEV] Stored OTP:', user.resetPasswordOtp, 'Expires:', user.resetPasswordOtpExpires, 'Current Time:', Date.now());
+    }
+    
     if (user.resetPasswordOtp !== otp || user.resetPasswordOtpExpires < Date.now()) {
-      console.log('Invalid or expired OTP for email:', email);
+      logger.auth('Invalid or expired OTP', email);
       return res.status(400).json({ msg: 'Invalid or expired OTP' });
     }
 
-    console.log('OTP verified successfully for email:', email);
+    logger.auth('OTP verified successfully', email);
     res.status(200).json({ msg: 'OTP verified successfully' });
   } catch (err) {
-    console.error('Error in verify-otp route:', err.message);
-    res.status(500).send('Server error');
+    logger.error('Error in verify-otp route:', err.message);
+    res.status(500).json({ msg: 'Server error' });
   }
 });
 
@@ -412,17 +441,17 @@ router.post('/reset-password', [
   }
 
   const { email, otp, newPassword } = req.body;
-  console.log('Reset password request received for email:', email);
+  logger.auth('Reset password request received', email);
 
   try {
     let user = await User.findOne({ email });
     if (!user) {
-      console.log('User not found for email:', email);
+      logger.debug('User not found for email:', email);
       return res.status(400).json({ msg: 'User not found' });
     }
 
     if (user.resetPasswordOtp !== otp || user.resetPasswordOtpExpires < Date.now()) {
-      console.log('Invalid or expired OTP for email:', email);
+      logger.auth('Invalid or expired OTP', email);
       return res.status(400).json({ msg: 'Invalid or expired OTP' });
     }
 
@@ -432,12 +461,12 @@ router.post('/reset-password', [
     user.resetPasswordOtpExpires = undefined;
 
     await user.save();
-    console.log('Password reset successfully for email:', email);
+    logger.auth('Password reset successfully', email);
 
     res.status(200).json({ msg: 'Password reset successfully' });
   } catch (err) {
-    console.error('Error in reset-password route:', err.message);
-    res.status(500).send('Server error');
+    logger.error('Error in reset-password route:', err.message);
+    res.status(500).json({ msg: 'Server error' });
   }
 });
 
@@ -445,9 +474,9 @@ router.post('/reset-password', [
 // @desc    Logout user / Clear cookie
 // @access  Public
 router.post('/logout', (req, res) => {
-  console.log('Logout request received');
-  console.log('Origin header:', req.headers.origin);
-  console.log('Referer header:', req.headers.referer);
+  logger.auth('Logout request received');
+  logger.debug('Origin header:', req.headers.origin);
+  logger.debug('Referer header:', req.headers.referer);
   
   // Try multiple approaches to ensure cookie is properly cleared
   
@@ -472,7 +501,7 @@ router.post('/logout', (req, res) => {
     });
   }
   
-  console.log('Logout successful, cookie cleared');
+  logger.auth('Logout successful, cookie cleared');
   res.status(200).json({ msg: 'Logged out successfully', success: true });
 });
 
@@ -481,5 +510,5 @@ module.exports = router;
 // Export cleanup function for graceful shutdown
 module.exports.cleanup = () => {
   clearInterval(otpCleanupInterval);
-  console.log('Auth module cleanup: OTP cleanup interval cleared');
+  logger.info('Auth module cleanup: OTP cleanup interval cleared');
 };

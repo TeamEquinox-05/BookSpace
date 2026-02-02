@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../utils/api';
+import logger from '../utils/logger';
 
 // Import components from their organized barrel files
 import { PageHeader } from '../components/shared';
@@ -38,7 +39,7 @@ export default function AdminDashboardPage() {
         setAvailablePlaces(placesRes.data);
         setChartData(chartRes.data);
       } catch (error) {
-        console.error("Error fetching dashboard data:", error);
+        logger.error('Error fetching dashboard data:', error);
         setError("Failed to load dashboard data. Please try again later.");
       } finally {
         setLoading(false);

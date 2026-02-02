@@ -4,6 +4,7 @@ import moment from 'moment';
 import { PageHeader } from '../components/shared';
 import { Spinner, TableSkeleton } from '../components/ui';
 import { ShieldX, Download, FileText, FileType, FileJson } from 'lucide-react';
+import logger from '../utils/logger';
 
 const FilterControls = ({ places, filters, setFilters }) => {
   const handleInputChange = (e) => {
@@ -41,7 +42,18 @@ const FilterControls = ({ places, filters, setFilters }) => {
     setFilters(prev => ({ ...prev, dateFrom, dateTo }));
   };
 
-  const activeFilterCount = Object.values(filters).filter(v => v !== '').length;
+  // Count active filters - date range counts as 1 filter, not 2
+  const getActiveFilterCount = () => {
+    let count = 0;
+    if (filters.search) count++;
+    if (filters.status) count++;
+    if (filters.placeId) count++;
+    // Count date range as a single filter if either is set
+    if (filters.dateFrom || filters.dateTo) count++;
+    return count;
+  };
+  
+  const activeFilterCount = getActiveFilterCount();
 
   return (
     <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-t-lg border-b border-gray-200 dark:border-gray-700">
@@ -169,9 +181,11 @@ const FilterControls = ({ places, filters, setFilters }) => {
 
 const DownloadReport = ({ filters, sortConfig, disabled }) => {
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
 
   const downloadCSV = async () => {
     setIsDownloading(true);
+    setIsOpen(false);
     try {
       // This is a simplified CSV generation. For a real app, a library like papaparse would be better.
       const headers = ['Event', 'Place', 'User', 'Start Time', 'End Time', 'Duration', 'Status'];
@@ -210,7 +224,7 @@ const DownloadReport = ({ filters, sortConfig, disabled }) => {
       link.click();
       document.body.removeChild(link);
     } catch (error) {
-      console.error('CSV download error:', error);
+      logger.error('CSV download error:', error);
     } finally {
       setIsDownloading(false);
     }
@@ -218,6 +232,7 @@ const DownloadReport = ({ filters, sortConfig, disabled }) => {
 
   const downloadFromServer = async (format) => {
     setIsDownloading(true);
+    setIsOpen(false);
     try {
       const query = new URLSearchParams({
         format,
@@ -238,44 +253,57 @@ const DownloadReport = ({ filters, sortConfig, disabled }) => {
       link.click();
       document.body.removeChild(link);
     } catch (error) {
-      console.error('Download error:', error);
+      logger.error('Download error:', error);
     } finally {
       setIsDownloading(false);
     }
   };
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (isOpen && !event.target.closest('.download-report-dropdown')) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isOpen]);
+
   return (
-    <div className="relative inline-block text-left">
-      <div className="group">
-        <button
-          type="button"
-          disabled={disabled || isDownloading}
-          className="inline-flex justify-center w-full rounded-md border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-700 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isDownloading ? (
-            <><Spinner size="sm" className="mr-2" /> Downloading...</>
-          ) : (
-            <><Download className="mr-2 h-5 w-5" /> Download Report</>
-          )}
-        </button>
-        <div className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white dark:bg-gray-700 ring-1 ring-black ring-opacity-5 dark:ring-gray-600 opacity-0 invisible group-hover:opacity-100 group-hover:visible focus-within:opacity-100 focus-within:visible transition-all duration-200 z-10">
+    <div className="relative inline-block text-left download-report-dropdown">
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        disabled={disabled || isDownloading}
+        className="inline-flex justify-center w-full rounded-md border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-700 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {isDownloading ? (
+          <><Spinner size="sm" className="mr-2" /> Downloading...</>
+        ) : (
+          <><Download className="mr-2 h-5 w-5" /> Download Report</>
+        )}
+      </button>
+      {isOpen && (
+        <div className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white dark:bg-gray-700 ring-1 ring-black ring-opacity-5 dark:ring-gray-600 z-10">
           <div className="py-1" role="menu" aria-orientation="vertical">
             <button 
-              onClick={(e) => { e.preventDefault(); downloadCSV(); }} 
+              onClick={() => downloadCSV()} 
               className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600" 
               role="menuitem"
             >
               <FileJson className="mr-3 h-5 w-5" /> Download as CSV
             </button>
             <button 
-              onClick={(e) => { e.preventDefault(); downloadFromServer('pdf'); }} 
+              onClick={() => downloadFromServer('pdf')} 
               className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600" 
               role="menuitem"
             >
               <FileType className="mr-3 h-5 w-5" /> Download as PDF
             </button>
             <button 
-              onClick={(e) => { e.preventDefault(); downloadFromServer('docx'); }} 
+              onClick={() => downloadFromServer('docx')} 
               className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600" 
               role="menuitem"
             >
@@ -283,7 +311,7 @@ const DownloadReport = ({ filters, sortConfig, disabled }) => {
             </button>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
@@ -308,7 +336,7 @@ const AllBookingsPage = () => {
         setPlaces(placesRes.data);
       } catch (err) {
         setError('Failed to fetch data. You might not have the required permissions.');
-        console.error(err);
+        logger.error('Error fetching bookings data:', err);
       } finally {
         setLoading(false);
       }

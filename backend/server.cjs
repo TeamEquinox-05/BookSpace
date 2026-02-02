@@ -4,7 +4,9 @@ dotenv.config({ path: path.resolve(__dirname, 'src', 'config', 'config.env') });
 
 const express = require('express');
 const cors = require('cors');
+const mongoose = require('mongoose');
 const connectDB = require('./src/config/db.cjs');
+const logger = require('./src/utils/logger.cjs');
 
 const cookieParser = require('cookie-parser');
 
@@ -35,20 +37,20 @@ const allowedOrigins = [
 // This creates a cleaner middleware chain and reduces conflicts
 app.use(cors({
   origin: function (origin, callback) {
-    console.log('CORS request from origin:', origin);
+    logger.debug('CORS request from origin:', origin);
     
     // Allow requests with no origin (like mobile apps, curl requests, or server-to-server)
     if (!origin) {
-      console.log('Request has no origin, allowing');
+      logger.debug('Request has no origin, allowing');
       return callback(null, true);
     }
     
     // Check if origin is in our allowed list
     if (allowedOrigins.includes(origin)) {
-      console.log('Origin allowed by CORS:', origin);
+      logger.debug('Origin allowed by CORS:', origin);
       callback(null, true);
     } else {
-      console.log('Origin blocked by CORS:', origin);
+      logger.warn('Origin blocked by CORS:', origin);
       callback(new Error('Not allowed by CORS'));
     }
   },
@@ -63,13 +65,45 @@ app.use(cors({
 
 // Log all requests for debugging
 app.use((req, res, next) => {
-  console.log(`${req.method} ${req.path} - Origin: ${req.headers.origin || 'none'}`);
+  logger.request(req.method, req.path, req.headers.origin);
   next();
 });
 
-// Health check endpoint
-app.get('/api/health', (req, res) => {
-  res.status(200).json({ status: 'ok', message: 'Server is running' });
+// Health check endpoint with database connectivity verification
+app.get('/api/health', async (req, res) => {
+  try {
+    // Check MongoDB connection state
+    // 0 = disconnected, 1 = connected, 2 = connecting, 3 = disconnecting
+    const dbState = mongoose.connection.readyState;
+    const dbStateNames = ['disconnected', 'connected', 'connecting', 'disconnecting'];
+    
+    if (dbState !== 1) {
+      return res.status(503).json({
+        status: 'unhealthy',
+        message: 'Database connection is not available',
+        database: dbStateNames[dbState] || 'unknown',
+        uptime: process.uptime()
+      });
+    }
+    
+    // Optionally ping the database to ensure it's responsive
+    await mongoose.connection.db.admin().ping();
+    
+    res.status(200).json({
+      status: 'healthy',
+      message: 'Server is running',
+      database: 'connected',
+      uptime: process.uptime()
+    });
+  } catch (err) {
+    logger.error('Health check failed:', err.message);
+    res.status(503).json({
+      status: 'unhealthy',
+      message: 'Health check failed',
+      error: err.message,
+      uptime: process.uptime()
+    });
+  }
 });
 
 // Define Routes
@@ -81,33 +115,44 @@ app.use('/api/users', require('./src/routes/users.cjs'));
 
 const PORT = process.env.PORT || 10000;
 
-const server = app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+const server = app.listen(PORT, () => logger.important(`Server running on port ${PORT}`));
 
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (err, promise) => {
-  console.error(`Unhandled Rejection: ${err.message}`);
+  logger.error(`Unhandled Rejection: ${err.message}`);
   // Close server & exit process gracefully
   server.close(() => {
-    console.log('Server closed due to unhandled rejection');
+    logger.important('Server closed due to unhandled rejection');
     process.exit(1);
   });
 });
 
 // Handle uncaught exceptions
 process.on('uncaughtException', (err, origin) => {
-  console.error(`Uncaught Exception: ${err.message}\nException origin: ${origin}`);
+  logger.error(`Uncaught Exception: ${err.message}\nException origin: ${origin}`);
   // Close server & exit process gracefully
   server.close(() => {
-    console.log('Server closed due to uncaught exception');
+    logger.important('Server closed due to uncaught exception');
     process.exit(1);
   });
 });
 
 // Handle graceful shutdown
 process.on('SIGTERM', () => {
-  console.log('SIGTERM received. Shutting down gracefully...');
+  logger.important('SIGTERM received. Shutting down gracefully...');
+  
+  // Clean up auth module (OTP cleanup interval)
+  try {
+    const authModule = require('./src/routes/auth.cjs');
+    if (authModule.cleanup) {
+      authModule.cleanup();
+    }
+  } catch (err) {
+    logger.error('Error during auth module cleanup:', err.message);
+  }
+  
   server.close(() => {
-    console.log('Server closed');
+    logger.important('Server closed');
     process.exit(0);
   });
 });

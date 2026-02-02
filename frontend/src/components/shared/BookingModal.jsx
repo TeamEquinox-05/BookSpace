@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { X, Calendar, Clock, MapPin, Users, FileText, Settings, CheckCircle, AlertCircle } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import api from '../../utils/api';
 import { Spinner } from '../ui';
+import logger from '../../utils/logger';
 
 const BookingModal = ({ isOpen, onClose, places, onBookingSubmit, initialBooking }) => {
   const [bookingDetails, setBookingDetails] = useState({
@@ -69,7 +70,7 @@ const BookingModal = ({ isOpen, onClose, places, onBookingSubmit, initialBooking
         setSelectedFacilities([]);
       }
     }
-  }, [isOpen, places, initialBooking]);
+  }, [isOpen, places, initialBooking, isEditMode]);
 
   useEffect(() => {
     if (bookingDetails.placeId) {
@@ -85,7 +86,7 @@ const BookingModal = ({ isOpen, onClose, places, onBookingSubmit, initialBooking
     setSelectedFacilities(prev => prev.some(f => f.name === facility.name) ? prev.filter(f => f.name !== facility.name) : [...prev, facility]);
   };
 
-  const checkAvailability = async (signal) => {
+  const checkAvailability = useCallback(async (signal) => {
     if (!bookingDetails.placeId || !bookingDetails.eventStartTime || !bookingDetails.eventEndTime) {
       setIsAvailable(true);
       setAvailabilityMessage('');
@@ -119,13 +120,13 @@ const BookingModal = ({ isOpen, onClose, places, onBookingSubmit, initialBooking
       if (err.name === 'AbortError' || err.name === 'CanceledError') {
         return;
       }
-      console.error('Error checking availability:', err);
+      logger.error('Error checking availability:', err);
       if (isMountedRef.current) {
         setIsAvailable(false);
         setAvailabilityMessage('Error checking availability.');
       }
     }
-  };
+  }, [bookingDetails.placeId, bookingDetails.eventStartTime, bookingDetails.eventEndTime]);
 
   useEffect(() => {
     // Set mounted ref
@@ -159,7 +160,7 @@ const BookingModal = ({ isOpen, onClose, places, onBookingSubmit, initialBooking
         abortControllerRef.current.abort();
       }
     };
-  }, [bookingDetails.placeId, bookingDetails.eventStartTime, bookingDetails.eventEndTime]);
+  }, [bookingDetails.placeId, bookingDetails.eventStartTime, bookingDetails.eventEndTime, checkAvailability]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

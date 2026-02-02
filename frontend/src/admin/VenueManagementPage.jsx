@@ -5,6 +5,7 @@ import { Plus, Edit, Trash2, Eye } from 'lucide-react';
 import VenueModal from '../components/admin/VenueModal';
 import ConfirmationModal from '../components/shared/ConfirmationModal';
 import TableSkeleton from '../components/ui/TableSkeleton';
+import logger from '../utils/logger';
 
 export default function VenueManagementPage() {
   const [venues, setVenues] = useState([]);
@@ -28,7 +29,7 @@ export default function VenueManagementPage() {
       } catch (err) {
         if (isMounted) {
           setError(err.message);
-          console.error("Error fetching venues:", err);
+          logger.error('Error fetching venues:', err);
         }
       } finally {
         if (isMounted) {
@@ -51,7 +52,7 @@ export default function VenueManagementPage() {
       setVenues(res.data);
     } catch (err) {
       setError(err.message);
-      console.error("Error fetching venues:", err);
+      logger.error('Error fetching venues:', err);
     } finally {
       setLoading(false);
     }
@@ -66,7 +67,7 @@ export default function VenueManagementPage() {
       fetchVenues(); // Refresh the list
       setIsModalOpen(false);
     } catch (err) {
-      console.error("Error saving venue:", err);
+      logger.error('Error saving venue:', err);
     }
   };
 
@@ -78,7 +79,7 @@ export default function VenueManagementPage() {
       setIsConfirmModalOpen(false);
       setVenueToDelete(null);
     } catch (err) {
-      console.error("Error deleting venue:", err);
+      logger.error('Error deleting venue:', err);
     }
   };
 

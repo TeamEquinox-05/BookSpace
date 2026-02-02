@@ -2,8 +2,6 @@ import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import MobileSidebar from './MobileSidebar';
-import { useTheme } from '../../context/ThemeContext';
-import { motion } from 'framer-motion';
 import { Menu } from 'lucide-react';
 
 const Layout = () => {
@@ -22,12 +20,8 @@ const Layout = () => {
         <MobileSidebar isOpen={isMobileSidebarOpen} onClose={() => setIsMobileSidebarOpen(false)} />
       </div>
 
-      <motion.main
+      <main
         className={`flex-1 overflow-y-auto transition-all duration-300 ease-in-out ${isSidebarExpanded ? 'md:ml-64' : 'md:ml-20'}`}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.5 }}
       >
         {/* Mobile Header/Hamburger */}
         <div className="md:hidden flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
@@ -38,7 +32,7 @@ const Layout = () => {
           <div></div> {/* Placeholder for right alignment */}
         </div>
         <Outlet />
-      </motion.main>
+      </main>
     </div>
   );
 };

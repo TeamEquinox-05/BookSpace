@@ -1,14 +1,12 @@
-import React, { useState } from 'react';
-import { NavLink as RouterNavLink, useLocation, useNavigate } from 'react-router-dom';
-import { Home, ClipboardCheck, Calendar, Building, Users, Settings, LogOut, Search, ChevronRight, Plus, FileText, Bell, BarChart3 } from 'lucide-react';
+import React from 'react';
+import { NavLink as RouterNavLink, useNavigate } from 'react-router-dom';
+import { Home, ClipboardCheck, Calendar, Building, Users, Settings, LogOut } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { motion } from 'framer-motion';
 
 // Helper for conditional class names (similar to clsx)
 const cn = (...classes) => classes.filter(Boolean).join(' ');
 
-const Sidebar = ({ isExpanded, setIsExpanded, onMouseEnter, onMouseLeave }) => {
-  const location = useLocation();
+const Sidebar = ({ isExpanded, setIsExpanded: _setIsExpanded, onMouseEnter, onMouseLeave }) => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
 
@@ -47,7 +45,7 @@ const Sidebar = ({ isExpanded, setIsExpanded, onMouseEnter, onMouseLeave }) => {
   
 
   return (
-    <motion.div
+    <div
       className={cn(
         "fixed left-0 top-0 h-screen bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 transition-all duration-300 ease-in-out z-50",
         "shadow-lg overflow-hidden", // Added overflow-hidden to prevent scrollbars
@@ -158,7 +156,7 @@ const Sidebar = ({ isExpanded, setIsExpanded, onMouseEnter, onMouseLeave }) => {
           )}
         </button>
       </div>
-    </motion.div>
+    </div>
   );
 };
 

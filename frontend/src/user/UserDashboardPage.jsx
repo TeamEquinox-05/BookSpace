@@ -1,20 +1,18 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import api from '../utils/api';
+import logger from '../utils/logger';
 
 // Import shared components
 import { PageHeader, RecentBookings } from '../components/shared';
 import AvailablePlacesGrid from '../components/shared/AvailablePlacesGrid';
 import BookingModal from '../components/shared/BookingModal';
-import CardGridSkeleton from '../components/ui/CardGridSkeleton';
-import TableSkeleton from '../components/ui/TableSkeleton';
 import { Spinner } from '../components/ui';
 import { useAuth } from '../context/AuthContext';
 import { AlertCircle, RefreshCw, Calendar, MapPin } from 'lucide-react';
 
 export default function UserDashboardPage() {
-  const { user } = useAuth();
+  const { user: _user } = useAuth();
   const [isBookingModalOpen, setBookingModalOpen] = useState(false);
   const [todaysEvents, setTodaysEvents] = useState([]);
   const [availableVenues, setAvailableVenues] = useState([]);
@@ -32,7 +30,7 @@ export default function UserDashboardPage() {
       setTodaysEvents(bookingsRes.data);
       setAvailableVenues(placesRes.data.filter(place => place.status === 'available'));
     } catch (error) {
-      console.error("Error fetching user dashboard data:", error);
+      logger.error('Error fetching user dashboard data:', error);
       setError("Failed to load dashboard data. Please try again later.");
     } finally {
       setLoading(false);
@@ -51,7 +49,7 @@ export default function UserDashboardPage() {
       fetchUserData();
       setBookingModalOpen(false);
     } catch (error) {
-      console.error('Booking failed:', error);
+      logger.error('Booking failed:', error);
       // Re-throw to be caught by the modal
       throw error;
     }

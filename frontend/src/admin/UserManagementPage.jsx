@@ -3,6 +3,7 @@ import api from '../utils/api';
 import { PageHeader, ConfirmationModal } from '../components/shared';
 import { Check, X, Trash2, Search, Filter, User as UserIcon } from 'lucide-react';
 import { Spinner } from '../components/ui';
+import logger from '../utils/logger';
 
 export default function UserManagementPage() {
   const [users, setUsers] = useState([]);
@@ -30,7 +31,7 @@ export default function UserManagementPage() {
       } catch (err) {
         if (isMounted) {
           setError(err.message);
-          console.error("Error fetching users:", err);
+          logger.error('Error fetching users:', err);
         }
       } finally {
         if (isMounted) {
@@ -64,7 +65,7 @@ export default function UserManagementPage() {
       setUsers(res.data.users);
       setTotalPages(res.data.totalPages);
     } catch (err) {
-      console.error(`Error ${actionType}ing user:`, err);
+      logger.error(`Error ${actionType}ing user:`, err);
     }
     setShowConfirmation(false);
     setSelectedUser(null);

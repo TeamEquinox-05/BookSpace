@@ -9,6 +9,7 @@ const verifyRole = require('../middleware/verifyRole.cjs');
 const PDFDocument = require('pdfkit');
 const { Document, Packer, Paragraph, Table, TableCell, TableRow, WidthType } = require('docx');
 const moment = require('moment');
+const logger = require('../utils/logger.cjs');
 
 // Middleware to validate MongoDB ObjectId
 const validateObjectId = (req, res, next) => {
@@ -65,8 +66,8 @@ router.post('/check-availability', [
       return res.json({ available: true, msg: 'Place is available.' });
     }
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server Error');
+    logger.error(err.message);
+    res.status(500).json({ msg: 'Server Error' });
   }
 });
 
@@ -139,8 +140,8 @@ router.post('/', [
   } catch (err) {
     await session.abortTransaction();
     session.endSession();
-    console.error(err.message);
-    res.status(500).send('Server Error');
+    logger.error(err.message);
+    res.status(500).json({ msg: 'Server Error' });
   }
 });
 
@@ -199,7 +200,7 @@ router.put('/:id/status',
       facilities: []
     };
 
-    console.log(`Sending email notification to user ${userName} (${userEmail}) about booking status change to: ${status}`);
+    logger.info(`Sending email notification to user ${userName} (${userEmail}) about booking status change to: ${status}`);
 
     // Send email to the user
     if (status === 'approved') {
@@ -219,7 +220,7 @@ Thank you for using BookSpace!`;
       
       // If approved, send emails to the requested facilities
       if (booking.requestedFacilities && booking.requestedFacilities.length > 0) {
-        console.log(`Sending notifications to ${booking.requestedFacilities.length} requested facilities`);
+        logger.info(`Sending notifications to ${booking.requestedFacilities.length} requested facilities`);
         
         // Use the facilities directly from the booking since they already contain emails
         const facilitiesToNotify = booking.requestedFacilities;
@@ -258,7 +259,7 @@ BookSpace Administration`;
               error: facilityEmailResult.error || null
             });
             
-            console.log(`Email to facility "${facility.name}" (${facility.email}): ${facilityEmailResult.success ? 'Sent' : 'Failed'}`);
+            logger.info(`Email to facility "${facility.name}" (${facility.email}): ${facilityEmailResult.success ? 'Sent' : 'Failed'}`);
           }
         }
       }
@@ -284,12 +285,12 @@ Thank you for using BookSpace!`;
 
     // Log email sending results
     if (emailResults.user && !emailResults.user.success) {
-      console.error(`Warning: Failed to send email notification to user ${userEmail}: ${emailResults.user.error}`);
+      logger.error(`Warning: Failed to send email notification to user ${userEmail}: ${emailResults.user.error}`);
     }
 
     const failedFacilityEmails = emailResults.facilities.filter(result => !result.success);
     if (failedFacilityEmails.length > 0) {
-      console.error(`Warning: Failed to send email to ${failedFacilityEmails.length} facilities:`, 
+      logger.error(`Warning: Failed to send email to ${failedFacilityEmails.length} facilities:`, 
         failedFacilityEmails.map(f => `${f.facility} (${f.email}): ${f.error}`).join(', '));
     }
 
@@ -302,8 +303,8 @@ Thank you for using BookSpace!`;
       }
     });
   } catch (err) {
-    console.error('Error updating booking status:', err.message);
-    res.status(500).send('Server Error');
+    logger.error('Error updating booking status:', err.message);
+    res.status(500).json({ msg: 'Server Error' });
   }
 });
 
@@ -410,8 +411,8 @@ router.put('/:id', [
   } catch (err) {
     await session.abortTransaction();
     session.endSession();
-    console.error('Error updating booking:', err.message);
-    res.status(500).send('Server Error');
+    logger.error('Error updating booking:', err.message);
+    res.status(500).json({ msg: 'Server Error' });
   }
 });
 
@@ -435,8 +436,8 @@ router.delete('/:id', auth, validateObjectId, async (req, res) => {
 
     res.json({ msg: 'Booking removed' });
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server Error');
+    logger.error(err.message);
+    res.status(500).json({ msg: 'Server Error' });
   }
 });
 
@@ -450,8 +451,8 @@ router.get('/my-bookings', auth, async (req, res) => {
       .populate('placeId', ['name', 'location']);
     res.json(bookings);
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server Error');
+    logger.error(err.message);
+    res.status(500).json({ msg: 'Server Error' });
   }
 });
 
@@ -463,8 +464,8 @@ router.get('/recent', auth, async (req, res) => {
     const bookings = await Booking.find({ userId: req.user.id }).sort({ requestedAt: -1 }).limit(5).populate('userId', ['name', 'email']).populate('placeId', ['name']);
     res.json(bookings);
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server Error');
+    logger.error(err.message);
+    res.status(500).json({ msg: 'Server Error' });
   }
 });
 
@@ -478,34 +479,34 @@ router.get('/pending', auth, verifyRole('admin'), async (req, res) => {
       .populate('placeId', ['name', 'location']);
     res.json(bookings);
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server Error');
+    logger.error(err.message);
+    res.status(500).json({ msg: 'Server Error' });
   }
 });
 
 // @route   GET api/bookings/approved
 // @desc    Get all approved bookings
-// @access  Public
+// @access  Private (Admin only)
 router.get('/approved', auth, verifyRole('admin'), async (req, res) => {
   try {
     const bookings = await Booking.find({ status: 'approved' }).sort({ eventStartTime: -1 }).populate('userId', ['name', 'email']).populate('placeId', ['name']);
     res.json(bookings);
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server Error');
+    logger.error(err.message);
+    res.status(500).json({ msg: 'Server Error' });
   }
 });
 
 // @route   GET api/bookings
 // @desc    Get all bookings
-// @access  Public
+// @access  Private (Admin only)
 router.get('/', auth, verifyRole('admin'), async (req, res) => {
   try {
     const bookings = await Booking.find().populate('userId', ['name', 'email']).populate('placeId', ['name']);
     res.json(bookings);
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server Error');
+    logger.error(err.message);
+    res.status(500).json({ msg: 'Server Error' });
   }
 });
 
@@ -539,7 +540,7 @@ router.get('/report', auth, verifyRole('admin'), async (req, res) => {
       query = query.sort(sort);
     }
 
-    console.log('Report generation triggered with filters:', { status, placeId, dateFrom, dateTo, search });
+    logger.info('Report generation triggered with filters:', { status, placeId, dateFrom, dateTo, search });
 
     let bookings = await query.populate('userId', 'name email').populate('placeId', 'name').exec();
 
@@ -554,7 +555,7 @@ router.get('/report', auth, verifyRole('admin'), async (req, res) => {
       );
     }
 
-    console.log(`Found ${bookings.length} bookings to report.`);
+    logger.info(`Found ${bookings.length} bookings to report.`);
 
     if (format === 'pdf') {
       const doc = new PDFDocument({ margin: 50, size: 'A4' });
@@ -733,8 +734,8 @@ router.get('/report', auth, verifyRole('admin'), async (req, res) => {
       res.status(400).send('Invalid format requested');
     }
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server Error');
+    logger.error(err.message);
+    res.status(500).json({ msg: 'Server Error' });
   }
 });
 

@@ -2,15 +2,14 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { NavLink as RouterNavLink, useLocation } from 'react-router-dom';
-import { Home, ClipboardCheck, Calendar, Building, Users, Settings, LogOut, Search, ChevronRight, Plus, FileText, Bell, BarChart3 } from 'lucide-react';
+import { NavLink as RouterNavLink } from 'react-router-dom';
+import { Home, ClipboardCheck, Calendar, Building, Users, Settings, LogOut } from 'lucide-react';
 
 // Helper for conditional class names (similar to clsx)
 const cn = (...classes) => classes.filter(Boolean).join(' ');
 
 const MobileSidebar = ({ isOpen, onClose }) => {
   const { user, logout } = useAuth();
-  const location = useLocation();
 
   const sidebarSections = [
     {

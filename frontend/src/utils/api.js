@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { API_URL } from '../config/api-config.js';
+import logger from './logger.js';
 
 // Create custom axios instance for the API
 const api = axios.create({
@@ -48,7 +49,7 @@ api.interceptors.request.use(
     };
     
     // Log outgoing requests for debugging
-    console.log(`API Request [${requestId}]: ${config.method.toUpperCase()} ${config.url}`, {
+    logger.api(`Request [${requestId}]: ${config.method.toUpperCase()} ${config.url}`, {
       endpoint: config.url,
       hasToken: !!config.headers.Authorization,
       isAuthEndpoint
@@ -58,7 +59,7 @@ api.interceptors.request.use(
   },
   error => {
     const requestId = generateRequestId();
-    console.error(`API Request setup error [${requestId}]:`, error.message);
+    logger.error(`API Request setup error [${requestId}]:`, error.message);
     return Promise.reject(error);
   }
 );
@@ -71,7 +72,7 @@ api.interceptors.response.use(
     const startTime = response.config.metadata?.startTime;
     const duration = startTime ? Date.now() - startTime : 'unknown';
     
-    console.log(`API Response [${requestId}]: ${response.config.method.toUpperCase()} ${response.config.url} - Status: ${response.status} (${duration}ms)`, {
+    logger.api(`Response [${requestId}]: ${response.config.method.toUpperCase()} ${response.config.url} - Status: ${response.status} (${duration}ms)`, {
       endpoint: response.config.url,
       status: response.status,
       duration: `${duration}ms`,
@@ -80,7 +81,7 @@ api.interceptors.response.use(
     
     // Handle token in response - store it if present in login/signup responses
     if (response.config.url.includes('/auth/login') && response.data?.token) {
-      console.log(`[${requestId}] Token received in response, storing it`);
+      logger.api(`[${requestId}] Token received in response, storing it`);
       localStorage.setItem('token', response.data.token);
     }
     
@@ -96,41 +97,41 @@ api.interceptors.response.use(
       const endpoint = error.config?.url || 'unknown-endpoint';
       const method = error.config?.method?.toUpperCase() || 'UNKNOWN';
       
-      console.error(`API Error [${requestId}]: ${method} ${endpoint} - Status: ${status}`);
-      console.error(`Error Response [${requestId}]:`, error.response.data);
+      logger.error(`API Error [${requestId}]: ${method} ${endpoint} - Status: ${status}`);
+      logger.error(`Error Response [${requestId}]:`, error.response.data);
       
       // Special handling for different error types
       if (status === 400) {
         // Validation errors
-        console.warn(`Validation error [${requestId}] for ${endpoint}`);
+        logger.warn(`Validation error [${requestId}] for ${endpoint}`);
       } else if (status === 401) {
         // Authentication errors
-        console.warn(`Authentication error [${requestId}] detected in API response`);
+        logger.warn(`Authentication error [${requestId}] detected in API response`);
         
         // Only clear token for non-login/auth endpoints
         const authEndpoints = ['/auth/login', '/auth/signup', '/auth/forgot-password', '/auth/verify-otp'];
         const isAuthEndpoint = authEndpoints.some(path => error.config.url.includes(path));
         
         if (!isAuthEndpoint) {
-          console.warn(`Clearing auth token due to 401 from non-auth endpoint [${requestId}]`);
+          logger.warn(`Clearing auth token due to 401 from non-auth endpoint [${requestId}]`);
           localStorage.removeItem('token');
         }
       } else if (status === 404) {
-        console.warn(`Endpoint not found [${requestId}]: ${endpoint}`);
+        logger.warn(`Endpoint not found [${requestId}]: ${endpoint}`);
       } else if (status === 500) {
-        console.error(`Server error [${requestId}] at ${endpoint}`);
+        logger.error(`Server error [${requestId}] at ${endpoint}`);
       }
     } else if (error.request) {
       // The request was made but no response was received
-      console.error(`API Network Error [${requestId}]: No response received for ${error.config?.method?.toUpperCase()} ${error.config?.url}`);
-      console.error(`Request details [${requestId}]:`, {
+      logger.error(`API Network Error [${requestId}]: No response received for ${error.config?.method?.toUpperCase()} ${error.config?.url}`);
+      logger.error(`Request details [${requestId}]:`, {
         url: error.config?.url,
         method: error.config?.method,
         timeout: error.config?.timeout
       });
     } else {
       // Something happened in setting up the request
-      console.error(`API Request Setup Error [${requestId}]:`, error.message);
+      logger.error(`API Request Setup Error [${requestId}]:`, error.message);
     }
     
     // Always reject the promise to let component handle the error

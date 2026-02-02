@@ -7,9 +7,9 @@ const PopularPlacesList = ({ places }) => (
     
     {places && places.length > 0 ? (
       <div className="space-y-4">
-        {places.map((place, index) => (
+        {places.map((place) => (
           <div 
-            key={index} 
+            key={place._id || place.name} 
             className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors duration-200 cursor-pointer"
           >
             {/* Place Name and Capacity */}

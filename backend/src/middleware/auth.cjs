@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
+const User = require('../models/User.cjs');
 
-module.exports = function (req, res, next) {
+module.exports = async function (req, res, next) {
   // Get token from header or cookie
   let token;
 
@@ -29,9 +30,43 @@ module.exports = function (req, res, next) {
   // Verify token
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded.user;
+    
+    // Fetch fresh user data from database to ensure role/status is current
+    // This prevents issues with cached role in JWT after role changes
+    const user = await User.findById(decoded.user.id).select('role status isDeleted name');
+    
+    if (!user) {
+      console.log('User not found in database');
+      return res.status(401).json({ msg: 'User not found' });
+    }
+    
+    // Check if user account is still valid
+    if (user.isDeleted) {
+      console.log('User account has been deleted');
+      return res.status(401).json({ msg: 'Account has been deleted' });
+    }
+    
+    if (user.status !== 'active') {
+      console.log(`User account is ${user.status}`);
+      return res.status(401).json({ msg: `Account is ${user.status}` });
+    }
+    
+    // Use fresh role from database instead of JWT cached role
+    req.user = {
+      id: decoded.user.id,
+      name: user.name,
+      role: user.role  // Fresh role from database
+    };
+    
     next();
   } catch (err) {
+    if (err.name === 'TokenExpiredError') {
+      return res.status(401).json({ msg: 'Token has expired' });
+    }
+    if (err.name === 'JsonWebTokenError') {
+      return res.status(401).json({ msg: 'Token is not valid' });
+    }
+    console.error('Auth middleware error:', err.message);
     res.status(401).json({ msg: 'Token is not valid' });
   }
 };

@@ -4,6 +4,8 @@ const router = express.Router();
 const mongoose = require('mongoose');
 const User = require('../models/User.cjs');
 const auth = require('../middleware/auth.cjs');
+const verifyRole = require('../middleware/verifyRole.cjs');
+const logger = require('../utils/logger.cjs');
 
 const { sendEmail } = require('../utils/email.cjs');
 
@@ -26,19 +28,15 @@ router.get('/me', auth, async (req, res) => {
     const user = await User.findById(req.user.id).select('-password');
     res.json(user);
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server Error');
+    logger.error(err.message);
+    res.status(500).json({ msg: 'Server Error' });
   }
 });
 
 // @route   GET api/users
 // @desc    Get all users with pagination, search, and filtering
 // @access  Private (Admin only)
-router.get('/', auth, async (req, res) => {
-  if (req.user.role !== 'admin') {
-    return res.status(403).json({ msg: 'Access denied' });
-  }
-
+router.get('/', auth, verifyRole('admin'), async (req, res) => {
   // Parse and validate pagination parameters
   const page = Math.max(1, parseInt(req.query.page, 10) || 1);
   const limit = Math.min(100, Math.max(1, parseInt(req.query.limit, 10) || 10)); // Limit between 1-100
@@ -72,8 +70,8 @@ router.get('/', auth, async (req, res) => {
       currentPage: page,
     });
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server Error');
+    logger.error(err.message);
+    res.status(500).json({ msg: 'Server Error' });
   }
 });
 
@@ -82,12 +80,9 @@ router.get('/', auth, async (req, res) => {
 // @access  Private (Admin only)
 router.put('/:id/approve', 
   auth,
+  verifyRole('admin'),
   validateObjectId,
   async (req, res) => {
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ msg: 'Access denied' });
-    }
-
     try {
       const user = await User.findByIdAndUpdate(req.params.id, { status: 'active' }, { new: true });
       if (!user) {
@@ -98,19 +93,19 @@ router.put('/:id/approve',
       sendEmail(user.email, 'Account Approved', 'Your account has been approved. You can now log in.')
         .then(result => {
           if (result.success) {
-            console.log(`✓ Approval email sent to ${user.email}`);
+            logger.info(`✓ Approval email sent to ${user.email}`);
           } else {
-            console.error(`✗ Failed to send approval email to ${user.email}:`, result.error);
+            logger.error(`✗ Failed to send approval email to ${user.email}:`, result.error);
           }
         })
         .catch(err => {
-          console.error(`✗ Error sending approval email to ${user.email}:`, err);
+          logger.error(`✗ Error sending approval email to ${user.email}:`, err);
         });
       
       res.json(user);
     } catch (err) {
-      console.error(err.message);
-      res.status(500).send('Server Error');
+      logger.error(err.message);
+      res.status(500).json({ msg: 'Server Error' });
     }
   });
 
@@ -119,12 +114,9 @@ router.put('/:id/approve',
 // @access  Private (Admin only)
 router.put('/:id/reject', 
   auth,
+  verifyRole('admin'),
   validateObjectId,
   async (req, res) => {
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ msg: 'Access denied' });
-    }
-
     try {
       const user = await User.findByIdAndUpdate(req.params.id, { status: 'rejected' }, { new: true });
       if (!user) {
@@ -135,30 +127,26 @@ router.put('/:id/reject',
       sendEmail(user.email, 'Account Rejected', 'Your account has been rejected. Please contact an administrator for more information.')
         .then(result => {
           if (result.success) {
-            console.log(`✓ Rejection email sent to ${user.email}`);
+            logger.info(`✓ Rejection email sent to ${user.email}`);
           } else {
-            console.error(`✗ Failed to send rejection email to ${user.email}:`, result.error);
+            logger.error(`✗ Failed to send rejection email to ${user.email}:`, result.error);
           }
         })
         .catch(err => {
-          console.error(`✗ Error sending rejection email to ${user.email}:`, err);
+          logger.error(`✗ Error sending rejection email to ${user.email}:`, err);
         });
       
       res.json(user);
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server Error');
+    logger.error(err.message);
+    res.status(500).json({ msg: 'Server Error' });
   }
 });
 
 // @route   DELETE api/users/:id
 // @desc    Soft delete a user
 // @access  Private (Admin only)
-router.delete('/:id', auth, validateObjectId, async (req, res) => {
-  if (req.user.role !== 'admin') {
-    return res.status(403).json({ msg: 'Access denied' });
-  }
-
+router.delete('/:id', auth, verifyRole('admin'), validateObjectId, async (req, res) => {
   // Prevent admin from deleting themselves
   if (req.params.id === req.user.id) {
     return res.status(400).json({ msg: 'You cannot delete your own account' });
@@ -176,19 +164,19 @@ router.delete('/:id', auth, validateObjectId, async (req, res) => {
     sendEmail(user.email, 'Account Removed', 'Your account has been removed from the platform.')
       .then(result => {
         if (result.success) {
-          console.log(`✓ Account removal email sent to ${user.email}`);
+          logger.info(`✓ Account removal email sent to ${user.email}`);
         } else {
-          console.error(`✗ Failed to send removal email to ${user.email}:`, result.error);
+          logger.error(`✗ Failed to send removal email to ${user.email}:`, result.error);
         }
       })
       .catch(err => {
-        console.error(`✗ Error sending removal email to ${user.email}:`, err);
+        logger.error(`✗ Error sending removal email to ${user.email}:`, err);
       });
     
     res.json({ msg: 'User removed' });
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server Error');
+    logger.error(err.message);
+    res.status(500).json({ msg: 'Server Error' });
   }
 });
 

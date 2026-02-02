@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { ForgotPasswordModal } from '../components/shared';
 import { Spinner } from '../components/ui';
 import api from '../utils/api';
+import logger from '../utils/logger';
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -36,7 +37,7 @@ const LoginPage = () => {
     }
     
     try {
-      console.log('Attempting login for:', email);
+      logger.auth('Attempting login for:', email);
       
       // Create the request data object
       const loginData = { 
@@ -44,12 +45,12 @@ const LoginPage = () => {
         password: password 
       };
       
-      console.log('Login request payload:', JSON.stringify(loginData));
+      logger.debug('Login request payload:', JSON.stringify(loginData));
       
       // Use our API utility with better error handling
       const res = await api.post('/auth/login', loginData);
       
-      console.log('Login response:', res.data);
+      logger.debug('Login response:', res.data);
       
       // Extract user and token data from the response
       // Handle both formats: { user, token } and { msg, token, user }
@@ -58,36 +59,36 @@ const LoginPage = () => {
       const token = responseData.token;
       
       if (!user) {
-        console.error('Invalid response format - missing user:', responseData);
+        logger.error('Invalid response format - missing user:', responseData);
         throw new Error('Invalid response from server - missing user data');
       }
       
       if (!token) {
-        console.error('Invalid response format - missing token:', responseData);
+        logger.error('Invalid response format - missing token:', responseData);
         throw new Error('Invalid response from server - missing authentication token');
       }
       
-      console.log('Login successful. User:', user.name, 'Role:', user.role);
+      logger.auth('Login successful. User:', user.name, 'Role:', user.role);
       login(user, token);
       
       // Verify the token has been stored
       setTimeout(() => {
         const storedToken = localStorage.getItem('token');
-        console.log('Stored token check:', storedToken ? 'Present' : 'Missing');
+        logger.debug('Stored token check:', storedToken ? 'Present' : 'Missing');
       }, 100);
       
       // Short delay to ensure state updates before navigation
       await new Promise(resolve => setTimeout(resolve, 100));
       
       if (user.role === 'admin') {
-        console.log('Navigating to /admin');
+        logger.debug('Navigating to /admin');
         navigate('/admin', { replace: true });
       } else {
-        console.log('Navigating to /dashboard');
+        logger.debug('Navigating to /dashboard');
         navigate('/dashboard', { replace: true });
       }
     } catch (err) {
-      console.error('Login error:', err);
+      logger.error('Login error:', err);
       
       // Enhanced error handling
       if (err.response) {
@@ -95,7 +96,7 @@ const LoginPage = () => {
         const errorMsg = err.response.data?.msg || 
                        (err.response.status === 400 ? 'Invalid email or password' : 'Server error');
                        
-        console.error('Server error response:', {
+        logger.error('Server error response:', {
           status: err.response.status,
           statusText: err.response.statusText,
           data: JSON.stringify(err.response.data),
@@ -105,7 +106,7 @@ const LoginPage = () => {
       } else if (err.request) {
         // Request was made but no response
         setError('No response from server. Please check your internet connection.');
-        console.log('No response received from server');
+        logger.debug('No response received from server');
       } else {
         // Error in request setup
         setError(err.message || 'Failed to send login request');

@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Mail, KeyRound, Lock, X } from 'lucide-react';
 import { Spinner } from '../ui';
 import api from '../../utils/api';
 import axios from 'axios';
+import logger from '../../utils/logger';
 
 // Helper component for the step indicator
 const StepIndicator = ({ currentStep }) => {
@@ -54,6 +55,22 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
   const [isResendDisabled, setIsResendDisabled] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // Refs for cleanup of AbortControllers and timeouts
+  const abortControllerRef = useRef(null);
+  const timeoutIdRef = useRef(null);
+
+  // Cleanup AbortController and timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (timeoutIdRef.current) {
+        clearTimeout(timeoutIdRef.current);
+      }
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
+
   useEffect(() => {
     let interval;
     if (timer > 0) {
@@ -71,7 +88,9 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
         setMessage('');
         setEmail('');
         setOtp('');
-        // etc.
+        // Clear password state for security - don't keep passwords in memory
+        setNewPassword('');
+        setConfirmPassword('');
     }, 300); // Allow modal to animate out
   }
 
@@ -106,11 +125,19 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
     setMessage('');
     
     const trimmedEmail = email.trim();
-    console.log(`[${Date.now()}] Sending OTP to email:`, trimmedEmail, isResend ? '(resend)' : '(first attempt)');
+    logger.auth(`Sending OTP to email:`, trimmedEmail, isResend ? '(resend)' : '(first attempt)');
+    
+    // Clean up any existing abort controller/timeout
+    if (timeoutIdRef.current) {
+      clearTimeout(timeoutIdRef.current);
+    }
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
     
     // Create an abort controller to handle timeouts manually
-    const abortController = new AbortController();
-    const timeoutId = setTimeout(() => abortController.abort(), 25000); // 25 second timeout
+    abortControllerRef.current = new AbortController();
+    timeoutIdRef.current = setTimeout(() => abortControllerRef.current?.abort(), 25000); // 25 second timeout
     
     try {
       // Try with our API utility first
@@ -118,7 +145,7 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
       try {
         response = await api.post('/auth/forgot-password', { email: trimmedEmail });
       } catch (apiError) {
-        console.warn('API utility request failed, falling back to direct axios:', apiError);
+        logger.warn('API utility request failed, falling back to direct axios:', apiError);
         
         // Fall back to direct axios call if API utility fails
         response = await axios({
@@ -132,12 +159,13 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
           data: { email: trimmedEmail },
           timeout: 30000, // 30 second timeout
           withCredentials: true, // Include credentials for cross-origin requests
-          signal: abortController.signal
+          signal: abortControllerRef.current.signal
         });
       }
       
-      clearTimeout(timeoutId);
-      console.log(`[${Date.now()}] OTP sent successfully, response:`, response.data);
+      clearTimeout(timeoutIdRef.current);
+      timeoutIdRef.current = null;
+      logger.auth('OTP sent successfully, response:', response.data);
       
       // Only advance to next step on first attempt, not on resend
       if (!isResend) setStep(2);
@@ -147,8 +175,9 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
       setTimer(60);
       setIsResendDisabled(true);
     } catch (err) {
-      clearTimeout(timeoutId);
-      console.error(`[${Date.now()}] Error sending OTP:`, err);
+      clearTimeout(timeoutIdRef.current);
+      timeoutIdRef.current = null;
+      logger.error('Error sending OTP:', err);
       
       // More detailed error breakdown
       let debugInfo = {
@@ -159,7 +188,7 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
         headers: err.config?.headers,
         message: err.message
       };
-      console.log('Detailed error info:', debugInfo);
+      logger.debug('Detailed error info:', debugInfo);
       
       // Extract the most accurate error message
       const errorMessage = extractErrorMessage(err);
@@ -184,11 +213,19 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
     const trimmedEmail = email.trim();
     const trimmedOTP = otp.trim();
     
-    console.log(`[${Date.now()}] Verifying OTP for email:`, trimmedEmail);
+    logger.auth('Verifying OTP for email:', trimmedEmail);
+    
+    // Clean up any existing abort controller/timeout
+    if (timeoutIdRef.current) {
+      clearTimeout(timeoutIdRef.current);
+    }
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
     
     // Create an abort controller for manual timeout handling
-    const abortController = new AbortController();
-    const timeoutId = setTimeout(() => abortController.abort(), 25000); // 25 second timeout
+    abortControllerRef.current = new AbortController();
+    timeoutIdRef.current = setTimeout(() => abortControllerRef.current?.abort(), 25000); // 25 second timeout
     
     try {
       // Try with API utility first
@@ -199,7 +236,7 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
           otp: trimmedOTP 
         });
       } catch (apiError) {
-        console.warn('API utility request failed for verify OTP, falling back to direct axios:', apiError);
+        logger.warn('API utility request failed for verify OTP, falling back to direct axios:', apiError);
         
         // Fall back to direct axios
         response = await axios({
@@ -216,19 +253,21 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
           },
           timeout: 30000, // 30 second timeout
           withCredentials: true, // Include credentials for cross-origin requests
-          signal: abortController.signal
+          signal: abortControllerRef.current.signal
         });
       }
       
-      clearTimeout(timeoutId);
-      console.log(`[${Date.now()}] OTP verification successful:`, response.data);
+      clearTimeout(timeoutIdRef.current);
+      timeoutIdRef.current = null;
+      logger.auth('OTP verification successful:', response.data);
       
       // Move to reset password step
       setStep(3);
       setMessage({ text: response.data.msg || 'OTP verified successfully', type: 'success' });
     } catch (err) {
-      clearTimeout(timeoutId);
-      console.error(`[${Date.now()}] Error verifying OTP:`, err);
+      clearTimeout(timeoutIdRef.current);
+      timeoutIdRef.current = null;
+      logger.error('Error verifying OTP:', err);
       
       // More detailed error breakdown
       const debugInfo = {
@@ -239,7 +278,7 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
         headers: err.config?.headers,
         message: err.message
       };
-      console.log('Detailed OTP verification error:', debugInfo);
+      logger.debug('Detailed OTP verification error:', debugInfo);
       
       // Extract the most accurate error message
       const errorMessage = extractErrorMessage(err);
@@ -292,11 +331,19 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
     const trimmedEmail = email.trim();
     const trimmedOTP = otp.trim();
     
-    console.log(`[${Date.now()}] Sending password reset request for:`, trimmedEmail);
+    logger.auth('Sending password reset request for:', trimmedEmail);
+    
+    // Clean up any existing abort controller/timeout
+    if (timeoutIdRef.current) {
+      clearTimeout(timeoutIdRef.current);
+    }
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
     
     // Create an abort controller for manual timeout handling
-    const abortController = new AbortController();
-    const timeoutId = setTimeout(() => abortController.abort(), 25000); // 25 second timeout
+    abortControllerRef.current = new AbortController();
+    timeoutIdRef.current = setTimeout(() => abortControllerRef.current?.abort(), 25000); // 25 second timeout
     
     try {
       // Try with API utility first
@@ -308,7 +355,7 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
           newPassword 
         });
       } catch (apiError) {
-        console.warn('API utility request failed for password reset, falling back to direct axios:', apiError);
+        logger.warn('API utility request failed for password reset, falling back to direct axios:', apiError);
         
         // Fall back to direct axios
         response = await axios({
@@ -326,12 +373,13 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
           },
           timeout: 30000, // 30 second timeout
           withCredentials: true, // Include credentials for cross-origin requests
-          signal: abortController.signal
+          signal: abortControllerRef.current.signal
         });
       }
       
-      clearTimeout(timeoutId);
-      console.log(`[${Date.now()}] Password reset successful:`, response.data);
+      clearTimeout(timeoutIdRef.current);
+      timeoutIdRef.current = null;
+      logger.auth('Password reset successful:', response.data);
       
       // Show success message with animation
       setMessage({ 
@@ -344,8 +392,9 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
         resetStateAndClose();
       }, 2000);
     } catch (err) {
-      clearTimeout(timeoutId);
-      console.error(`[${Date.now()}] Error resetting password:`, err);
+      clearTimeout(timeoutIdRef.current);
+      timeoutIdRef.current = null;
+      logger.error('Error resetting password:', err);
       
       // More detailed error breakdown
       const debugInfo = {
@@ -356,7 +405,7 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
         headers: err.config?.headers,
         message: err.message
       };
-      console.log('Detailed password reset error:', debugInfo);
+      logger.debug('Detailed password reset error:', debugInfo);
       
       // Extract the most accurate error message
       const errorMessage = extractErrorMessage(err);
