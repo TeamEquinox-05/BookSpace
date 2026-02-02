@@ -18,8 +18,9 @@ app.use(cookieParser());
 // Set trust proxy to trust the Render reverse proxy
 app.set('trust proxy', 1);
 
-// Init Middleware
-app.use(express.json({ extended: false }));
+// Init Middleware with body size limit to prevent DoS
+app.use(express.json({ limit: '10kb' }));
+app.use(express.urlencoded({ extended: false, limit: '10kb' }));
 
 // Define allowed origins
 const allowedOrigins = [
@@ -80,18 +81,33 @@ app.use('/api/users', require('./src/routes/users.cjs'));
 
 const PORT = process.env.PORT || 10000;
 
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+const server = app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (err, promise) => {
-  console.error(`Error: ${err.message}`);
-  // Close server & exit process
-  // server.close(() => process.exit(1));
+  console.error(`Unhandled Rejection: ${err.message}`);
+  // Close server & exit process gracefully
+  server.close(() => {
+    console.log('Server closed due to unhandled rejection');
+    process.exit(1);
+  });
 });
 
 // Handle uncaught exceptions
 process.on('uncaughtException', (err, origin) => {
-  console.error(`Caught exception: ${err.message}\n` + `Exception origin: ${origin}`);
-  // Close server & exit process
-  // server.close(() => process.exit(1));
+  console.error(`Uncaught Exception: ${err.message}\nException origin: ${origin}`);
+  // Close server & exit process gracefully
+  server.close(() => {
+    console.log('Server closed due to uncaught exception');
+    process.exit(1);
+  });
+});
+
+// Handle graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received. Shutting down gracefully...');
+  server.close(() => {
+    console.log('Server closed');
+    process.exit(0);
+  });
 });

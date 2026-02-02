@@ -3,11 +3,13 @@ const mongoose = require('mongoose');
 const BookingSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'user'
+    ref: 'user',
+    required: true
   },
   placeId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'place'
+    ref: 'place',
+    required: true
   },
   eventTitle: {
     type: String,
@@ -29,6 +31,7 @@ const BookingSchema = new mongoose.Schema({
   },
   status: {
     type: String,
+    enum: ['pending', 'approved', 'rejected'],
     default: 'pending'
   },
   requestedFacilities: [

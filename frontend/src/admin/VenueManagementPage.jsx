@@ -16,7 +16,32 @@ export default function VenueManagementPage() {
   const [venueToDelete, setVenueToDelete] = useState(null);
 
   useEffect(() => {
+    let isMounted = true;
+    
+    const fetchVenues = async () => {
+      try {
+        setLoading(true);
+        const res = await api.get('/places');
+        if (isMounted) {
+          setVenues(res.data);
+        }
+      } catch (err) {
+        if (isMounted) {
+          setError(err.message);
+          console.error("Error fetching venues:", err);
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
     fetchVenues();
+    
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const fetchVenues = async () => {

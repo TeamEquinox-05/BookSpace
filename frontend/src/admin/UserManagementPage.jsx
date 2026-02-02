@@ -16,22 +16,34 @@ export default function UserManagementPage() {
   const [selectedUser, setSelectedUser] = useState(null);
   const [actionType, setActionType] = useState('');
 
-  const fetchUsers = async () => {
-    setLoading(true);
-    try {
-      const res = await api.get(`/users?page=${currentPage}&limit=10&search=${search}&status=${status}`);
-      setUsers(res.data.users);
-      setTotalPages(res.data.totalPages);
-    } catch (err) {
-      setError(err.message);
-      console.error("Error fetching users:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
+    let isMounted = true;
+    
+    const fetchUsers = async () => {
+      setLoading(true);
+      try {
+        const res = await api.get(`/users?page=${currentPage}&limit=10&search=${search}&status=${status}`);
+        if (isMounted) {
+          setUsers(res.data.users);
+          setTotalPages(res.data.totalPages);
+        }
+      } catch (err) {
+        if (isMounted) {
+          setError(err.message);
+          console.error("Error fetching users:", err);
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
     fetchUsers();
+    
+    return () => {
+      isMounted = false;
+    };
   }, [currentPage, search, status]);
 
   const handleAction = async () => {
@@ -45,7 +57,12 @@ export default function UserManagementPage() {
       } else if (actionType === 'remove') {
         await api.delete(`/users/${selectedUser._id}`);
       }
-      fetchUsers();
+      // Trigger refetch by updating a state that's in the dependency array
+      setCurrentPage(prev => prev); // Force re-render to refetch
+      // Refetch users manually
+      const res = await api.get(`/users?page=${currentPage}&limit=10&search=${search}&status=${status}`);
+      setUsers(res.data.users);
+      setTotalPages(res.data.totalPages);
     } catch (err) {
       console.error(`Error ${actionType}ing user:`, err);
     }

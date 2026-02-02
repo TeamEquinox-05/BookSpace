@@ -125,7 +125,12 @@ const MobileSidebar = ({ isOpen, onClose }) => {
         <div className="border-t border-slate-200 dark:border-slate-700 p-4">
           <RouterNavLink
             to="/login"
-            onClick={() => { logout(); onClose(); }} // Logout and close sidebar
+            onClick={async (e) => { 
+              e.preventDefault();
+              await logout(); 
+              onClose(); 
+              window.location.href = '/login';
+            }}
             className={cn(
               "flex items-center rounded-lg transition-all",
               "bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white",

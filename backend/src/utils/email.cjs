@@ -11,14 +11,22 @@ const nodemailer = require('nodemailer');
 //   3. Generate a new App Password for "Mail"
 //   4. Use that password in EMAIL_PASS
 
-// Create Gmail transporter with optimal settings
-const createGmailTransporter = () => {
+// Singleton transporter instance - created once and reused for efficiency
+let transporter = null;
+
+// Create Gmail transporter with optimal settings (singleton pattern)
+const getTransporter = () => {
+  // Return existing transporter if already created
+  if (transporter) {
+    return transporter;
+  }
+
   if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
     console.error('ERROR: EMAIL_USER and EMAIL_PASS must be set in environment variables');
     return null;
   }
 
-  return nodemailer.createTransport({
+  transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
     port: 587,
     secure: false, // Use STARTTLS
@@ -29,8 +37,13 @@ const createGmailTransporter = () => {
     connectionTimeout: 10000,
     greetingTimeout: 10000,
     socketTimeout: 10000,
+    pool: true, // Use pooled connections for better performance
+    maxConnections: 5, // Limit concurrent connections
+    maxMessages: 100, // Messages per connection before reconnecting
     debug: false
   });
+
+  return transporter;
 };
 
 // Debugging environment variables
@@ -40,8 +53,24 @@ console.log('Email service configuration:', {
   service: 'Gmail SMTP (Nodemailer)'
 });
 
+// Validate email format before attempting to send
+const isValidEmail = (email) => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
+
 // Send email using Nodemailer
 const sendEmail = async (to, subject, text) => {
+  // Validate email before sending
+  if (!to || !isValidEmail(to)) {
+    console.error(`Invalid email address: ${to}`);
+    return {
+      success: false,
+      error: 'Invalid email address format',
+      code: 'INVALID_EMAIL'
+    };
+  }
+
   // Create HTML version of the email
   const html = `<div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
       <h2 style="color: #1d4ed8;">${subject}</h2>
@@ -51,10 +80,10 @@ const sendEmail = async (to, subject, text) => {
       </p>
     </div>`;
 
-  // Create transporter
-  const transporter = createGmailTransporter();
+  // Get singleton transporter
+  const emailTransporter = getTransporter();
   
-  if (!transporter) {
+  if (!emailTransporter) {
     console.error('Failed to create email transporter - check EMAIL_USER and EMAIL_PASS');
     return { 
       success: false, 
@@ -73,7 +102,7 @@ const sendEmail = async (to, subject, text) => {
 
   try {
     console.log(`Attempting to send email to ${to} using Gmail SMTP`);
-    const info = await transporter.sendMail(mailOptions);
+    const info = await emailTransporter.sendMail(mailOptions);
     console.log(`✓ Email sent successfully to ${to}, messageId: ${info.messageId}`);
     return { 
       success: true, 
@@ -94,4 +123,13 @@ const sendEmail = async (to, subject, text) => {
   }
 };
 
-module.exports = { sendEmail };
+// Cleanup function for graceful shutdown
+const closeTransporter = () => {
+  if (transporter) {
+    transporter.close();
+    transporter = null;
+    console.log('Email transporter closed');
+  }
+};
+
+module.exports = { sendEmail, closeTransporter };

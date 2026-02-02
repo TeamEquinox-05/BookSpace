@@ -30,7 +30,7 @@ router.get('/', auth, verifyRole('admin'), async (req, res) => {
     endOfToday.setHours(23, 59, 59, 999);
     
     const todayBookings = await Booking.countDocuments({
-      status: { $in: ['approved', 'confirmed'] },
+      status: 'approved',
       $or: [
         { eventStartTime: { $gte: startOfToday, $lte: endOfToday } },
         { eventEndTime: { $gte: startOfToday, $lte: endOfToday } },

@@ -48,8 +48,12 @@ const cleanupExpiredOtps = () => {
   }
 };
 
-// Run cleanup every 5 minutes
-setInterval(cleanupExpiredOtps, 5 * 60 * 1000);
+// Run cleanup every 5 minutes - store reference so it can be cleared on shutdown
+const otpCleanupInterval = setInterval(cleanupExpiredOtps, 5 * 60 * 1000);
+
+// Unref the interval so it doesn't prevent Node.js from exiting gracefully
+// This allows the process to exit even if the interval is still running
+otpCleanupInterval.unref();
 
 
 
@@ -252,7 +256,10 @@ router.post('/login',
       process.env.JWT_SECRET,
       { expiresIn: '24h' }, // Extended token expiration to 24 hours for testing
       (err, token) => {
-        if (err) throw err;
+        if (err) {
+          console.error('JWT sign error:', err.message);
+          return res.status(500).json({ msg: 'Error generating authentication token' });
+        }
         
         // Enhanced cookie settings for cross-domain usage
         // Don't specify domain to let browser handle it correctly
@@ -470,3 +477,9 @@ router.post('/logout', (req, res) => {
 });
 
 module.exports = router;
+
+// Export cleanup function for graceful shutdown
+module.exports.cleanup = () => {
+  clearInterval(otpCleanupInterval);
+  console.log('Auth module cleanup: OTP cleanup interval cleared');
+};

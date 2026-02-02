@@ -16,25 +16,24 @@ const FilterControls = ({ places, filters, setFilters }) => {
   };
 
   const setDatePreset = (preset) => {
-    const today = moment();
     let dateFrom = '';
     let dateTo = '';
 
     switch(preset) {
       case 'today':
-        dateFrom = today.format('YYYY-MM-DD');
-        dateTo = today.format('YYYY-MM-DD');
+        dateFrom = moment().format('YYYY-MM-DD');
+        dateTo = moment().format('YYYY-MM-DD');
         break;
       case 'week':
-        dateFrom = today.startOf('week').format('YYYY-MM-DD');
-        dateTo = today.endOf('week').format('YYYY-MM-DD');
+        dateFrom = moment().startOf('week').format('YYYY-MM-DD');
+        dateTo = moment().endOf('week').format('YYYY-MM-DD');
         break;
       case 'month':
-        dateFrom = today.startOf('month').format('YYYY-MM-DD');
-        dateTo = today.endOf('month').format('YYYY-MM-DD');
+        dateFrom = moment().startOf('month').format('YYYY-MM-DD');
+        dateTo = moment().endOf('month').format('YYYY-MM-DD');
         break;
       case 'last30':
-        dateFrom = today.subtract(30, 'days').format('YYYY-MM-DD');
+        dateFrom = moment().subtract(30, 'days').format('YYYY-MM-DD');
         dateTo = moment().format('YYYY-MM-DD');
         break;
     }
@@ -173,43 +172,48 @@ const DownloadReport = ({ filters, sortConfig, disabled }) => {
 
   const downloadCSV = async () => {
     setIsDownloading(true);
-    // This is a simplified CSV generation. For a real app, a library like papaparse would be better.
-    const headers = ['Event', 'Place', 'User', 'Start Time', 'End Time', 'Duration', 'Status'];
-    const query = new URLSearchParams({
-      ...filters,
-      sortKey: sortConfig.key,
-      sortDirection: sortConfig.direction,
-    }).toString();
-    const response = await api.get(`/bookings?${query}`);
-    const bookings = response.data;
+    try {
+      // This is a simplified CSV generation. For a real app, a library like papaparse would be better.
+      const headers = ['Event', 'Place', 'User', 'Start Time', 'End Time', 'Duration', 'Status'];
+      const query = new URLSearchParams({
+        ...filters,
+        sortKey: sortConfig.key,
+        sortDirection: sortConfig.direction,
+      }).toString();
+      const response = await api.get(`/bookings?${query}`);
+      const bookings = response.data;
 
-    let csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n";
-    bookings.forEach(b => {
-      const duration = moment.duration(moment(b.eventEndTime).diff(moment(b.eventStartTime)));
-      const hours = Math.floor(duration.asHours());
-      const minutes = duration.minutes();
-      const durationText = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+      let csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n";
+      bookings.forEach(b => {
+        const duration = moment.duration(moment(b.eventEndTime).diff(moment(b.eventStartTime)));
+        const hours = Math.floor(duration.asHours());
+        const minutes = duration.minutes();
+        const durationText = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
 
-      const row = [
-        `"${b.eventTitle}"`,
-        `"${b.placeId?.name || 'N/A'}"`,
-        `"${b.userId?.name || 'N/A'}"`,
-        `"${moment(b.eventStartTime).format('YYYY-MM-DD HH:mm')}"`,
-        `"${moment(b.eventEndTime).format('YYYY-MM-DD HH:mm')}"`,
-        `"${durationText}"`,
-        `"${b.status}"`
-      ].join(",");
-      csvContent += row + "\n";
-    });
+        const row = [
+          `"${b.eventTitle}"`,
+          `"${b.placeId?.name || 'N/A'}"`,
+          `"${b.userId?.name || 'N/A'}"`,
+          `"${moment(b.eventStartTime).format('YYYY-MM-DD HH:mm')}"`,
+          `"${moment(b.eventEndTime).format('YYYY-MM-DD HH:mm')}"`,
+          `"${durationText}"`,
+          `"${b.status}"`
+        ].join(",");
+        csvContent += row + "\n";
+      });
 
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "bookings-report.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    setIsDownloading(false);
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", "bookings-report.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error('CSV download error:', error);
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   const downloadFromServer = async (format) => {
@@ -349,12 +353,25 @@ const AllBookingsPage = () => {
       );
     }
 
+    // Helper function to get nested property value
+    const getNestedValue = (obj, path) => {
+      return path.split('.').reduce((current, key) => current?.[key], obj);
+    };
+
     if (sortConfig !== null) {
       filteredItems.sort((a, b) => {
-        if (a[sortConfig.key] < b[sortConfig.key]) {
+        const aValue = getNestedValue(a, sortConfig.key);
+        const bValue = getNestedValue(b, sortConfig.key);
+        
+        // Handle null/undefined values
+        if (aValue == null && bValue == null) return 0;
+        if (aValue == null) return sortConfig.direction === 'ascending' ? 1 : -1;
+        if (bValue == null) return sortConfig.direction === 'ascending' ? -1 : 1;
+        
+        if (aValue < bValue) {
           return sortConfig.direction === 'ascending' ? -1 : 1;
         }
-        if (a[sortConfig.key] > b[sortConfig.key]) {
+        if (aValue > bValue) {
           return sortConfig.direction === 'ascending' ? 1 : -1;
         }
         return 0;

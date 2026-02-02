@@ -1,10 +1,19 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
 const router = express.Router();
+const mongoose = require('mongoose');
 const Place = require('../models/Place.cjs');
 const Booking = require('../models/Booking.cjs');
 const auth = require('../middleware/auth.cjs');
 const verifyRole = require('../middleware/verifyRole.cjs');
+
+// Middleware to validate MongoDB ObjectId
+const validateObjectId = (req, res, next) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    return res.status(400).json({ msg: 'Invalid place ID format' });
+  }
+  next();
+};
 
 // @route   POST api/places
 // @desc    Create a new place
@@ -41,7 +50,8 @@ router.post('/',
 // @access  Private/Admin
 router.put('/:id', 
   auth, 
-  verifyRole('admin'), 
+  verifyRole('admin'),
+  validateObjectId,
   [
     body('name').optional().trim().notEmpty().withMessage('Name cannot be empty').isLength({ max: 100 }),
     body('location').optional().trim().notEmpty().withMessage('Location cannot be empty'),
@@ -70,14 +80,31 @@ router.put('/:id',
 });
 
 // @route   DELETE api/places/:id
-// @desc    Delete a place
+// @desc    Delete a place (only if no future bookings exist)
 // @access  Private/Admin
-router.delete('/:id', auth, verifyRole('admin'), async (req, res) => {
+router.delete('/:id', auth, verifyRole('admin'), validateObjectId, async (req, res) => {
   try {
     let place = await Place.findById(req.params.id);
     if (!place) {
       return res.status(404).json({ msg: 'Place not found' });
     }
+
+    // Check for future or pending bookings for this place
+    const now = new Date();
+    const activeBookings = await Booking.countDocuments({
+      placeId: req.params.id,
+      $or: [
+        { status: 'pending' },
+        { status: 'approved', eventEndTime: { $gte: now } }
+      ]
+    });
+
+    if (activeBookings > 0) {
+      return res.status(400).json({ 
+        msg: `Cannot delete place with ${activeBookings} active or pending booking(s). Please cancel or wait for bookings to complete first.` 
+      });
+    }
+
     await Place.findByIdAndDelete(req.params.id);
     res.json({ msg: 'Place removed' });
   } catch (err) {
@@ -125,7 +152,7 @@ router.get('/popular', async (req, res) => {
 // @route   GET api/places/:id
 // @desc    Get a single place by ID
 // @access  Public
-router.get('/:id', async (req, res) => {
+router.get('/:id', validateObjectId, async (req, res) => {
   try {
     const place = await Place.findById(req.params.id);
     if (!place) {
@@ -153,11 +180,11 @@ router.get('/', async (req, res) => {
 
 // @route   GET api/places/:id/bookings
 // @desc    Get all bookings for a specific place
-// @access  Public
-router.get('/:id/bookings', async (req, res) => {
+// @access  Private (requires authentication to protect user data)
+router.get('/:id/bookings', auth, validateObjectId, async (req, res) => {
   try {
     const bookings = await Booking.find({ placeId: req.params.id })
-      .populate('userId', ['name', 'email'])
+      .populate('userId', ['name']) // Only expose name, not email for privacy
       .populate('placeId', ['name', 'location', 'capacity']);
     res.json(bookings);
   } catch (err) {

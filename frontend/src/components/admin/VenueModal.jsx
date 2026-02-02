@@ -4,6 +4,7 @@ import { X, Plus, Trash2 } from 'lucide-react';
 const VenueModal = ({ isOpen, onClose, onSave, venue }) => {
   // --- No changes to state or logic ---
   const [formData, setFormData] = useState({});
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
     if (venue) {
@@ -19,7 +20,45 @@ const VenueModal = ({ isOpen, onClose, onSave, venue }) => {
         facilities: [],
       });
     }
+    setErrors({});
   }, [venue, isOpen]); // Add isOpen to re-initialize when modal re-opens
+
+  const validateForm = () => {
+    const newErrors = {};
+    
+    if (!formData.name || formData.name.trim().length === 0) {
+      newErrors.name = 'Venue name is required';
+    } else if (formData.name.trim().length > 100) {
+      newErrors.name = 'Venue name must be less than 100 characters';
+    }
+    
+    if (!formData.capacity || isNaN(formData.capacity) || parseInt(formData.capacity) < 1) {
+      newErrors.capacity = 'Capacity must be a positive number';
+    }
+    
+    if (!formData.location || formData.location.trim().length === 0) {
+      newErrors.location = 'Location is required';
+    }
+    
+    // Validate facilities
+    formData.facilities?.forEach((facility, index) => {
+      if (facility.name && !facility.email) {
+        newErrors[`facility_${index}_email`] = 'Email is required for facility';
+      }
+      if (facility.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(facility.email)) {
+        newErrors[`facility_${index}_email`] = 'Invalid email format';
+      }
+    });
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSave = () => {
+    if (validateForm()) {
+      onSave(formData);
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -69,11 +108,13 @@ const VenueModal = ({ isOpen, onClose, onSave, venue }) => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">Venue Name</label>
-              <input type="text" name="name" value={formData.name || ''} onChange={handleChange} placeholder="e.g., Main Auditorium" className="w-full p-2.5 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-600 dark:text-slate-300 focus:ring-2 focus:ring-blue-500 transition" />
+              <input type="text" name="name" value={formData.name || ''} onChange={handleChange} placeholder="e.g., Main Auditorium" className={`w-full p-2.5 bg-slate-50 dark:bg-slate-700 border ${errors.name ? 'border-red-500' : 'border-slate-300 dark:border-slate-600'} rounded-lg text-slate-600 dark:text-slate-300 focus:ring-2 focus:ring-blue-500 transition`} />
+              {errors.name && <p className="mt-1 text-sm text-red-500">{errors.name}</p>}
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">Capacity</label>
-              <input type="number" name="capacity" value={formData.capacity || ''} onChange={handleChange} placeholder="e.g., 200" className="w-full p-2.5 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-600 dark:text-slate-300 focus:ring-2 focus:ring-blue-500 transition" />
+              <input type="number" name="capacity" value={formData.capacity || ''} onChange={handleChange} placeholder="e.g., 200" className={`w-full p-2.5 bg-slate-50 dark:bg-slate-700 border ${errors.capacity ? 'border-red-500' : 'border-slate-300 dark:border-slate-600'} rounded-lg text-slate-600 dark:text-slate-300 focus:ring-2 focus:ring-blue-500 transition`} />
+              {errors.capacity && <p className="mt-1 text-sm text-red-500">{errors.capacity}</p>}
             </div>
           </div>
           <div>
@@ -83,7 +124,8 @@ const VenueModal = ({ isOpen, onClose, onSave, venue }) => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">Location</label>
-              <input type="text" name="location" value={formData.location || ''} onChange={handleChange} placeholder="e.g., 1st Floor, Main Building" className="w-full p-2.5 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-600 dark:text-slate-300 focus:ring-2 focus:ring-blue-500 transition" />
+              <input type="text" name="location" value={formData.location || ''} onChange={handleChange} placeholder="e.g., 1st Floor, Main Building" className={`w-full p-2.5 bg-slate-50 dark:bg-slate-700 border ${errors.location ? 'border-red-500' : 'border-slate-300 dark:border-slate-600'} rounded-lg text-slate-600 dark:text-slate-300 focus:ring-2 focus:ring-blue-500 transition`} />
+              {errors.location && <p className="mt-1 text-sm text-red-500">{errors.location}</p>}
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">Status</label>
@@ -100,15 +142,18 @@ const VenueModal = ({ isOpen, onClose, onSave, venue }) => {
             <h3 className="text-lg font-semibold mb-3 text-slate-800 dark:text-white">Facilities</h3>
             <div className="space-y-3">
               {formData.facilities && formData.facilities.map((facility, index) => (
-                <div key={index} className="bg-slate-50 dark:bg-slate-700/50 p-3 rounded-lg flex items-start space-x-3">
-                  <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <input type="text" value={facility.name} onChange={(e) => handleFacilityChange(index, 'name', e.target.value)} placeholder="Facility Name" className="w-full p-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md text-slate-600 dark:text-slate-300 focus:ring-2 focus:ring-blue-500 transition" />
-                    <input type="email" value={facility.email} onChange={(e) => handleFacilityChange(index, 'email', e.target.value)} placeholder="Contact Email" className="w-full p-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md text-slate-600 dark:text-slate-300 focus:ring-2 focus:ring-blue-500 transition" />
-                    <input type="text" value={facility.message} onChange={(e) => handleFacilityChange(index, 'message', e.target.value)} placeholder="Contact Message" className="w-full p-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md text-slate-600 dark:text-slate-300 focus:ring-2 focus:ring-blue-500 transition" />
+                <div key={index} className="bg-slate-50 dark:bg-slate-700/50 p-3 rounded-lg">
+                  <div className="flex items-start space-x-3">
+                    <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <input type="text" value={facility.name} onChange={(e) => handleFacilityChange(index, 'name', e.target.value)} placeholder="Facility Name" className="w-full p-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md text-slate-600 dark:text-slate-300 focus:ring-2 focus:ring-blue-500 transition" />
+                      <input type="email" value={facility.email} onChange={(e) => handleFacilityChange(index, 'email', e.target.value)} placeholder="Contact Email" className={`w-full p-2 bg-white dark:bg-slate-700 border ${errors[`facility_${index}_email`] ? 'border-red-500' : 'border-slate-300 dark:border-slate-600'} rounded-md text-slate-600 dark:text-slate-300 focus:ring-2 focus:ring-blue-500 transition`} />
+                      <input type="text" value={facility.message} onChange={(e) => handleFacilityChange(index, 'message', e.target.value)} placeholder="Contact Message" className="w-full p-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md text-slate-600 dark:text-slate-300 focus:ring-2 focus:ring-blue-500 transition" />
+                    </div>
+                    <button onClick={() => removeFacility(index)} className="p-2 text-slate-500 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/40 dark:hover:text-red-400 rounded-full transition-colors">
+                      <Trash2 size={18} />
+                    </button>
                   </div>
-                  <button onClick={() => removeFacility(index)} className="p-2 text-slate-500 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/40 dark:hover:text-red-400 rounded-full transition-colors">
-                    <Trash2 size={18} />
-                  </button>
+                  {errors[`facility_${index}_email`] && <p className="mt-1 text-sm text-red-500 sm:ml-0 sm:col-start-2">{errors[`facility_${index}_email`]}</p>}
                 </div>
               ))}
               <button type="button" onClick={addFacility} className="w-full flex items-center justify-center space-x-2 p-2.5 mt-2 border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-lg text-slate-500 hover:border-blue-500 hover:text-blue-500 dark:hover:border-blue-500 dark:hover:text-blue-400 transition-colors">
@@ -122,7 +167,7 @@ const VenueModal = ({ isOpen, onClose, onSave, venue }) => {
         {/* Modal Footer */}
         <div className="p-6 flex justify-end space-x-4 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 rounded-b-xl">
           <button type="button" onClick={onClose} className="px-5 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors">Cancel</button>
-          <button type="button" onClick={() => onSave(formData)} className="px-5 py-2.5 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-slate-800">
+          <button type="button" onClick={handleSave} className="px-5 py-2.5 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-slate-800">
             {venue ? 'Update Venue' : 'Save Venue'}
           </button>
         </div>

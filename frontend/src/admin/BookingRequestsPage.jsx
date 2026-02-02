@@ -19,7 +19,32 @@ export default function BookingRequestsPage() {
   const { addToast, ToastContainer } = useToast();
 
   useEffect(() => {
+    let isMounted = true;
+    
+    const fetchPendingBookings = async () => {
+      try {
+        setLoading(true);
+        const res = await api.get('/bookings/pending');
+        if (isMounted) {
+          setPendingBookings(res.data);
+        }
+      } catch (err) {
+        if (isMounted) {
+          setError(err.message);
+          console.error("Error fetching pending bookings:", err);
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
     fetchPendingBookings();
+    
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const fetchPendingBookings = async () => {

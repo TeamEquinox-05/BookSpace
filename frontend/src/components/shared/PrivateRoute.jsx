@@ -1,22 +1,20 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { Spinner } from '../ui';
 
 const PrivateRoute = ({ adminOnly }) => {
   const { user, loading, refreshUser } = useAuth();
+  const hasAttemptedRefresh = useRef(false);
 
-  // Memoize the refresh check to avoid unnecessary re-renders
-  const checkAuth = useCallback(() => {
-    if (!loading && !user) {
+  // On mount, verify authentication is still valid (only once)
+  useEffect(() => {
+    // Only attempt refresh once per mount if not loading and no user
+    if (!loading && !user && !hasAttemptedRefresh.current) {
+      hasAttemptedRefresh.current = true;
       refreshUser();
     }
   }, [loading, user, refreshUser]);
-
-  // On mount, verify authentication is still valid
-  useEffect(() => {
-    checkAuth();
-  }, [checkAuth]);
 
   // Display loading spinner while checking authentication
   if (loading) {

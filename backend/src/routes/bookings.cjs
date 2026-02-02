@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const mongoose = require('mongoose');
 const { body, validationResult } = require('express-validator');
 const Booking = require('../models/Booking.cjs');
 const { sendEmail } = require('../utils/email.cjs');
@@ -9,15 +10,43 @@ const PDFDocument = require('pdfkit');
 const { Document, Packer, Paragraph, Table, TableCell, TableRow, WidthType } = require('docx');
 const moment = require('moment');
 
+// Middleware to validate MongoDB ObjectId
+const validateObjectId = (req, res, next) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    return res.status(400).json({ msg: 'Invalid booking ID format' });
+  }
+  next();
+};
+
 // @route   POST api/bookings/check-availability
 // @desc    Check if a place is available for a given time range
 // @access  Public
-router.post('/check-availability', async (req, res) => {
+router.post('/check-availability', [
+  body('placeId').isMongoId().withMessage('Invalid place ID'),
+  body('eventStartTime').isISO8601().withMessage('Invalid start time format'),
+  body('eventEndTime').isISO8601().withMessage('Invalid end time format')
+], async (req, res) => {
+  // Validate input
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
   const { placeId, eventStartTime, eventEndTime } = req.body;
 
   try {
     const newEventStartTime = new Date(eventStartTime);
     const newEventEndTime = new Date(eventEndTime);
+
+    // Validate dates are valid
+    if (isNaN(newEventStartTime.getTime()) || isNaN(newEventEndTime.getTime())) {
+      return res.status(400).json({ msg: 'Invalid date format' });
+    }
+
+    // Validate end time is after start time
+    if (newEventEndTime <= newEventStartTime) {
+      return res.status(400).json({ msg: 'End time must be after start time' });
+    }
 
     const overlappingBookings = await Booking.find({
       placeId,
@@ -118,7 +147,22 @@ router.post('/', [
 // @route   PUT api/bookings/:id/status
 // @desc    Update booking status (approve/reject)
 // @access  Private/Admin
-router.put('/:id/status', auth, verifyRole('admin'), async (req, res) => {
+router.put('/:id/status', 
+  auth, 
+  verifyRole('admin'),
+  validateObjectId,
+  [
+    body('status').isIn(['approved', 'rejected']).withMessage('Status must be approved or rejected'),
+    body('reason').if(body('status').equals('rejected'))
+      .notEmpty().withMessage('Rejection reason is required')
+      .isLength({ max: 500 }).trim()
+  ],
+  async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
   const { status, reason } = req.body;
   const { id } = req.params;
 
@@ -136,7 +180,6 @@ router.put('/:id/status', auth, verifyRole('admin'), async (req, res) => {
     }
 
     booking.status = status;
-    booking.eventTitle = booking.eventTitle;
     if (status === 'rejected') {
       booking.reason = reason;
     }
@@ -267,37 +310,106 @@ Thank you for using BookSpace!`;
 // @route   PUT api/bookings/:id
 // @desc    Update a booking
 // @access  Private
-router.put('/:id', auth, async (req, res) => {
+router.put('/:id', [
+  auth,
+  validateObjectId,
+  body('eventTitle').optional().isLength({ min: 3, max: 100 }).trim().escape().withMessage('Event title must be 3-100 characters'),
+  body('description').optional().isLength({ max: 500 }).trim().escape().withMessage('Description must be less than 500 characters'),
+  body('eventStartTime').optional().isISO8601().withMessage('Invalid start time format'),
+  body('eventEndTime').optional().isISO8601().withMessage('Invalid end time format'),
+  body('placeId').optional().isMongoId().withMessage('Invalid place ID'),
+  body('requestedFacilities').optional().isArray().withMessage('Facilities must be an array')
+], async (req, res) => {
+  // Check for validation errors
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ 
+      msg: 'Validation failed', 
+      errors: errors.array() 
+    });
+  }
+
   const { eventTitle, description, eventStartTime, eventEndTime, placeId, requestedFacilities } = req.body;
 
+  // Use a session for atomic operation to prevent race conditions
+  const session = await Booking.startSession();
+
   try {
-    let booking = await Booking.findById(req.params.id);
+    session.startTransaction();
+
+    let booking = await Booking.findById(req.params.id).session(session);
 
     if (!booking) {
+      await session.abortTransaction();
+      session.endSession();
       return res.status(404).json({ msg: 'Booking not found' });
     }
 
     if (booking.userId.toString() !== req.user.id) {
+      await session.abortTransaction();
+      session.endSession();
       return res.status(401).json({ msg: 'User not authorized' });
     }
 
     if (booking.status !== 'pending') {
+      await session.abortTransaction();
+      session.endSession();
       return res.status(400).json({ msg: 'Only pending bookings can be edited' });
     }
 
     const updatedEventStartTime = new Date(eventStartTime || booking.eventStartTime);
     const updatedEventEndTime = new Date(eventEndTime || booking.eventEndTime);
+    const updatedPlaceId = placeId || booking.placeId;
+
+    // Validate dates are valid
+    if (isNaN(updatedEventStartTime.getTime()) || isNaN(updatedEventEndTime.getTime())) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({ msg: 'Invalid date format' });
+    }
+
+    // Validate end time is after start time
+    if (updatedEventEndTime <= updatedEventStartTime) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({ msg: 'End time must be after start time' });
+    }
+
+    // Check for overlapping approved bookings (exclude current booking) within the transaction
+    const overlappingBookings = await Booking.find({
+      _id: { $ne: booking._id },
+      placeId: updatedPlaceId,
+      status: 'approved',
+      $or: [
+        { eventStartTime: { $lt: updatedEventEndTime, $gte: updatedEventStartTime } },
+        { eventEndTime: { $lte: updatedEventEndTime, $gt: updatedEventStartTime } },
+        { eventStartTime: { $lte: updatedEventStartTime }, eventEndTime: { $gte: updatedEventEndTime } },
+        { eventStartTime: { $gte: updatedEventStartTime }, eventEndTime: { $lte: updatedEventEndTime } }
+      ]
+    }).session(session);
+
+    if (overlappingBookings.length > 0) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({ msg: 'Updated time overlaps with an existing approved booking for this place.' });
+    }
 
     booking.eventTitle = eventTitle || booking.eventTitle;
     booking.description = description || booking.description;
     booking.eventStartTime = updatedEventStartTime;
     booking.eventEndTime = updatedEventEndTime;
-    booking.placeId = placeId || booking.placeId;
+    booking.placeId = updatedPlaceId;
     booking.requestedFacilities = requestedFacilities || booking.requestedFacilities;
 
-    await booking.save();
+    await booking.save({ session });
+    
+    await session.commitTransaction();
+    session.endSession();
+
     res.json(booking);
   } catch (err) {
+    await session.abortTransaction();
+    session.endSession();
     console.error('Error updating booking:', err.message);
     res.status(500).send('Server Error');
   }
@@ -305,8 +417,8 @@ router.put('/:id', auth, async (req, res) => {
 
 // @route   DELETE api/bookings/:id
 // @desc    Delete a booking
-// @access  Private
-router.delete('/:id', auth, async (req, res) => {
+// @access  Private (owner or admin)
+router.delete('/:id', auth, validateObjectId, async (req, res) => {
   try {
     const booking = await Booking.findById(req.params.id);
 
@@ -314,7 +426,8 @@ router.delete('/:id', auth, async (req, res) => {
       return res.status(404).json({ msg: 'Booking not found' });
     }
 
-    if (booking.userId.toString() !== req.user.id) {
+    // Allow deletion if user owns the booking OR is an admin
+    if (booking.userId.toString() !== req.user.id && req.user.role !== 'admin') {
       return res.status(401).json({ msg: 'User not authorized' });
     }
 

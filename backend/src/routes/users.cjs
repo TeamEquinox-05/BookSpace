@@ -1,10 +1,22 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
 const router = express.Router();
+const mongoose = require('mongoose');
 const User = require('../models/User.cjs');
 const auth = require('../middleware/auth.cjs');
 
 const { sendEmail } = require('../utils/email.cjs');
+
+// Helper function to escape special regex characters (prevents ReDoS attacks)
+const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+// Middleware to validate MongoDB ObjectId
+const validateObjectId = (req, res, next) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    return res.status(400).json({ msg: 'Invalid user ID format' });
+  }
+  next();
+};
 
 // @route   GET api/users/me
 // @desc    Get current user
@@ -27,13 +39,19 @@ router.get('/', auth, async (req, res) => {
     return res.status(403).json({ msg: 'Access denied' });
   }
 
-  const { page = 1, limit = 10, search = '', status = '' } = req.query;
+  // Parse and validate pagination parameters
+  const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+  const limit = Math.min(100, Math.max(1, parseInt(req.query.limit, 10) || 10)); // Limit between 1-100
+  const search = req.query.search || '';
+  const status = req.query.status || '';
 
   const query = { isDeleted: false };
   if (search) {
+    // Sanitize search input to prevent ReDoS attacks
+    const sanitizedSearch = escapeRegex(search.trim());
     query.$or = [
-      { name: { $regex: search, $options: 'i' } },
-      { email: { $regex: search, $options: 'i' } },
+      { name: { $regex: sanitizedSearch, $options: 'i' } },
+      { email: { $regex: sanitizedSearch, $options: 'i' } },
     ];
   }
   if (status) {
@@ -42,7 +60,7 @@ router.get('/', auth, async (req, res) => {
 
   try {
     const users = await User.find(query)
-      .limit(limit * 1)
+      .limit(limit)
       .skip((page - 1) * limit)
       .exec();
 
@@ -63,7 +81,8 @@ router.get('/', auth, async (req, res) => {
 // @desc    Approve a user
 // @access  Private (Admin only)
 router.put('/:id/approve', 
-  auth, 
+  auth,
+  validateObjectId,
   async (req, res) => {
     if (req.user.role !== 'admin') {
       return res.status(403).json({ msg: 'Access denied' });
@@ -99,7 +118,8 @@ router.put('/:id/approve',
 // @desc    Reject a user
 // @access  Private (Admin only)
 router.put('/:id/reject', 
-  auth, 
+  auth,
+  validateObjectId,
   async (req, res) => {
     if (req.user.role !== 'admin') {
       return res.status(403).json({ msg: 'Access denied' });
@@ -134,9 +154,14 @@ router.put('/:id/reject',
 // @route   DELETE api/users/:id
 // @desc    Soft delete a user
 // @access  Private (Admin only)
-router.delete('/:id', auth, async (req, res) => {
+router.delete('/:id', auth, validateObjectId, async (req, res) => {
   if (req.user.role !== 'admin') {
     return res.status(403).json({ msg: 'Access denied' });
+  }
+
+  // Prevent admin from deleting themselves
+  if (req.params.id === req.user.id) {
+    return res.status(400).json({ msg: 'You cannot delete your own account' });
   }
 
   try {
