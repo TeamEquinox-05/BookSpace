@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import api from '../utils/api';
 import moment from 'moment';
 import { PageHeader } from '../components/shared';
-import { Spinner, TableSkeleton } from '../components/ui';
-import { ShieldX, Download, FileText, FileType, FileJson } from 'lucide-react';
+import { Spinner, TableSkeleton, Badge, EmptyState } from '../components/ui';
+import { ShieldX, Download, FileText, FileType, FileJson, Calendar, Search, Filter, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import logger from '../utils/logger';
 
 const FilterControls = ({ places, filters, setFilters }) => {
@@ -55,65 +56,73 @@ const FilterControls = ({ places, filters, setFilters }) => {
   
   const activeFilterCount = getActiveFilterCount();
 
+  const DatePresetButton = ({ onClick, children }) => (
+    <motion.button
+      onClick={onClick}
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+      className="px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors flex items-center gap-1"
+    >
+      <Calendar className="w-3 h-3" />
+      {children}
+    </motion.button>
+  );
+
   return (
-    <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-t-lg border-b border-gray-200 dark:border-gray-700">
-      {/* Quick Date Presets */}
-      <div className="flex flex-wrap gap-2 mb-4">
-        <button
-          onClick={() => setDatePreset('today')}
-          className="px-3 py-1 text-xs font-medium rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200 hover:bg-blue-200 dark:hover:bg-blue-800"
-        >
-          Today
-        </button>
-        <button
-          onClick={() => setDatePreset('week')}
-          className="px-3 py-1 text-xs font-medium rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200 hover:bg-blue-200 dark:hover:bg-blue-800"
-        >
-          This Week
-        </button>
-        <button
-          onClick={() => setDatePreset('month')}
-          className="px-3 py-1 text-xs font-medium rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200 hover:bg-blue-200 dark:hover:bg-blue-800"
-        >
-          This Month
-        </button>
-        <button
-          onClick={() => setDatePreset('last30')}
-          className="px-3 py-1 text-xs font-medium rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200 hover:bg-blue-200 dark:hover:bg-blue-800"
-        >
-          Last 30 Days
-        </button>
-        {activeFilterCount > 0 && (
-          <span className="px-3 py-1 text-xs font-medium rounded-full bg-[#f7b731] text-gray-900">
-            {activeFilterCount} filter{activeFilterCount > 1 ? 's' : ''} active
-          </span>
-        )}
+    <div className="p-5 bg-slate-50 dark:bg-slate-800/50 rounded-t-xl border-b border-slate-200 dark:border-slate-700">
+      {/* Header with Quick Date Presets */}
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
+        <div className="flex items-center gap-2">
+          <Filter className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+          <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Quick filters:</span>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <DatePresetButton onClick={() => setDatePreset('today')}>Today</DatePresetButton>
+          <DatePresetButton onClick={() => setDatePreset('week')}>This Week</DatePresetButton>
+          <DatePresetButton onClick={() => setDatePreset('month')}>This Month</DatePresetButton>
+          <DatePresetButton onClick={() => setDatePreset('last30')}>Last 30 Days</DatePresetButton>
+          <AnimatePresence>
+            {activeFilterCount > 0 && (
+              <motion.span
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400"
+              >
+                {activeFilterCount} filter{activeFilterCount > 1 ? 's' : ''} active
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         {/* Search Box */}
         <div className="w-full xl:col-span-2">
-          <label htmlFor="search-filter" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Search</label>
-          <input
-            type="text"
-            id="search-filter"
-            name="search"
-            value={filters.search}
-            onChange={handleInputChange}
-            placeholder="Event, user, or ID..."
-            className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
-          />
+          <label htmlFor="search-filter" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Search</label>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input
+              type="text"
+              id="search-filter"
+              name="search"
+              value={filters.search}
+              onChange={handleInputChange}
+              placeholder="Event, user, or ID..."
+              className="block w-full pl-10 pr-4 py-2.5 text-sm border border-slate-200 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 transition-all"
+            />
+          </div>
         </div>
 
         {/* Status Filter */}
         <div className="w-full">
-          <label htmlFor="status-filter" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status</label>
+          <label htmlFor="status-filter" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Status</label>
           <select
             id="status-filter"
             name="status"
             value={filters.status}
             onChange={handleInputChange}
-            className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            className="block w-full px-3 py-2.5 text-sm border border-slate-200 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-all"
           >
             <option value="">All Statuses</option>
             <option value="approved">Approved</option>
@@ -124,13 +133,13 @@ const FilterControls = ({ places, filters, setFilters }) => {
 
         {/* Place Filter */}
         <div className="w-full">
-          <label htmlFor="place-filter" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Place</label>
+          <label htmlFor="place-filter" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Place</label>
           <select
             id="place-filter"
             name="placeId"
             value={filters.placeId}
             onChange={handleInputChange}
-            className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            className="block w-full px-3 py-2.5 text-sm border border-slate-200 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-all"
           >
             <option value="">All Places</option>
             {places.map(place => (
@@ -141,40 +150,51 @@ const FilterControls = ({ places, filters, setFilters }) => {
 
         {/* Date From */}
         <div className="w-full">
-          <label htmlFor="date-from-filter" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">From Date</label>
+          <label htmlFor="date-from-filter" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">From Date</label>
           <input
             type="date"
             id="date-from-filter"
             name="dateFrom"
             value={filters.dateFrom}
             onChange={handleInputChange}
-            className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            className="block w-full px-3 py-2.5 text-sm border border-slate-200 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-all"
           />
         </div>
 
         {/* Date To */}
         <div className="w-full">
-          <label htmlFor="date-to-filter" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">To Date</label>
+          <label htmlFor="date-to-filter" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">To Date</label>
           <input
             type="date"
             id="date-to-filter"
             name="dateTo"
             value={filters.dateTo}
             onChange={handleInputChange}
-            className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            className="block w-full px-3 py-2.5 text-sm border border-slate-200 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-all"
           />
         </div>
       </div>
 
       {/* Clear Filters Button */}
-      <div className="mt-4">
-        <button
-          onClick={clearFilters}
-          className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
-        >
-          Clear All Filters
-        </button>
-      </div>
+      <AnimatePresence>
+        {activeFilterCount > 0 && (
+          <motion.div 
+            className="mt-4"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+          >
+            <motion.button
+              onClick={clearFilters}
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.99 }}
+              className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors"
+            >
+              Clear All Filters
+            </motion.button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
@@ -277,7 +297,7 @@ const DownloadReport = ({ filters, sortConfig, disabled }) => {
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         disabled={disabled || isDownloading}
-        className="inline-flex justify-center w-full rounded-md border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-700 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="inline-flex justify-center w-full rounded-md border border-slate-300 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {isDownloading ? (
           <><Spinner size="sm" className="mr-2" /> Downloading...</>
@@ -286,25 +306,25 @@ const DownloadReport = ({ filters, sortConfig, disabled }) => {
         )}
       </button>
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white dark:bg-gray-700 ring-1 ring-black ring-opacity-5 dark:ring-gray-600 z-10">
+        <div className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white dark:bg-slate-700 ring-1 ring-black ring-opacity-5 dark:ring-slate-600 z-10">
           <div className="py-1" role="menu" aria-orientation="vertical">
             <button 
               onClick={() => downloadCSV()} 
-              className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600" 
+              className="flex items-center w-full px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-600" 
               role="menuitem"
             >
               <FileJson className="mr-3 h-5 w-5" /> Download as CSV
             </button>
             <button 
               onClick={() => downloadFromServer('pdf')} 
-              className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600" 
+              className="flex items-center w-full px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-600" 
               role="menuitem"
             >
               <FileType className="mr-3 h-5 w-5" /> Download as PDF
             </button>
             <button 
               onClick={() => downloadFromServer('docx')} 
-              className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600" 
+              className="flex items-center w-full px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-600" 
               role="menuitem"
             >
               <FileText className="mr-3 h-5 w-5" /> Download as DOCX
@@ -417,91 +437,139 @@ const AllBookingsPage = () => {
   };
 
   const getSortIndicator = (key) => {
-    if (sortConfig.key !== key) return null;
-    return sortConfig.direction === 'ascending' ? ' ▲' : ' ▼';
+    if (sortConfig.key !== key) {
+      return <ChevronsUpDown className="w-4 h-4 text-slate-400 ml-1 inline" />;
+    }
+    return sortConfig.direction === 'ascending' 
+      ? <ChevronUp className="w-4 h-4 text-blue-500 ml-1 inline" />
+      : <ChevronDown className="w-4 h-4 text-blue-500 ml-1 inline" />;
   };
 
   const renderContent = () => {
-    if (loading) return <TableSkeleton rows={10} columns={5} />;
+    if (loading) return <TableSkeleton rows={10} columns={7} />;
     if (error) return (
-      <div className="flex flex-col items-center justify-center text-center py-12">
-        <ShieldX className="w-16 h-16 text-red-500 mb-4" />
-        <h3 className="text-xl font-semibold text-gray-800 dark:text-white">An Error Occurred</h3>
-        <p className="text-gray-600 dark:text-gray-400 mt-2">{error}</p>
-      </div>
+      <EmptyState
+        icon={ShieldX}
+        title="An Error Occurred"
+        description={error}
+        size="lg"
+        className="py-16"
+      />
     );
     if (bookings.length === 0) return (
-      <div className="text-center py-12">
-        <h3 className="text-xl font-semibold text-gray-800 dark:text-white">No Bookings Found</h3>
-        <p className="text-gray-600 dark:text-gray-400 mt-2">There are currently no bookings in the system.</p>
-      </div>
+      <EmptyState
+        title="No Bookings Found"
+        description="There are currently no bookings in the system."
+        size="lg"
+        className="py-16"
+      />
     );
 
     return (
       <>
         <FilterControls places={places} filters={filters} setFilters={setFilters} />
-        <div className="px-4 py-3 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-          <div className="text-sm text-gray-700 dark:text-gray-300">
-            Showing <span className="font-semibold text-[#003366] dark:text-[#f7b731]">{filteredAndSortedBookings.length}</span> of <span className="font-semibold">{bookings.length}</span> bookings
+        <div className="px-5 py-3 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
+          <div className="text-sm text-slate-600 dark:text-slate-400">
+            Showing <span className="font-semibold text-slate-900 dark:text-white">{filteredAndSortedBookings.length}</span> of <span className="font-semibold text-slate-900 dark:text-white">{bookings.length}</span> bookings
           </div>
           <DownloadReport filters={filters} sortConfig={sortConfig} disabled={filteredAndSortedBookings.length === 0} />
         </div>
         {filteredAndSortedBookings.length === 0 ? (
-          <div className="text-center py-12">
-            <h3 className="text-xl font-semibold text-gray-800 dark:text-white">No Bookings Match Filters</h3>
-            <p className="text-gray-600 dark:text-gray-400 mt-2">Try adjusting or clearing the filters.</p>
-          </div>
+          <EmptyState
+            icon={Search}
+            title="No Bookings Match Filters"
+            description="Try adjusting or clearing the filters to see more results."
+            size="md"
+            className="py-12"
+          />
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-              <thead className="bg-gray-50 dark:bg-gray-800">
-                <tr>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer" onClick={() => requestSort('eventTitle')}>
-                    Event{getSortIndicator('eventTitle')}
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer" onClick={() => requestSort('placeId.name')}>
-                    Place{getSortIndicator('placeId.name')}
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer" onClick={() => requestSort('userId.name')}>
-                    User{getSortIndicator('userId.name')}
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer" onClick={() => requestSort('eventStartTime')}>
-                    Start Time{getSortIndicator('eventStartTime')}
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer" onClick={() => requestSort('eventEndTime')}>
-                    End Time{getSortIndicator('eventEndTime')}
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Duration
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer" onClick={() => requestSort('status')}>
-                    Status{getSortIndicator('status')}
-                  </th>
+            <table className="min-w-full">
+              <thead>
+                <tr className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700">
+                  {[
+                    { key: 'eventTitle', label: 'Event' },
+                    { key: 'placeId.name', label: 'Place' },
+                    { key: 'userId.name', label: 'User' },
+                    { key: 'eventStartTime', label: 'Start Time' },
+                    { key: 'eventEndTime', label: 'End Time' },
+                    { key: null, label: 'Duration' },
+                    { key: 'status', label: 'Status' },
+                  ].map(({ key, label }) => (
+                    <th 
+                      key={label}
+                      scope="col" 
+                      className={`px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider ${key ? 'cursor-pointer hover:text-slate-700 dark:hover:text-slate-200 transition-colors select-none' : ''}`}
+                      onClick={key ? () => requestSort(key) : undefined}
+                    >
+                      <span className="inline-flex items-center">
+                        {label}
+                        {key && getSortIndicator(key)}
+                      </span>
+                    </th>
+                  ))}
                 </tr>
               </thead>
-              <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-                {filteredAndSortedBookings.map((booking) => {
-                  const duration = moment.duration(moment(booking.eventEndTime).diff(moment(booking.eventStartTime)));
-                  const hours = Math.floor(duration.asHours());
-                  const minutes = duration.minutes();
-                  const durationText = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
-                  
-                  return (
-                    <tr key={booking._id}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{booking.eventTitle}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{booking.placeId?.name || 'N/A'}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{booking.userId?.name || 'N/A'}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{moment(booking.eventStartTime).format('MMM DD, HH:mm')}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{moment(booking.eventEndTime).format('MMM DD, HH:mm')}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{durationText}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${booking.status === 'approved' ? 'bg-green-100 text-green-800' : booking.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'}`}>
-                          {booking.status}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
+                <AnimatePresence>
+                  {filteredAndSortedBookings.map((booking, index) => {
+                    const duration = moment.duration(moment(booking.eventEndTime).diff(moment(booking.eventStartTime)));
+                    const hours = Math.floor(duration.asHours());
+                    const minutes = duration.minutes();
+                    const durationText = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+                    
+                    return (
+                      <motion.tr 
+                        key={booking._id}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.2, delay: index * 0.02 }}
+                        className={`
+                          ${index % 2 === 0 ? 'bg-white dark:bg-slate-900' : 'bg-slate-50/50 dark:bg-slate-800/30'}
+                          hover:bg-blue-50/50 dark:hover:bg-blue-900/10 
+                          transition-colors cursor-pointer
+                        `}
+                      >
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="text-sm font-medium text-slate-900 dark:text-white">
+                            {booking.eventTitle}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="text-sm text-slate-600 dark:text-slate-300">
+                            {booking.placeId?.name || 'N/A'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="text-sm text-slate-600 dark:text-slate-300">
+                            {booking.userId?.name || 'N/A'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="text-sm text-slate-600 dark:text-slate-300">
+                            {moment(booking.eventStartTime).format('MMM DD, HH:mm')}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="text-sm text-slate-600 dark:text-slate-300">
+                            {moment(booking.eventEndTime).format('MMM DD, HH:mm')}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="text-sm text-slate-500 dark:text-slate-400 font-mono">
+                            {durationText}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <Badge variant={Badge.fromStatus(booking.status)} dot>
+                            {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                          </Badge>
+                        </td>
+                      </motion.tr>
+                    );
+                  })}
+                </AnimatePresence>
               </tbody>
             </table>
           </div>
@@ -513,11 +581,16 @@ const AllBookingsPage = () => {
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       <PageHeader title="All Bookings" subtitle="View and manage all bookings in the system" />
-      <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 dark:bg-gray-900 p-6">
+      <main className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50 dark:bg-slate-900 p-6">
         <div className="max-w-7xl mx-auto">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
+          <motion.div 
+            className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
             {renderContent()}
-          </div>
+          </motion.div>
         </div>
       </main>
     </div>

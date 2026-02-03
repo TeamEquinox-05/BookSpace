@@ -75,19 +75,19 @@ const MyBookingsPage = () => {
     <>
       <div className="flex-1 flex flex-col overflow-hidden">
         <PageHeader title="My Bookings" />
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 dark:bg-gray-900 p-6">
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50 dark:bg-slate-900 p-6">
           
           {loading ? (
             <CardGridSkeleton count={3} />
           ) : bookings.length === 0 ? (
-            <p className="text-center text-gray-500 dark:text-gray-400">No bookings found.</p>
+            <p className="text-center text-slate-500 dark:text-slate-400">No bookings found.</p>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {bookings.map(booking => (
-                <div key={booking._id} className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{booking.eventTitle}</h3>
-                  <p className="text-gray-600 dark:text-gray-400 mb-4">{booking.placeId?.name || 'Unknown Venue'}</p>
-                  <div className="text-sm text-gray-500 dark:text-gray-300">
+                <div key={booking._id} className="bg-white dark:bg-slate-800 rounded-lg shadow-lg p-6">
+                  <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">{booking.eventTitle}</h3>
+                  <p className="text-slate-600 dark:text-slate-400 mb-4">{booking.placeId?.name || 'Unknown Venue'}</p>
+                  <div className="text-sm text-slate-500 dark:text-slate-300">
                     <p><strong>Status:</strong> {booking.status}</p>
                     <p><strong>From:</strong> {new Date(booking.eventStartTime).toLocaleString()}</p>
                     <p><strong>To:</strong> {new Date(booking.eventEndTime).toLocaleString()}</p>

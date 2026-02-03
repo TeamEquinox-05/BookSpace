@@ -8,7 +8,7 @@ const DetailViewSkeleton = () => {
   return (
     <div className="animate-pulse max-w-4xl mx-auto">
       <div className="h-8 bg-slate-200 dark:bg-slate-700 rounded w-1/2 mb-4"></div>
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+      <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-6">
         <div className="space-y-4">
           <SkeletonLine width="w-full" />
           <SkeletonLine width="w-5/6" />

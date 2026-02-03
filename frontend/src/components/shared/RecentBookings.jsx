@@ -19,7 +19,7 @@ const RecentBookings = ({ bookings, onAddBooking }) => (
       </div>
       <motion.button 
         onClick={onAddBooking} 
-        className="flex items-center space-x-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold rounded-lg transition-all shadow-md hover:shadow-xl"
+        className="flex items-center space-x-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-all shadow-md hover:shadow-xl"
         whileHover={{ scale: 1.05, y: -2 }}
         whileTap={{ scale: 0.98 }}
       >
@@ -53,7 +53,7 @@ const RecentBookings = ({ bookings, onAddBooking }) => (
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.4 }}
       >
-        <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900/30 dark:to-purple-900/30 rounded-2xl mb-4">
+        <div className="inline-flex items-center justify-center w-20 h-20 bg-blue-100 dark:bg-blue-900/30 rounded-2xl mb-4">
           <Sparkles className="w-10 h-10 text-blue-500 dark:text-blue-400" />
         </div>
         <h4 className="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-2">No bookings yet</h4>
@@ -62,7 +62,7 @@ const RecentBookings = ({ bookings, onAddBooking }) => (
         </p>
         <motion.button
           onClick={onAddBooking}
-          className="inline-flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-lg transition-all shadow-lg hover:shadow-xl"
+          className="inline-flex items-center space-x-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-all shadow-lg hover:shadow-xl"
           whileHover={{ scale: 1.05, y: -2 }}
           whileTap={{ scale: 0.98 }}
         >

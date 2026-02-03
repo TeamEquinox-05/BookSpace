@@ -638,7 +638,7 @@ export default function PlaceDetailsPage() {
             className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-gray-200 dark:border-gray-700"
           >
             {/* Modal Header */}
-            <div className="sticky top-0 bg-gradient-to-r from-yellow-500 to-yellow-600 text-white p-6 rounded-t-2xl z-10">
+            <div className="sticky top-0 bg-yellow-500 text-white p-6 rounded-t-2xl z-10">
               <div className="flex justify-between items-start">
                 <div className="flex-1">
                   <h2 className="text-2xl font-bold mb-2">{selectedEvent.eventTitle || 'Event Details'}</h2>

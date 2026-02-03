@@ -63,7 +63,7 @@ const PageHeader = ({ title, children }) => {
   const { icon, tooltip } = getThemeIcon();
 
   return (
-    <header className="bg-gradient-to-r from-blue-900 to-blue-800 dark:from-blue-950 dark:to-blue-900 border-b border-blue-700 dark:border-blue-800 sticky top-0 z-10 shadow-md">
+    <header className="bg-blue-800 dark:bg-blue-950 border-b border-blue-700 dark:border-blue-800 sticky top-0 z-10 shadow-md">
       <div className="flex items-center justify-between px-4 sm:px-6 h-16">
         {/* Left Side */}
         <div className="flex items-center space-x-4">

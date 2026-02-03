@@ -1,22 +1,152 @@
 import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import api from '../utils/api';
 import logger from '../utils/logger';
 import { PageHeader } from '../components/shared';
 import FormSkeleton from '../components/ui/FormSkeleton';
 import { Spinner } from '../components/ui';
 import { useTheme } from '../context/ThemeContext';
+import { User, Mail, Phone, Shield, Lock, Sun, Moon, Monitor, Save, Eye, EyeOff, Check } from 'lucide-react';
+
+const SettingsSection = ({ icon: Icon, title, description, children, delay = 0 }) => (
+  <motion.div 
+    className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden"
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.4, delay }}
+  >
+    <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
+      <div className="flex items-center gap-3">
+        <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+          <Icon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+        </div>
+        <div>
+          <h3 className="text-lg font-semibold text-slate-800 dark:text-white">{title}</h3>
+          {description && (
+            <p className="text-sm text-slate-500 dark:text-slate-400">{description}</p>
+          )}
+        </div>
+      </div>
+    </div>
+    <div className="p-6">{children}</div>
+  </motion.div>
+);
+
+const ThemeOption = ({ icon: Icon, label, value, selected, onChange }) => (
+  <motion.button
+    type="button"
+    onClick={() => onChange(value)}
+    className={`relative flex flex-col items-center gap-2 p-5 rounded-xl border-2 transition-all ${
+      selected 
+        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-md' 
+        : 'border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-sm'
+    }`}
+    whileHover={{ scale: 1.03, y: -2 }}
+    whileTap={{ scale: 0.97 }}
+  >
+    {selected && (
+      <motion.div
+        initial={{ scale: 0, rotate: -180 }}
+        animate={{ scale: 1, rotate: 0 }}
+        transition={{ type: "spring", stiffness: 200, damping: 15 }}
+        className="absolute top-2 right-2 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center shadow-lg"
+      >
+        <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />
+      </motion.div>
+    )}
+    <motion.div 
+      className={`p-3 rounded-xl transition-colors ${
+        selected 
+          ? 'bg-blue-500 dark:bg-blue-600' 
+          : 'bg-slate-100 dark:bg-slate-700'
+      }`}
+      animate={{ 
+        backgroundColor: selected 
+          ? ['#3b82f6', '#2563eb', '#3b82f6'] 
+          : undefined 
+      }}
+      transition={{ duration: 2, repeat: selected ? Infinity : 0 }}
+    >
+      <Icon className={`w-6 h-6 transition-colors ${
+        selected 
+          ? 'text-white' 
+          : 'text-slate-500 dark:text-slate-400'
+      }`} />
+    </motion.div>
+    <span className={`text-sm font-medium transition-colors ${
+      selected 
+        ? 'text-blue-600 dark:text-blue-400' 
+        : 'text-slate-600 dark:text-slate-400'
+    }`}>
+      {label}
+    </span>
+  </motion.button>
+);
+
+const InputField = ({ icon: Icon, label, type = 'text', value, onChange, disabled = false, placeholder }) => {
+  const [showPassword, setShowPassword] = useState(false);
+  const isPassword = type === 'password';
+  
+  return (
+    <div>
+      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+        {label}
+      </label>
+      <div className="relative">
+        <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
+          <Icon className="w-5 h-5 text-slate-400" />
+        </div>
+        <input
+          type={isPassword && showPassword ? 'text' : type}
+          value={value}
+          onChange={onChange}
+          disabled={disabled}
+          placeholder={placeholder}
+          className={`w-full pl-11 ${isPassword ? 'pr-11' : 'pr-4'} py-3 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-800 dark:text-white placeholder-slate-400 ${
+            disabled ? 'bg-slate-50 dark:bg-slate-700/50 cursor-not-allowed opacity-60' : ''
+          }`}
+        />
+        {isPassword && (
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+          >
+            {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
 
 export default function SettingsPage() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
   const { themeMode, setTheme } = useTheme();
+  
+  // Form states
+  const [formData, setFormData] = useState({
+    name: '',
+    phone: '',
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
 
   useEffect(() => {
     const fetchUserData = async () => {
       try {
         const res = await api.get('/users/me');
         setUser(res.data);
+        setFormData(prev => ({
+          ...prev,
+          name: res.data.name || '',
+          phone: res.data.phone || ''
+        }));
       } catch (err) {
         setError(err.message);
         logger.error('Error fetching user data:', err);
@@ -28,95 +158,281 @@ export default function SettingsPage() {
     fetchUserData();
   }, []);
 
-  if (error) {
-    return <div>Error: {error}</div>;
-  }
+  useEffect(() => {
+    if (success || error) {
+      const timer = setTimeout(() => {
+        setSuccess(null);
+        setError(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [success, error]);
 
-  return (
-    <>
+  const handleInputChange = (field) => (e) => {
+    setFormData(prev => ({ ...prev, [field]: e.target.value }));
+    setError(null);
+    setSuccess(null);
+  };
+
+  const handleUpdateProfile = async () => {
+    setSaving(true);
+    setError(null);
+    setSuccess(null);
+    
+    try {
+      // Add your API call here
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulated delay
+      setSuccess('Profile updated successfully!');
+    } catch (err) {
+      setError('Failed to update profile. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (!formData.newPassword || formData.newPassword.length < 8) {
+      setError('Password must be at least 8 characters long');
+      return;
+    }
+    
+    if (formData.newPassword !== formData.confirmPassword) {
+      setError('New passwords do not match');
+      return;
+    }
+    
+    setSaving(true);
+    setError(null);
+    setSuccess(null);
+    
+    try {
+      // Add your API call here
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulated delay
+      setSuccess('Password changed successfully!');
+      setFormData(prev => ({ 
+        ...prev, 
+        currentPassword: '', 
+        newPassword: '', 
+        confirmPassword: '' 
+      }));
+    } catch (err) {
+      setError('Failed to change password. Please check your current password.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (error && !user) {
+    return (
       <div className="flex-1 flex flex-col overflow-hidden">
         <PageHeader title="Settings" />
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 dark:bg-gray-900 p-6">
-          <div className="max-w-4xl mx-auto">
-            {loading ? (
-              <div className="flex justify-center items-center h-64">
-                <Spinner size="lg" />
-              </div>
-            ) : !user ? (
-              <div>No user data found.</div>
-            ) : (
-              <>
-                {/* Theme Settings Section */}
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Appearance</h2>
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-6">
-                  <div className="space-y-4">
-                    <div>
-                      <label htmlFor="theme-select" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Theme
-                      </label>
-                      <select
-                        id="theme-select"
-                        value={themeMode}
-                        onChange={(e) => setTheme(e.target.value)}
-                        className="mt-1 block w-full md:w-64 px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
-                      >
-                        <option value="light">Light</option>
-                        <option value="dark">Dark</option>
-                        <option value="system">System (Auto)</option>
-                      </select>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                        Choose how BookSpace looks to you. Select a single theme, or sync with your system preferences.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Profile Information</h2>
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Name</label>
-                      <input type="text" defaultValue={user.name} className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm dark:text-white" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
-                      <input type="email" value={user.email} disabled className="mt-1 block w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm sm:text-sm dark:text-white" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Phone</label>
-                      <input type="text" defaultValue={user.phone} className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm dark:text-white" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Role</label>
-                      <input type="text" value={user.role} disabled className="mt-1 block w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm sm:text-sm dark:text-white" />
-                    </div>
-                  </div>
-                  <div className="mt-6 text-right">
-                    <button className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">Update Profile</button>
-                  </div>
-                </div>
-
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Change Password</h2>
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Current Password</label>
-                      <input type="password" className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm dark:text-white" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">New Password</label>
-                      <input type="password" className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm dark:text-white" />
-                    </div>
-                  </div>
-                  <div className="mt-6 text-right">
-                    <button className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">Change Password</button>
-                  </div>
-                </div>
-              </>
-            )}
+        <main className="flex-1 flex items-center justify-center bg-slate-50 dark:bg-slate-900">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Shield className="w-8 h-8 text-red-500" />
+            </div>
+            <h3 className="text-lg font-semibold text-slate-800 dark:text-white mb-2">Error Loading Settings</h3>
+            <p className="text-slate-500 dark:text-slate-400">{error}</p>
           </div>
         </main>
       </div>
-    </>
+    );
+  }
+
+  return (
+    <div className="flex-1 flex flex-col overflow-hidden">
+      <PageHeader title="Settings" />
+      <main className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50 dark:bg-slate-900 p-6">
+        <div className="max-w-4xl mx-auto space-y-6">
+          {loading ? (
+            <div className="flex justify-center items-center h-64">
+              <Spinner size="lg" />
+            </div>
+          ) : !user ? (
+            <div className="text-center py-12">
+              <p className="text-slate-500 dark:text-slate-400">No user data found.</p>
+            </div>
+          ) : (
+            <>
+              {/* Success/Error Messages */}
+              {(success || error) && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className={`p-4 rounded-xl flex items-center gap-3 ${
+                    success 
+                      ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400'
+                      : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400'
+                  }`}
+                >
+                  {success ? (
+                    <div className="p-1 bg-green-100 dark:bg-green-900/30 rounded-full">
+                      <Check className="w-4 h-4" />
+                    </div>
+                  ) : (
+                    <div className="p-1 bg-red-100 dark:bg-red-900/30 rounded-full">
+                      <Shield className="w-4 h-4" />
+                    </div>
+                  )}
+                  <span className="font-medium flex-1">{success || error}</span>
+                </motion.div>
+              )}
+
+              {/* Appearance Section */}
+              <SettingsSection 
+                icon={Sun} 
+                title="Appearance" 
+                description="Choose your preferred color theme"
+                delay={0}
+              >
+                <div className="grid grid-cols-3 gap-4">
+                  <ThemeOption
+                    icon={Sun}
+                    label="Light"
+                    value="light"
+                    selected={themeMode === 'light'}
+                    onChange={setTheme}
+                  />
+                  <ThemeOption
+                    icon={Moon}
+                    label="Dark"
+                    value="dark"
+                    selected={themeMode === 'dark'}
+                    onChange={setTheme}
+                  />
+                  <ThemeOption
+                    icon={Monitor}
+                    label="System"
+                    value="system"
+                    selected={themeMode === 'system'}
+                    onChange={setTheme}
+                  />
+                </div>
+              </SettingsSection>
+
+              {/* Profile Section */}
+              <SettingsSection 
+                icon={User} 
+                title="Profile Information" 
+                description="Update your personal details"
+                delay={0.1}
+              >
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <InputField
+                      icon={User}
+                      label="Full Name"
+                      value={formData.name}
+                      onChange={handleInputChange('name')}
+                      placeholder="Enter your name"
+                    />
+                    <InputField
+                      icon={Mail}
+                      label="Email Address"
+                      type="email"
+                      value={user.email}
+                      disabled
+                    />
+                    <InputField
+                      icon={Phone}
+                      label="Phone Number"
+                      value={formData.phone}
+                      onChange={handleInputChange('phone')}
+                      placeholder="Enter your phone number"
+                    />
+                    <InputField
+                      icon={Shield}
+                      label="Role"
+                      value={user.role}
+                      disabled
+                    />
+                  </div>
+                  <div className="flex justify-end pt-2">
+                    <motion.button
+                      onClick={handleUpdateProfile}
+                      disabled={saving}
+                      className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      {saving ? (
+                        <>
+                          <Spinner size="sm" />
+                          <span>Saving...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Save className="w-4 h-4" />
+                          <span>Update Profile</span>
+                        </>
+                      )}
+                    </motion.button>
+                  </div>
+                </div>
+              </SettingsSection>
+
+              {/* Password Section */}
+              <SettingsSection 
+                icon={Lock} 
+                title="Change Password" 
+                description="Update your account password"
+                delay={0.2}
+              >
+                <div className="space-y-6">
+                  <InputField
+                    icon={Lock}
+                    label="Current Password"
+                    type="password"
+                    value={formData.currentPassword}
+                    onChange={handleInputChange('currentPassword')}
+                    placeholder="Enter current password"
+                  />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <InputField
+                      icon={Lock}
+                      label="New Password"
+                      type="password"
+                      value={formData.newPassword}
+                      onChange={handleInputChange('newPassword')}
+                      placeholder="At least 8 characters"
+                    />
+                    <InputField
+                      icon={Lock}
+                      label="Confirm New Password"
+                      type="password"
+                      value={formData.confirmPassword}
+                      onChange={handleInputChange('confirmPassword')}
+                      placeholder="Re-enter new password"
+                    />
+                  </div>
+                  <div className="flex justify-end pt-2">
+                    <motion.button
+                      onClick={handleChangePassword}
+                      disabled={saving || !formData.currentPassword || !formData.newPassword || !formData.confirmPassword}
+                      className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      {saving ? (
+                        <>
+                          <Spinner size="sm" />
+                          <span>Changing...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Lock className="w-4 h-4" />
+                          <span>Change Password</span>
+                        </>
+                      )}
+                    </motion.button>
+                  </div>
+                </div>
+              </SettingsSection>
+            </>
+          )}
+        </div>
+      </main>
+    </div>
   );
 }

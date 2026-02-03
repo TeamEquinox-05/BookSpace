@@ -27,8 +27,8 @@ const StatCard = ({ icon: Icon, title, value, change, lightColor = 'bg-blue-500'
           </p>
           {isLoading ? (
             <div className="animate-pulse space-y-3">
-              <div className="h-9 bg-gradient-to-r from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-600 rounded-lg w-24"></div>
-              <div className="h-4 bg-gradient-to-r from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-600 rounded w-20"></div>
+              <div className="h-9 bg-slate-200 dark:bg-slate-700 rounded-lg w-24"></div>
+              <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-20"></div>
             </div>
           ) : (
             <>
