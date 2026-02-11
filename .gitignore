@@ -15,10 +15,6 @@ dist-ssr
 cli-images
 
 # Environment files (contain secrets)
-*.env
-!.env.example
-config.env
-**/config/config.env
 
 # Editor directories and files
 .vscode/*
