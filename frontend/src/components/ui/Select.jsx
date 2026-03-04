@@ -32,7 +32,7 @@ const Select = React.forwardRef(({
   
   const baseSelectStyles = `
     block w-full rounded-xl border transition-colors duration-200 appearance-none
-    bg-white dark:bg-slate-800
+    bg-white dark:bg-[#0a0a0a]
     text-slate-900 dark:text-white
     focus:outline-none focus:ring-2 focus:ring-offset-0
     pr-10
@@ -40,7 +40,7 @@ const Select = React.forwardRef(({
   
   const stateStyles = error
     ? 'border-red-300 dark:border-red-600 focus:border-red-500 focus:ring-red-500/20'
-    : 'border-slate-300 dark:border-slate-600 focus:border-blue-500 focus:ring-blue-500/20';
+    : 'border-slate-300 dark:border-[#1a1a1a] focus:border-blue-500 focus:ring-blue-500/20';
   
   return (
     <div className={className}>

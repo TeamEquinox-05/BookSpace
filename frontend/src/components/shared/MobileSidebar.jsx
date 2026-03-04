@@ -60,10 +60,10 @@ const MobileSidebar = ({ isOpen, onClose }) => {
         initial={{ x: '-100%' }}
         animate={{ x: isOpen ? '0%' : '-100%' }}
         transition={{ duration: 0.3, ease: 'easeInOut' }}
-        className="fixed left-0 top-0 h-screen w-64 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 z-50 flex flex-col md:hidden shadow-lg"
+        className="fixed left-0 top-0 h-screen w-64 bg-white dark:bg-[#0a0a0a] border-r border-slate-200 dark:border-[#1a1a1a] z-50 flex flex-col md:hidden shadow-lg"
       >
         {/* Header */}
-        <div className="flex items-center justify-between h-16 px-4 border-b border-slate-200 dark:border-slate-700">
+        <div className="flex items-center justify-between h-16 px-4 border-b border-slate-200 dark:border-[#1a1a1a]">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 flex items-center justify-center flex-shrink-0">
               <img 
@@ -121,7 +121,7 @@ const MobileSidebar = ({ isOpen, onClose }) => {
         </div>
 
         {/* Footer */}
-        <div className="border-t border-slate-200 dark:border-slate-700 p-4">
+        <div className="border-t border-slate-200 dark:border-[#1a1a1a] p-4">
           <RouterNavLink
             to="/login"
             onClick={async (e) => { 
@@ -132,8 +132,8 @@ const MobileSidebar = ({ isOpen, onClose }) => {
             }}
             className={cn(
               "flex items-center rounded-lg transition-all",
-              "bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white",
-              "border border-slate-200 dark:border-slate-600",
+              "bg-slate-100 dark:bg-[#1a1a1a] hover:bg-slate-200 dark:hover:bg-[#2a2a2a] text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white",
+              "border border-slate-200 dark:border-[#2a2a2a]",
               "w-full gap-3 px-3 py-2.5"
             )}
           >

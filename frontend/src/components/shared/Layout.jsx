@@ -9,7 +9,7 @@ const Layout = () => {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   return (
-    <div className="flex h-screen bg-slate-50 dark:bg-slate-900">
+    <div className="flex h-screen bg-slate-50 dark:bg-black">
       {/* Desktop Sidebar */}
       <div className="hidden md:flex">
         <Sidebar isExpanded={isSidebarExpanded} setIsExpanded={setIsSidebarExpanded} onMouseEnter={() => setIsSidebarExpanded(true)} onMouseLeave={() => setIsSidebarExpanded(false)} />
@@ -24,12 +24,12 @@ const Layout = () => {
         className={`flex-1 overflow-y-auto transition-all duration-300 ease-in-out ${isSidebarExpanded ? 'md:ml-64' : 'md:ml-20'}`}
       >
         {/* Mobile Header/Hamburger */}
-        <div className="md:hidden flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
-          <button onClick={() => setIsMobileSidebarOpen(true)} className="p-2 rounded-md text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700">
-            <Menu size={24} />
+        <div className="md:hidden flex items-center justify-between px-4 h-14 border-b border-slate-200 dark:border-[#1a1a1a] bg-white dark:bg-[#0a0a0a]">
+          <button onClick={() => setIsMobileSidebarOpen(true)} className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-[#1a1a1a] transition-colors">
+            <Menu size={20} />
           </button>
-          <h1 className="text-xl font-bold text-blue-600 dark:text-blue-400">BookSpace</h1>
-          <div></div> {/* Placeholder for right alignment */}
+          <span className="text-sm font-semibold text-slate-800 dark:text-white tracking-tight">BookSpace</span>
+          <div className="w-8" /> {/* Balance placeholder */}
         </div>
         <Outlet />
       </main>

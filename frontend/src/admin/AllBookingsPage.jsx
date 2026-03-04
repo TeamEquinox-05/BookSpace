@@ -69,7 +69,7 @@ const FilterControls = ({ places, filters, setFilters }) => {
   );
 
   return (
-    <div className="p-5 bg-slate-50 dark:bg-slate-800/50 rounded-t-xl border-b border-slate-200 dark:border-slate-700">
+    <div className="p-5 bg-slate-50 dark:bg-[#0a0a0a] rounded-t-xl border-b border-slate-200 dark:border-[#1a1a1a]">
       {/* Header with Quick Date Presets */}
       <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
         <div className="flex items-center gap-2">
@@ -109,7 +109,7 @@ const FilterControls = ({ places, filters, setFilters }) => {
               value={filters.search}
               onChange={handleInputChange}
               placeholder="Event, user, or ID..."
-              className="block w-full pl-10 pr-4 py-2.5 text-sm border border-slate-200 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 transition-all"
+              className="block w-full pl-10 pr-4 py-2.5 text-sm border border-slate-200 dark:border-[#2a2a2a] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 rounded-lg bg-white dark:bg-[#1a1a1a] text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 transition-all"
             />
           </div>
         </div>
@@ -122,7 +122,7 @@ const FilterControls = ({ places, filters, setFilters }) => {
             name="status"
             value={filters.status}
             onChange={handleInputChange}
-            className="block w-full px-3 py-2.5 text-sm border border-slate-200 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-all"
+            className="block w-full px-3 py-2.5 text-sm border border-slate-200 dark:border-[#2a2a2a] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 rounded-lg bg-white dark:bg-[#1a1a1a] text-slate-900 dark:text-white transition-all"
           >
             <option value="">All Statuses</option>
             <option value="approved">Approved</option>
@@ -139,7 +139,7 @@ const FilterControls = ({ places, filters, setFilters }) => {
             name="placeId"
             value={filters.placeId}
             onChange={handleInputChange}
-            className="block w-full px-3 py-2.5 text-sm border border-slate-200 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-all"
+            className="block w-full px-3 py-2.5 text-sm border border-slate-200 dark:border-[#2a2a2a] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 rounded-lg bg-white dark:bg-[#1a1a1a] text-slate-900 dark:text-white transition-all"
           >
             <option value="">All Places</option>
             {places.map(place => (
@@ -157,11 +157,11 @@ const FilterControls = ({ places, filters, setFilters }) => {
             name="dateFrom"
             value={filters.dateFrom}
             onChange={handleInputChange}
-            className="block w-full px-3 py-2.5 text-sm border border-slate-200 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-all"
+            className="block w-full px-3 py-2.5 text-sm border border-slate-200 dark:border-[#2a2a2a] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 rounded-lg bg-white dark:bg-[#1a1a1a] text-slate-900 dark:text-white transition-all"
           />
         </div>
 
-        {/* Date To */}
+        {/* Date To */}}
         <div className="w-full">
           <label htmlFor="date-to-filter" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">To Date</label>
           <input
@@ -170,12 +170,12 @@ const FilterControls = ({ places, filters, setFilters }) => {
             name="dateTo"
             value={filters.dateTo}
             onChange={handleInputChange}
-            className="block w-full px-3 py-2.5 text-sm border border-slate-200 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-all"
+            className="block w-full px-3 py-2.5 text-sm border border-slate-200 dark:border-[#2a2a2a] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 rounded-lg bg-white dark:bg-[#1a1a1a] text-slate-900 dark:text-white transition-all"
           />
         </div>
       </div>
 
-      {/* Clear Filters Button */}
+      {/* Clear Filters Button */}}
       <AnimatePresence>
         {activeFilterCount > 0 && (
           <motion.div 
@@ -188,7 +188,7 @@ const FilterControls = ({ places, filters, setFilters }) => {
               onClick={clearFilters}
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.99 }}
-              className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors"
+              className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 bg-white dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#2a2a2a] rounded-lg hover:bg-slate-50 dark:hover:bg-[#2a2a2a] transition-colors"
             >
               Clear All Filters
             </motion.button>
@@ -297,7 +297,7 @@ const DownloadReport = ({ filters, sortConfig, disabled }) => {
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         disabled={disabled || isDownloading}
-        className="inline-flex justify-center w-full rounded-md border border-slate-300 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="inline-flex justify-center w-full rounded-md border border-slate-300 dark:border-[#2a2a2a] shadow-sm px-4 py-2 bg-white dark:bg-[#1a1a1a] text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-[#2a2a2a] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {isDownloading ? (
           <><Spinner size="sm" className="mr-2" /> Downloading...</>
@@ -306,7 +306,7 @@ const DownloadReport = ({ filters, sortConfig, disabled }) => {
         )}
       </button>
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white dark:bg-slate-700 ring-1 ring-black ring-opacity-5 dark:ring-slate-600 z-10">
+        <div className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white dark:bg-[#1a1a1a] ring-1 ring-black ring-opacity-5 dark:ring-[#2a2a2a] z-10">
           <div className="py-1" role="menu" aria-orientation="vertical">
             <button 
               onClick={() => downloadCSV()} 
@@ -468,7 +468,7 @@ const AllBookingsPage = () => {
     return (
       <>
         <FilterControls places={places} filters={filters} setFilters={setFilters} />
-        <div className="px-5 py-3 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
+        <div className="px-5 py-3 bg-white dark:bg-[#0a0a0a] border-b border-slate-200 dark:border-[#1a1a1a] flex justify-between items-center">
           <div className="text-sm text-slate-600 dark:text-slate-400">
             Showing <span className="font-semibold text-slate-900 dark:text-white">{filteredAndSortedBookings.length}</span> of <span className="font-semibold text-slate-900 dark:text-white">{bookings.length}</span> bookings
           </div>
@@ -486,7 +486,7 @@ const AllBookingsPage = () => {
           <div className="overflow-x-auto">
             <table className="min-w-full">
               <thead>
-                <tr className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700">
+                <tr className="bg-slate-50 dark:bg-[#0a0a0a] border-b border-slate-200 dark:border-[#1a1a1a]">
                   {[
                     { key: 'eventTitle', label: 'Event' },
                     { key: 'placeId.name', label: 'Place' },
@@ -526,7 +526,7 @@ const AllBookingsPage = () => {
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.2, delay: index * 0.02 }}
                         className={`
-                          ${index % 2 === 0 ? 'bg-white dark:bg-slate-900' : 'bg-slate-50/50 dark:bg-slate-800/30'}
+                          ${index % 2 === 0 ? 'bg-white dark:bg-black' : 'bg-slate-50/50 dark:bg-[#0a0a0a]'}
                           hover:bg-blue-50/50 dark:hover:bg-blue-900/10 
                           transition-colors cursor-pointer
                         `}
@@ -581,10 +581,10 @@ const AllBookingsPage = () => {
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       <PageHeader title="All Bookings" subtitle="View and manage all bookings in the system" />
-      <main className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50 dark:bg-slate-900 p-6">
+      <main className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50 dark:bg-black p-4 sm:p-6 transition-colors">
         <div className="max-w-7xl mx-auto">
           <motion.div 
-            className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden"
+            className="bg-white dark:bg-[#0a0a0a] rounded-xl shadow-sm border border-slate-200 dark:border-[#1a1a1a] overflow-hidden"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}

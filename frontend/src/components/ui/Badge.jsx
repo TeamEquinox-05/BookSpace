@@ -26,7 +26,7 @@ const Badge = ({
     warning: 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400',
     error: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400',
     info: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400',
-    default: 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300',
+    default: 'bg-slate-100 dark:bg-[#1a1a1a] text-slate-600 dark:text-slate-300',
   };
   
   const dotColors = {

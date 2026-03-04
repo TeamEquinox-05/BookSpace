@@ -1,214 +1,82 @@
 @import "tailwindcss";
 
-@variant dark (html.dark &);
+/* CRITICAL: .dark on <html>, descendants inherit dark styles */
+@custom-variant dark (&:where(.dark, .dark *));
 
-@theme {
-  /* PCCE Color Palette (Padre Conceição College of Engineering, Goa) */
-  --color-pcce-navy: #003366;        /* Primary: Deep Navy Blue */
-  --color-pcce-gold: #f7b731;        /* Secondary: Golden Yellow */
-  --color-pcce-maroon: #8b0000;      /* Accent: Maroon Red */
-  --color-pcce-light-blue: #4a90e2;  /* Light Blue accent */
-  
-  /* Override default colors with PCCE brand */
-  --color-primary-50: #fffbeb;
-  --color-primary-100: #fef3c7;
-  --color-primary-200: #fde68a;
-  --color-primary-300: #fcd34d;
-  --color-primary-400: #fbbf24;
-  --color-primary-500: #f7b731;      /* PCCE Gold */
-  --color-primary-600: #d97706;
-  --color-primary-700: #b45309;
-  --color-primary-800: #92400e;
-  --color-primary-900: #78350f;
+/* Hide native browser password reveal eye icon */
+input::-ms-reveal,
+input::-ms-clear {
+  display: none;
+}
+input::-webkit-credentials-auto-fill-button,
+input::-webkit-textfield-decoration-container {
+  visibility: hidden;
+  pointer-events: none;
 }
 
-/* Smooth theme transition */
-* {
-  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+/* ── Base ── */
+body {
+  background-color: #f8fafc;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
 }
 
-/* Disable transitions during page load */
-.no-transition * {
-  transition: none !important;
+.dark body {
+  background-color: #000000; /* pure black */
 }
 
-/* Custom Scrollbar Styles */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
-::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 10px;
-}
+.dark ::-webkit-scrollbar-thumb { background: #1a1a1a; }
+.dark ::-webkit-scrollbar-thumb:hover { background: #2a2a2a; }
 
-::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 10px;
-}
+/* ── React Big Calendar ── */
+.rbc-calendar { font-family: inherit; color: #334155; }
+.dark .rbc-calendar { color: #e4e4e7; }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #555;
-}
+.rbc-header { padding: 8px 0; font-size: 0.85em; font-weight: 600; color: #64748b; border-bottom: 1px solid #e2e8f0; }
+.dark .rbc-header { color: #a1a1aa; border-bottom-color: #1a1a1a; }
 
-/* Dark Mode Scrollbar */
-.dark ::-webkit-scrollbar-track {
-  background: #1e293b; /* dark:bg-slate-800 */
-}
+.rbc-off-range-bg { background: #f8fafc; }
+.dark .rbc-off-range-bg { background: #0a0a0a; }
 
-.dark ::-webkit-scrollbar-thumb {
-  background: #475569; /* dark:bg-slate-600 */
-}
+.rbc-today { background-color: #dbeafe; }
+.dark .rbc-today { background-color: #0f1c2e; }
 
-.dark ::-webkit-scrollbar-thumb:hover {
-  background: #64748b; /* dark:bg-slate-500 */
-}
+.rbc-event { background-color: #2563eb; color: white; border-radius: 6px; padding: 2px 6px; font-size: 0.8em; border: none; }
+.rbc-event.rbc-selected { background-color: #1d4ed8; }
 
+.rbc-toolbar button { color: #475569; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 0.5rem; padding: 0.4rem 0.9rem; font-weight: 500; }
+.dark .rbc-toolbar button { color: #999999; background: #0a0a0a; border-color: #1a1a1a; }
+.rbc-toolbar button:hover { background: #e2e8f0; }
+.dark .rbc-toolbar button:hover { background: #1a1a1a; }
+.rbc-toolbar button.rbc-active { background: #2563eb; color: white; border-color: #2563eb; }
+.dark .rbc-toolbar button.rbc-active { background: #2563eb; border-color: #2563eb; }
 
+.rbc-month-view, .rbc-time-view { border: 1px solid #e2e8f0; border-radius: 0.75rem; overflow: hidden; }
+.dark .rbc-month-view, .dark .rbc-time-view { border-color: #1a1a1a; }
+.rbc-row-segment .rbc-event-content { white-space: normal; }
+
+/* ── CSS Variables ── */
 :root {
-  /* PCCE Brand Colors - Light Mode */
-  --pcce-navy: #003366;
-  --pcce-gold: #f7b731;
-  --pcce-maroon: #8b0000;
-  --pcce-light-blue: #4a90e2;
-  --pcce-light-bg: #f5f8fb;
-  
-  /* Sidebar - Light Mode */
-  --sidebar-background: #ffffff;
-  --sidebar-foreground: #003366;
-  --sidebar-muted-foreground: #64748b;
-  --sidebar-primary: #f7b731;
-  --sidebar-primary-foreground: #003366;
+  --sidebar-bg: #ffffff;
+  --sidebar-fg: #0f172a;
+  --sidebar-muted: #64748b;
+  --sidebar-primary: #2563eb;
+  --sidebar-primary-fg: #ffffff;
   --sidebar-accent: #f1f5f9;
   --sidebar-border: #e2e8f0;
 }
 
 .dark {
-  /* PCCE Brand Colors - Dark Mode */
-  --pcce-navy: #004080;
-  --pcce-gold: #fbbf24;
-  --pcce-maroon: #b91c1c;
-  --pcce-light-blue: #60a5fa;
-  --pcce-dark-bg: #0f1419;
-  
-  /* Sidebar - Dark Mode */
-  --sidebar-background: #003366;
-  --sidebar-foreground: #e2e8f0;
-  --sidebar-muted-foreground: #94a3b8;
-  --sidebar-primary: #fbbf24;
-  --sidebar-primary-foreground: #003366;
-  --sidebar-accent: #004080;
-  --sidebar-border: #4b5563;
-}
-
-/* Loading Ellipsis Animation */
-@keyframes ellipsisDot1 {
-  0%, 100% { opacity: 0; }
-  20%, 80% { opacity: 1; }
-}
-
-@keyframes ellipsisDot2 {
-  0%, 20%, 100% { opacity: 0; }
-  40%, 80% { opacity: 1; }
-}
-
-@keyframes ellipsisDot3 {
-  0%, 40%, 100% { opacity: 0; }
-  60%, 80% { opacity: 1; }
-}
-
-.ellipsis-dot:nth-child(1) {
-  animation: ellipsisDot1 1.8s infinite;
-}
-
-.ellipsis-dot:nth-child(2) {
-  animation: ellipsisDot2 1.8s infinite;
-}
-
-.ellipsis-dot:nth-child(3) {
-  animation: ellipsisDot3 1.8s infinite;
-}
-
-/* PCCE Brand Utilities */
-.bg-brand-navy {
-  background-color: #003366;
-}
-
-.bg-brand-gold {
-  background-color: #f7b731;
-}
-
-.bg-brand-maroon {
-  background-color: #8b0000;
-}
-
-.text-brand-navy {
-  color: #003366;
-}
-
-.text-brand-gold {
-  color: #f7b731;
-}
-
-.text-brand-maroon {
-  color: #8b0000;
-}
-
-.hover\:bg-brand-gold:hover {
-  background-color: #f7b731;
-}
-
-.border-brand-navy {
-  border-color: #003366;
-}
-
-.border-brand-gold {
-  border-color: #f7b731;
-}
-
-.hover\:bg-brand-gold-dark:hover {
-  background-color: #d97706;
-}
-
-.hover\:bg-brand-navy-light:hover {
-  background-color: #004080;
-}
-
-/* Dark mode brand colors */
-.dark .text-brand-gold {
-  color: #fbbf24;
-}
-
-.dark .bg-brand-navy {
-  background-color: #004080;
-}
-
-.bg-brand-navy {
-  background-color: #1e3a5f;
-}
-
-.text-brand-navy {
-  color: #1e3a5f;
-}
-
-.bg-brand-blue {
-  background-color: #5b9bd5;
-}
-
-.text-brand-blue {
-  color: #5b9bd5;
-}
-
-/* Dark mode brand colors */
-.dark .bg-brand-primary {
-  background-color: #ffa726;
-}
-
-.dark .hover\:bg-brand-primary:hover {
-  background-color: #ffa726;
-}
-
-.dark .text-brand-primary {
-  color: #ffa726;
+  --sidebar-bg: #000000;
+  --sidebar-fg: #e5e5e5;
+  --sidebar-muted: #737373;
+  --sidebar-primary: #3b82f6;
+  --sidebar-primary-fg: #ffffff;
+  --sidebar-accent: #0a0a0a;
+  --sidebar-border: #1a1a1a;
 }

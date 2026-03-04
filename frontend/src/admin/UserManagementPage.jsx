@@ -14,7 +14,7 @@ const UserCard = ({ user, onApprove, onReject, onRemove }) => {
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.95 }}
       whileHover={{ y: -4, boxShadow: '0 10px 40px -10px rgba(0,0,0,0.1)' }}
-      className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden transition-shadow"
+      className="bg-white dark:bg-[#0a0a0a] rounded-xl shadow-sm border border-slate-200 dark:border-[#1a1a1a] overflow-hidden transition-shadow"
     >
       {/* Status bar at top */}
       <div className={`h-1 ${
@@ -27,7 +27,7 @@ const UserCard = ({ user, onApprove, onReject, onRemove }) => {
         <div className="flex items-start gap-4">
           {/* Avatar */}
           <div className="flex-shrink-0">
-            <div className="h-12 w-12 rounded-xl bg-slate-100 dark:bg-slate-700 flex items-center justify-center">
+            <div className="h-12 w-12 rounded-xl bg-slate-100 dark:bg-[#1a1a1a] flex items-center justify-center">
               <span className="text-lg font-semibold text-slate-600 dark:text-slate-300">
                 {user.name?.charAt(0)?.toUpperCase() || 'U'}
               </span>
@@ -54,7 +54,7 @@ const UserCard = ({ user, onApprove, onReject, onRemove }) => {
         </div>
 
         {/* Actions */}
-        <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-700 flex items-center justify-end gap-2">
+        <div className="mt-4 pt-4 border-t border-slate-100 dark:border-[#1a1a1a] flex items-center justify-end gap-2">
           {user.status === 'pending' && (
             <>
               <motion.button
@@ -81,7 +81,7 @@ const UserCard = ({ user, onApprove, onReject, onRemove }) => {
             onClick={() => onRemove(user)}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="p-2 rounded-lg text-slate-500 bg-slate-50 dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors"
+            className="p-2 rounded-lg text-slate-500 bg-slate-50 dark:bg-[#1a1a1a] hover:bg-slate-100 dark:hover:bg-[#2a2a2a] transition-colors"
             title="Remove user"
           >
             <Trash2 size={18} />
@@ -169,11 +169,11 @@ export default function UserManagementPage() {
     <>
       <div className="flex-1 flex flex-col overflow-hidden">
         <PageHeader title="User Management" subtitle="Manage user accounts and permissions" />
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50 dark:bg-slate-900 p-6">
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50 dark:bg-black p-4 sm:p-6 transition-colors">
           <div className="max-w-7xl mx-auto">
             {/* Filters */}
             <motion.div 
-              className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 mb-6"
+              className="bg-white dark:bg-[#0a0a0a] rounded-xl shadow-sm border border-slate-200 dark:border-[#1a1a1a] p-4 mb-6"
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
             >
@@ -185,7 +185,7 @@ export default function UserManagementPage() {
                     placeholder="Search by name or email"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                    className="w-full pl-10 pr-4 py-2.5 text-sm border border-slate-200 dark:border-[#2a2a2a] rounded-lg bg-white dark:bg-[#1a1a1a] text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                   />
                 </div>
                 <div className="relative w-full md:w-auto">
@@ -193,7 +193,7 @@ export default function UserManagementPage() {
                   <select
                     value={status}
                     onChange={(e) => setStatus(e.target.value)}
-                    className="w-full md:w-auto pl-10 pr-8 py-2.5 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none"
+                    className="w-full md:w-auto pl-10 pr-8 py-2.5 text-sm border border-slate-200 dark:border-[#2a2a2a] rounded-lg bg-white dark:bg-[#1a1a1a] text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none"
                   >
                     <option value="">All Statuses</option>
                     <option value="pending">Pending</option>
@@ -205,11 +205,7 @@ export default function UserManagementPage() {
             </motion.div>
 
             {/* Content */}
-            {loading ? (
-              <div className="flex justify-center items-center py-16">
-                <Spinner size="lg" text="Loading users..." />
-              </div>
-            ) : error ? (
+            {error ? (
               <EmptyState
                 icon={UserIcon}
                 title="Error Loading Users"
@@ -260,7 +256,7 @@ export default function UserManagementPage() {
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.2 }}
               >
-                <div className="inline-flex items-center gap-1 bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-1">
+                <div className="inline-flex items-center gap-1 bg-white dark:bg-[#0a0a0a] rounded-lg shadow-sm border border-slate-200 dark:border-[#1a1a1a] p-1">
                   <motion.button
                     onClick={() => setCurrentPage(currentPage - 1)}
                     disabled={currentPage === 1}
@@ -271,7 +267,7 @@ export default function UserManagementPage() {
                     <ChevronLeft className="w-4 h-4" />
                     Previous
                   </motion.button>
-                  <span className="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 border-x border-slate-200 dark:border-slate-700">
+                  <span className="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 border-x border-slate-200 dark:border-[#1a1a1a]">
                     Page {currentPage} of {totalPages}
                   </span>
                   <motion.button

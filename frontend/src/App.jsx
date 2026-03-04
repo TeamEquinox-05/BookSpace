@@ -1,49 +1,39 @@
-import React, { Suspense, lazy } from 'react';
+import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext.jsx';
-import { Spinner } from './components/ui';
+import { PageLoader } from './components/ui';
 
-// Eagerly loaded components (needed for initial render)
 import PrivateRoute from './components/shared/PrivateRoute.jsx';
 import Layout from './components/shared/Layout.jsx';
 
-// Lazy loaded components - split by route for better code splitting
-const AdminDashboardPage = lazy(() => import('./admin/AdminDashboardPage.jsx'));
-const BookingRequestsPage = lazy(() => import('./admin/BookingRequestsPage.jsx'));
-const AllBookingsPage = lazy(() => import('./admin/AllBookingsPage.jsx'));
-const VenueManagementPage = lazy(() => import('./admin/VenueManagementPage.jsx'));
-const UserManagementPage = lazy(() => import('./admin/UserManagementPage.jsx'));
+import AdminDashboardPage from './admin/AdminDashboardPage.jsx';
+import BookingRequestsPage from './admin/BookingRequestsPage.jsx';
+import AllBookingsPage from './admin/AllBookingsPage.jsx';
+import VenueManagementPage from './admin/VenueManagementPage.jsx';
+import UserManagementPage from './admin/UserManagementPage.jsx';
 
-const UserDashboardPage = lazy(() => import('./user/UserDashboardPage.jsx'));
-const MyBookingsPage = lazy(() => import('./user/MyBookingsPage.jsx'));
+import UserDashboardPage from './user/UserDashboardPage.jsx';
+import MyBookingsPage from './user/MyBookingsPage.jsx';
 
-const LoginPage = lazy(() => import('./auth/LoginPage.jsx'));
-const SignupPage = lazy(() => import('./auth/SignupPage.jsx'));
+import LoginPage from './auth/LoginPage.jsx';
+import SignupPage from './auth/SignupPage.jsx';
 
-const SettingsPage = lazy(() => import('./settings/SettingsPage.jsx'));
-const PlaceDetailsPage = lazy(() => import('./places/PlaceDetailsPage.jsx'));
-
-// Loading fallback component for Suspense
-const PageLoader = () => (
-  <div className="min-h-[50vh] flex justify-center items-center">
-    <Spinner size="lg" color="blue" />
-  </div>
-);
+import SettingsPage from './settings/SettingsPage.jsx';
+import PlaceDetailsPage from './places/PlaceDetailsPage.jsx';
 
 function App() {
   const { user, loading } = useAuth();
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-900 flex justify-center items-center">
-        <Spinner size="lg" color="white" />
+      <div className="min-h-screen bg-black flex justify-center items-center">
+        <PageLoader />
       </div>
     );
   }
 
   return (
-    <Suspense fallback={<PageLoader />}>
-      <Routes>
+    <Routes>
         {/* Public routes - accessible whether logged in or not */}
         <Route path="/login" element={user ? (user.role === 'admin' ? <Navigate to="/admin" replace /> : <Navigate to="/dashboard" replace />) : <LoginPage />} />
         <Route path="/signup" element={user ? (user.role === 'admin' ? <Navigate to="/admin" replace /> : <Navigate to="/dashboard" replace />) : <SignupPage />} />
@@ -79,7 +69,6 @@ function App() {
           : (user.role === 'admin' ? <Navigate to="/admin" replace /> : <Navigate to="/dashboard" replace />)} 
         />
       </Routes>
-    </Suspense>
   );
 }
 

@@ -17,7 +17,7 @@ import { Calendar, TrendingUp, BarChart3 } from 'lucide-react';
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg p-4 min-w-[140px]">
+      <div className="bg-white dark:bg-[#0a0a0a] border border-slate-200 dark:border-[#1a1a1a] rounded-xl shadow-lg p-4 min-w-[140px]">
         <p className="text-sm font-semibold text-slate-800 dark:text-white mb-2">{label}</p>
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded-full bg-blue-500"></div>
@@ -98,12 +98,8 @@ export default function AdminDashboardPage() {
     <>
       <div className="flex-1 flex flex-col overflow-hidden">
         <PageHeader title="Admin Dashboard" />
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 dark:bg-gray-900 p-6">
-          {loading ? (
-            <div className="flex justify-center items-center h-64">
-              <Spinner size="lg" />
-            </div>
-          ) : error ? (
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50 dark:bg-black p-4 sm:p-6 transition-colors">
+          {error ? (
             <div className="text-center text-red-500">{error}</div>
           ) : (
             <>
@@ -112,9 +108,9 @@ export default function AdminDashboardPage() {
               
               {/* Improved Chart Section */}
               <div className="mt-8">
-                <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-100 dark:border-slate-700 overflow-hidden">
+                <div className="bg-white dark:bg-[#0a0a0a] rounded-2xl shadow-lg border border-slate-100 dark:border-[#1a1a1a] overflow-hidden">
                   {/* Chart Header */}
-                  <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-700">
+                  <div className="px-6 py-5 border-b border-slate-100 dark:border-[#1a1a1a]">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                       <div className="flex items-center gap-3">
                         <div className="p-2.5 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
@@ -135,7 +131,7 @@ export default function AdminDashboardPage() {
                             <p className="text-sm font-bold text-slate-800 dark:text-white">{totalChartBookings}</p>
                           </div>
                         </div>
-                        <div className="w-px h-8 bg-slate-200 dark:bg-slate-700"></div>
+                        <div className="w-px h-8 bg-slate-200 dark:bg-[#1a1a1a]"></div>
                         <div className="flex items-center gap-2">
                           <TrendingUp className="w-4 h-4 text-green-500" />
                           <div>

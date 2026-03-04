@@ -64,32 +64,15 @@ export default function UserDashboardPage() {
     <>
       <div className="flex-1 flex flex-col overflow-hidden">
         <PageHeader title="User Dashboard" />
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50 dark:bg-slate-900 p-6">
-          {loading ? (
-            <motion.div 
-              className="flex flex-col justify-center items-center h-64"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.3 }}
-            >
-              <div className="relative">
-                <Spinner size="lg" />
-                <motion.div
-                  className="absolute inset-0 border-4 border-blue-200 dark:border-blue-800 rounded-full"
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                />
-              </div>
-              <p className="mt-4 text-slate-600 dark:text-slate-400">Loading your dashboard...</p>
-            </motion.div>
-          ) : error ? (
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50 dark:bg-black p-4 sm:p-6 transition-colors">
+          {error ? (
             <motion.div 
               className="flex flex-col justify-center items-center h-64"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.3 }}
             >
-              <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-8 text-center max-w-md mx-auto border border-red-100 dark:border-red-900/30">
+              <div className="bg-white dark:bg-[#0a0a0a] rounded-2xl shadow-lg p-8 text-center max-w-md mx-auto border border-red-100 dark:border-red-900/30">
                 <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
                   <AlertCircle className="w-8 h-8 text-red-600 dark:text-red-400" />
                 </div>
@@ -123,7 +106,7 @@ export default function UserDashboardPage() {
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.4 }}
                 >
-                  <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-lg p-12 max-w-lg mx-auto border border-slate-100 dark:border-slate-700">
+                  <div className="bg-white dark:bg-[#0a0a0a] rounded-3xl shadow-lg p-12 max-w-lg mx-auto border border-slate-100 dark:border-[#1a1a1a]">
                     <div className="flex justify-center space-x-4 mb-6">
                       <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center">
                         <Calendar className="w-8 h-8 text-blue-600 dark:text-blue-400" />

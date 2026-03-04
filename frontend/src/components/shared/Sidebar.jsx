@@ -56,7 +56,7 @@ const Sidebar = ({ isExpanded, setIsExpanded: _setIsExpanded, onMouseEnter, onMo
   return (
     <motion.div
       className={cn(
-        "fixed left-0 top-0 h-screen bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 z-50",
+        "fixed left-0 top-0 h-screen bg-white dark:bg-[#0a0a0a] border-r border-slate-200 dark:border-[#1a1a1a] z-50",
         "shadow-lg overflow-hidden flex flex-col"
       )}
       initial={false}
@@ -67,7 +67,7 @@ const Sidebar = ({ isExpanded, setIsExpanded: _setIsExpanded, onMouseEnter, onMo
       onMouseLeave={onMouseLeave}
     >
       {/* Header */}
-      <div className="flex items-center h-16 px-4 border-b border-slate-200 dark:border-slate-700 flex-shrink-0">
+      <div className="flex items-center h-16 px-4 border-b border-slate-200 dark:border-[#1a1a1a] flex-shrink-0">
         <div className="flex items-center gap-3 min-w-0">
           <motion.div 
             className="w-10 h-10 flex items-center justify-center flex-shrink-0"
@@ -180,9 +180,9 @@ const Sidebar = ({ isExpanded, setIsExpanded: _setIsExpanded, onMouseEnter, onMo
 
                       {/* Tooltip for collapsed state */}
                       {!isExpanded && (
-                        <div className="absolute left-full ml-4 px-3 py-2 bg-slate-800 dark:bg-slate-700 text-white rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50 text-sm font-medium">
+                        <div className="absolute left-full ml-4 px-3 py-2 bg-[#1a1a1a] dark:bg-[#1a1a1a] text-white rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50 text-sm font-medium">
                           {item.title}
-                          <div className="absolute left-0 top-1/2 -translate-x-1 -translate-y-1/2 w-2 h-2 bg-slate-800 dark:bg-slate-700 rotate-45"></div>
+                          <div className="absolute left-0 top-1/2 -translate-x-1 -translate-y-1/2 w-2 h-2 bg-[#1a1a1a] dark:bg-[#1a1a1a] rotate-45"></div>
                         </div>
                       )}
                     </>
@@ -195,12 +195,12 @@ const Sidebar = ({ isExpanded, setIsExpanded: _setIsExpanded, onMouseEnter, onMo
       </div>
 
       {/* User Profile & Logout Section */}
-      <div className="border-t border-slate-200 dark:border-slate-700 p-3 flex-shrink-0">
+      <div className="border-t border-slate-200 dark:border-[#1a1a1a] p-3 flex-shrink-0">
         {/* User Profile */}
         <AnimatePresence>
           {isExpanded && (
             <motion.div 
-              className="flex items-center gap-3 px-2 py-2 mb-2 rounded-xl bg-slate-50 dark:bg-slate-700/50"
+              className="flex items-center gap-3 px-2 py-2 mb-2 rounded-xl bg-slate-50 dark:bg-[#1a1a1a]"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 10 }}
@@ -231,10 +231,10 @@ const Sidebar = ({ isExpanded, setIsExpanded: _setIsExpanded, onMouseEnter, onMo
                 {(user?.name || 'U').charAt(0).toUpperCase()}
               </span>
               {/* Tooltip */}
-              <div className="absolute left-full ml-4 px-3 py-2 bg-slate-800 dark:bg-slate-700 text-white rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50">
+              <div className="absolute left-full ml-4 px-3 py-2 bg-[#1a1a1a] dark:bg-[#1a1a1a] text-white rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50">
                 <p className="text-sm font-medium">{user?.name || 'User'}</p>
                 <p className="text-xs text-slate-300 capitalize">{user?.role || 'user'}</p>
-                <div className="absolute left-0 top-1/2 -translate-x-1 -translate-y-1/2 w-2 h-2 bg-slate-800 dark:bg-slate-700 rotate-45"></div>
+                <div className="absolute left-0 top-1/2 -translate-x-1 -translate-y-1/2 w-2 h-2 bg-[#1a1a1a] dark:bg-[#1a1a1a] rotate-45"></div>
               </div>
             </div>
           </div>

@@ -391,13 +391,9 @@ export default function PlaceDetailsPage() {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      <PageHeader title={loading ? 'Loading...' : place?.name || 'Details'} />
-      <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 dark:bg-gray-900 p-6">
-        {loading ? (
-          <div className="flex justify-center items-center h-64">
-            <Spinner size="lg" />
-          </div>
-        ) : !place ? (
+      <PageHeader title={place?.name || 'Details'} />
+      <main className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50 dark:bg-black p-4 sm:p-6 transition-colors">
+        {!place ? (
           <div className="text-center text-gray-600 dark:text-gray-400">Place not found.</div>
         ) : (
           <div className="max-w-7xl mx-auto">

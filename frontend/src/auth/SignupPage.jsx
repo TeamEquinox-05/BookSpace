@@ -198,8 +198,8 @@ const SignupPage = ({ onSignupSuccess: _onSignupSuccess }) => {
   const togglePasswordVisibility = () => setShowPassword(!showPassword);
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 flex items-center justify-center p-4">
-      <div className="w-full max-w-4xl bg-white dark:bg-slate-800 rounded-2xl shadow-lg flex overflow-hidden">
+    <div className="min-h-screen bg-slate-50 dark:bg-black text-slate-800 dark:text-slate-200 flex items-center justify-center p-4 transition-colors">
+      <div className="w-full max-w-4xl bg-white dark:bg-[#0a0a0a] rounded-2xl shadow-lg flex overflow-hidden">
         {/* Left Side: Branding */}
         <div className="hidden md:flex flex-col justify-center items-center w-1/2 bg-blue-800 text-white p-12">
           <div className="w-32 h-32 mb-6 bg-white rounded-2xl flex items-center justify-center p-4 shadow-xl">
@@ -238,26 +238,26 @@ const SignupPage = ({ onSignupSuccess: _onSignupSuccess }) => {
                   <>
                     <div className="relative">
                       <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-                      <input type="text" name="name" value={name} onChange={onChange} required placeholder="Full Name" className="w-full pl-10 pr-3 py-3 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
+                      <input type="text" name="name" value={name} onChange={onChange} required placeholder="Full Name" className="w-full pl-10 pr-3 py-3 bg-slate-100 dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#2a2a2a] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
                     </div>
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-                      <input type="email" name="email" value={email} onChange={onChange} required placeholder="Email Address" className="w-full pl-10 pr-3 py-3 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
+                      <input type="email" name="email" value={email} onChange={onChange} required placeholder="Email Address" className="w-full pl-10 pr-3 py-3 bg-slate-100 dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#2a2a2a] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
                     </div>
                     <div className="relative">
                       <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-                      <input type={showPassword ? 'text' : 'password'} name="password" value={password} onChange={onChange} required placeholder="Password" className="w-full pl-10 pr-10 py-3 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
+                      <input type={showPassword ? 'text' : 'password'} name="password" value={password} onChange={onChange} required placeholder="Password" className="w-full pl-10 pr-10 py-3 bg-slate-100 dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#2a2a2a] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
                       <button type="button" onClick={togglePasswordVisibility} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
                         {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                       </button>
                     </div>
                     <div className="relative">
                       <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-                      <input type="text" name="phone" value={phone} onChange={onChange} placeholder="Phone Number (Optional)" className="w-full pl-10 pr-3 py-3 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
+                      <input type="text" name="phone" value={phone} onChange={onChange} placeholder="Phone Number (Optional)" className="w-full pl-10 pr-3 py-3 bg-slate-100 dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#2a2a2a] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
                     </div>
                     <div className="relative">
                       <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-                      <select name="role" value={role} onChange={onChange} className="w-full pl-10 pr-3 py-3 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition appearance-none">
+                      <select name="role" value={role} onChange={onChange} className="w-full pl-10 pr-3 py-3 bg-slate-100 dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#2a2a2a] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition appearance-none">
                         <option value="user">User</option>
                         {/* Admin role removed from public signup */}
                       </select>
@@ -292,7 +292,7 @@ const SignupPage = ({ onSignupSuccess: _onSignupSuccess }) => {
                           }} 
                           required 
                           placeholder="Enter 6-digit code" 
-                          className="w-full text-center tracking-[0.3em] font-semibold text-lg py-3 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" 
+                          className="w-full text-center tracking-[0.3em] font-semibold text-lg py-3 bg-slate-100 dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#2a2a2a] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" 
                           autoComplete="one-time-code"
                           inputMode="numeric"
                           maxLength={6}

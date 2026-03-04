@@ -58,8 +58,8 @@ const EmptyState = ({
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.3 }}
     >
-      <div className={`inline-flex items-center justify-center ${styles.iconWrapper} bg-slate-100 dark:bg-slate-800 rounded-2xl mb-4`}>
-        <Icon className={`${styles.icon} text-slate-400 dark:text-slate-500`} />
+      <div className={`inline-flex items-center justify-center ${styles.iconWrapper} bg-slate-100 dark:bg-[#1a1a1a] rounded-2xl mb-4`}>
+        <Icon className={`${styles.icon} text-slate-400 dark:text-zinc-500`} />
       </div>
       
       <h3 className={`${styles.title} font-semibold text-slate-700 dark:text-slate-300 mb-2`}>

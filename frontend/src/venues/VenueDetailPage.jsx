@@ -34,7 +34,7 @@ export default function VenueDetailPage({ role = 'user' }) {
     <>
       <div className="flex-1 flex flex-col overflow-hidden">
         <PageHeader title={loading ? 'Loading...' : venue?.name || 'Venue Details'} />
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 dark:bg-gray-900 p-6">
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50 dark:bg-black p-4 sm:p-6 transition-colors">
           {loading ? (
             <DetailViewSkeleton />
           ) : !venue ? (

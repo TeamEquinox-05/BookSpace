@@ -2,7 +2,7 @@ import React from 'react';
 import { Users, BarChart2 } from 'lucide-react';
 
 const PopularPlacesList = ({ places }) => (
-  <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-6 border border-slate-200 dark:border-slate-700 h-full">
+  <div className="bg-white dark:bg-[#0a0a0a] rounded-2xl shadow-lg p-6 border border-slate-200 dark:border-[#1a1a1a] h-full">
     <h3 className="text-xl font-semibold text-slate-800 dark:text-white mb-6">Popular Places</h3>
     
     {places && places.length > 0 ? (
@@ -10,7 +10,7 @@ const PopularPlacesList = ({ places }) => (
         {places.map((place) => (
           <div 
             key={place._id || place.name} 
-            className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors duration-200 cursor-pointer"
+            className="flex items-center justify-between p-3 bg-slate-50 dark:bg-[#1a1a1a] rounded-lg hover:bg-slate-100 dark:hover:bg-[#2a2a2a] transition-colors duration-200 cursor-pointer"
           >
             {/* Place Name and Capacity */}
             <div>

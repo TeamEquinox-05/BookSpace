@@ -23,7 +23,7 @@ const StepIndicator = ({ currentStep }) => {
                     ? 'bg-blue-600 border-blue-600 text-white'
                     : isCompleted
                     ? 'bg-green-500 border-green-500 text-white'
-                    : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-500 text-slate-500'
+                    : 'bg-white dark:bg-[#1a1a1a] border-slate-300 dark:border-[#2a2a2a] text-slate-500'
                 }`}
               >
                 {isCompleted ? '✓' : stepNumber}
@@ -33,7 +33,7 @@ const StepIndicator = ({ currentStep }) => {
               </p>
             </div>
             {stepNumber < steps.length && (
-              <div className={`flex-1 h-0.5 mx-2 ${isCompleted ? 'bg-green-500' : 'bg-slate-300 dark:bg-slate-600'}`}></div>
+              <div className={`flex-1 h-0.5 mx-2 ${isCompleted ? 'bg-green-500' : 'bg-slate-300 dark:bg-[#2a2a2a]'}`}></div>
             )}
           </React.Fragment>
         );
@@ -465,7 +465,7 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
                     }
                   }}
                   placeholder="Enter your registered email" 
-                  className="w-full pl-10 pr-3 py-3 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                  className="w-full pl-10 pr-3 py-3 bg-slate-100 dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#2a2a2a] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
                   disabled={loading}
                   autoComplete="email"
                   autoFocus
@@ -522,7 +522,7 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
                       setOtp(value);
                     }}
                     placeholder="Enter 6-digit code" 
-                    className="w-full pl-10 text-center tracking-[0.3em] font-semibold text-lg py-3 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" 
+                    className="w-full pl-10 text-center tracking-[0.3em] font-semibold text-lg py-3 bg-slate-100 dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#2a2a2a] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" 
                     autoComplete="one-time-code"
                   />
                 </div>
@@ -539,7 +539,7 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
                 {loading ? <Spinner centered={false} size="sm" text="Verifying" color="white" /> : 'Verify Code'}
               </button>
               
-              <div className="flex justify-between items-center mt-6 pt-4 border-t border-slate-200 dark:border-slate-700">
+              <div className="flex justify-between items-center mt-6 pt-4 border-t border-slate-200 dark:border-[#1a1a1a]">
                 <button 
                   onClick={() => setStep(1)} 
                   className="text-sm font-medium text-slate-600 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-300"
@@ -588,7 +588,7 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
                                     }
                                 }} 
                                 placeholder="Enter new password" 
-                                className="w-full pl-10 pr-3 py-3 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                                className="w-full pl-10 pr-3 py-3 bg-slate-100 dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#2a2a2a] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
                                 autoComplete="new-password"
                                 autoFocus
                                 disabled={loading}
@@ -622,10 +622,10 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
                                     }
                                 }}
                                 placeholder="Confirm your new password" 
-                                className={`w-full pl-10 pr-3 py-3 bg-slate-100 dark:bg-slate-700 border rounded-lg focus:outline-none focus:ring-2 transition ${
+                                className={`w-full pl-10 pr-3 py-3 bg-slate-100 dark:bg-[#1a1a1a] border rounded-lg focus:outline-none focus:ring-2 transition ${
                                     confirmPassword && newPassword !== confirmPassword 
                                         ? 'border-red-300 dark:border-red-700 focus:ring-red-500' 
-                                        : 'border-slate-200 dark:border-slate-600 focus:ring-blue-500'
+                                        : 'border-slate-200 dark:border-[#2a2a2a] focus:ring-blue-500'
                                 }`}
                                 autoComplete="new-password"
                                 disabled={loading}
@@ -664,8 +664,8 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={resetStateAndClose}>
-      <div className="w-full max-w-md p-6 sm:p-8 bg-white rounded-xl shadow-2xl dark:bg-slate-800 transform transition-all" onClick={e => e.stopPropagation()}>
-        <button onClick={resetStateAndClose} className="absolute top-4 right-4 p-2 rounded-full text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700">
+      <div className="w-full max-w-md p-6 sm:p-8 bg-white rounded-xl shadow-2xl dark:bg-[#0a0a0a] transform transition-all" onClick={e => e.stopPropagation()}>
+        <button onClick={resetStateAndClose} className="absolute top-4 right-4 p-2 rounded-full text-slate-400 hover:bg-slate-100 dark:hover:bg-[#1a1a1a]">
           <X size={20} />
         </button>
         <div className="text-center">

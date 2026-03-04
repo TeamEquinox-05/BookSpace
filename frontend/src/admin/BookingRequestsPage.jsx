@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../utils/api';
 import { PageHeader } from '../components/shared';
-import { Check, X, Calendar, Clock, User, MapPin, Package, Mail, AlertCircle, Inbox } from 'lucide-react';
+import { Check, X, Calendar, Clock, User, MapPin, Package, Mail, AlertCircle, Inbox, Building2 } from 'lucide-react';
 import { Spinner, useToast, EmptyState, Badge } from '../components/ui';
 import logger from '../utils/logger';
 
@@ -10,20 +10,16 @@ const BookingRequestCard = ({ booking, onApprove, onReject, isProcessing, proces
   const [showRejectForm, setShowRejectForm] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
 
-  const handleRejectClick = () => {
-    setShowRejectForm(true);
-  };
+  const handleRejectClick = () => setShowRejectForm(true);
+  const handleCancelReject = () => { setShowRejectForm(false); setRejectionReason(''); };
+  const handleConfirmReject = () => { onReject(booking._id, rejectionReason); setShowRejectForm(false); setRejectionReason(''); };
 
-  const handleCancelReject = () => {
-    setShowRejectForm(false);
-    setRejectionReason('');
-  };
-
-  const handleConfirmReject = () => {
-    onReject(booking._id, rejectionReason);
-    setShowRejectForm(false);
-    setRejectionReason('');
-  };
+  const startDate = new Date(booking.eventStartTime);
+  const endDate = new Date(booking.eventEndTime);
+  const dateStr = startDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+  const startTime = startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const endTime = endDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const userInitials = (booking.userId?.name || '?').split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
 
   return (
     <motion.div
@@ -31,85 +27,93 @@ const BookingRequestCard = ({ booking, onApprove, onReject, isProcessing, proces
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20, transition: { duration: 0.2 } }}
-      whileHover={{ y: -2 }}
-      className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden"
+      className="bg-white dark:bg-[#0a0a0a] rounded-2xl border border-slate-200 dark:border-[#1a1a1a] overflow-hidden shadow-sm"
     >
-      {/* Status bar at top */}
-      <div className="h-1 bg-amber-400" />
-      
-      <div className="p-6">
-        {/* Header */}
-        <div className="flex items-start justify-between mb-4">
-          <div>
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-1">
-              {booking.eventTitle}
-            </h3>
-            <Badge variant="warning" dot size="sm">
-              Pending Approval
-            </Badge>
-          </div>
+      {/* Amber top accent */}
+      <div className="h-0.5 bg-gradient-to-r from-amber-400 via-orange-400 to-amber-300" />
+
+      {/* Card Header */}
+      <div className="px-5 pt-5 pb-4 flex items-start gap-4">
+        {/* Venue Icon Block */}
+        <div className="flex-shrink-0 w-11 h-11 rounded-xl bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center border border-amber-100 dark:border-amber-800/30">
+          <Building2 className="w-5 h-5 text-amber-500" />
         </div>
 
-        {/* Details Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
-          <div className="flex items-center gap-3 text-slate-600 dark:text-slate-300">
-            <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center">
-              <MapPin className="w-4 h-4 text-blue-500" />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h3 className="text-base font-semibold text-slate-900 dark:text-white leading-tight truncate">
+                {booking.eventTitle}
+              </h3>
+              <p className="text-sm text-slate-500 dark:text-zinc-500 mt-0.5 flex items-center gap-1.5">
+                <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
+                {booking.placeId?.name || 'N/A'}
+              </p>
             </div>
-            <span className="text-sm">{booking.placeId?.name || 'N/A'}</span>
-          </div>
-          
-          <div className="flex items-center gap-3 text-slate-600 dark:text-slate-300">
-            <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-purple-50 dark:bg-purple-900/30 flex items-center justify-center">
-              <User className="w-4 h-4 text-purple-500" />
-            </div>
-            <div className="text-sm">
-              <span className="font-medium">{booking.userId?.name || 'N/A'}</span>
-              <span className="text-slate-400 dark:text-slate-500 ml-1">({booking.userId?.email || 'N/A'})</span>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-3 text-slate-600 dark:text-slate-300">
-            <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-green-50 dark:bg-green-900/30 flex items-center justify-center">
-              <Calendar className="w-4 h-4 text-green-500" />
-            </div>
-            <span className="text-sm">{new Date(booking.eventStartTime).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}</span>
-          </div>
-          
-          <div className="flex items-center gap-3 text-slate-600 dark:text-slate-300">
-            <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-orange-50 dark:bg-orange-900/30 flex items-center justify-center">
-              <Clock className="w-4 h-4 text-orange-500" />
-            </div>
-            <span className="text-sm">
-              {new Date(booking.eventStartTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - {new Date(booking.eventEndTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+            <span className="flex-shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border border-amber-200 dark:border-amber-800/40">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+              Pending
             </span>
           </div>
         </div>
+      </div>
 
-        {/* Requested Facilities */}
+      {/* Divider */}
+      <div className="mx-5 border-t border-slate-100 dark:border-[#1a1a1a]" />
+
+      {/* Details */}
+      <div className="px-5 py-4 space-y-3">
+        {/* Requested by */}
+        <div className="flex items-center gap-3">
+          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center">
+            <span className="text-white text-xs font-bold leading-none">{userInitials}</span>
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-slate-800 dark:text-white leading-tight">{booking.userId?.name || 'N/A'}</p>
+            <p className="text-xs text-slate-400 dark:text-zinc-500 truncate">{booking.userId?.email || 'N/A'}</p>
+          </div>
+        </div>
+
+        {/* Date & Time row */}
+        <div className="flex items-center gap-4 bg-slate-50 dark:bg-[#111111] rounded-xl px-4 py-3 border border-slate-100 dark:border-[#1a1a1a]">
+          <div className="flex items-center gap-2 text-slate-700 dark:text-zinc-300">
+            <Calendar className="w-4 h-4 text-blue-500 flex-shrink-0" />
+            <span className="text-sm font-medium">{dateStr}</span>
+          </div>
+          <div className="w-px h-4 bg-slate-200 dark:bg-[#2a2a2a]" />
+          <div className="flex items-center gap-2 text-slate-700 dark:text-zinc-300">
+            <Clock className="w-4 h-4 text-green-500 flex-shrink-0" />
+            <span className="text-sm font-medium">{startTime} – {endTime}</span>
+          </div>
+        </div>
+
+        {/* Facilities */}
         {booking.requestedFacilities?.length > 0 && (
-          <div className="mb-5 p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
-            <div className="flex items-start gap-3">
-              <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center">
-                <Package className="w-4 h-4 text-indigo-500" />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                  Requested facilities: {booking.requestedFacilities?.map(f => f.name).join(', ')}
-                </p>
-                <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center mt-1">
-                  <Mail className="w-3 h-3 mr-1" />
-                  {booking.requestedFacilities.length} facility email{booking.requestedFacilities.length > 1 ? 's' : ''} will be notified
-                </p>
-              </div>
+          <div className="space-y-2">
+            <div className="flex flex-wrap gap-2">
+              {booking.requestedFacilities.map((f, i) => (
+                <span
+                  key={i}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800/30 text-xs font-medium"
+                >
+                  <Package className="w-3 h-3" />
+                  {f.name}
+                </span>
+              ))}
             </div>
+            <p className="text-xs text-slate-400 dark:text-zinc-600 flex items-center gap-1.5">
+              <Mail className="w-3 h-3" />
+              {booking.requestedFacilities.length} facility email{booking.requestedFacilities.length > 1 ? 's' : ''} will be notified on approval
+            </p>
           </div>
         )}
+      </div>
 
-        {/* Action Buttons */}
+      {/* Action Footer */}
+      <div className="px-5 pb-5">
         <AnimatePresence mode="wait">
           {!showRejectForm ? (
-            <motion.div 
+            <motion.div
               key="buttons"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -121,56 +125,53 @@ const BookingRequestCard = ({ booking, onApprove, onReject, isProcessing, proces
                 disabled={isProcessing}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="flex-1 py-2.5 px-4 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                className="flex-1 h-10 bg-green-500 hover:bg-green-600 active:bg-green-700 text-white rounded-xl font-semibold text-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm shadow-green-500/20"
               >
                 {isProcessing && processingAction === 'approve' ? (
                   <Spinner size="sm" centered={false} />
                 ) : (
-                  <>
-                    <Check className="w-4 h-4" />
-                    Approve
-                  </>
+                  <><Check className="w-4 h-4" />Approve</>
                 )}
               </motion.button>
-              
+
               <motion.button
                 onClick={handleRejectClick}
                 disabled={isProcessing}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="flex-1 py-2.5 px-4 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                className="flex-1 h-10 bg-white dark:bg-[#0a0a0a] hover:bg-red-50 dark:hover:bg-red-950/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900/50 rounded-xl font-semibold text-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <X className="w-4 h-4" />
                 Reject
               </motion.button>
             </motion.div>
           ) : (
-            <motion.div 
+            <motion.div
               key="reject-form"
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               className="space-y-3"
             >
-              <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 text-sm">
-                <AlertCircle className="w-4 h-4" />
-                <span>Please provide a reason for rejection</span>
+              <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 text-sm font-medium">
+                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                Provide a reason for rejection
               </div>
               <textarea
-                className="w-full p-3 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all resize-none"
+                className="w-full p-3 text-sm border border-slate-200 dark:border-[#2a2a2a] rounded-xl bg-slate-50 dark:bg-[#111111] text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-400 transition-all resize-none"
                 rows="3"
                 placeholder="Enter rejection reason..."
                 value={rejectionReason}
                 onChange={(e) => setRejectionReason(e.target.value)}
                 autoFocus
               />
-              <div className="flex justify-end gap-3">
+              <div className="flex justify-end gap-2">
                 <motion.button
                   onClick={handleCancelReject}
                   disabled={isProcessing}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg transition-colors"
+                  className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-zinc-400 bg-slate-100 dark:bg-[#1a1a1a] hover:bg-slate-200 dark:hover:bg-[#2a2a2a] rounded-xl transition-colors"
                 >
                   Cancel
                 </motion.button>
@@ -179,15 +180,12 @@ const BookingRequestCard = ({ booking, onApprove, onReject, isProcessing, proces
                   disabled={isProcessing || !rejectionReason.trim()}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  className="px-4 py-2 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="px-4 py-2 text-sm font-semibold text-white bg-red-500 hover:bg-red-600 rounded-xl transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isProcessing && processingAction === 'reject' ? (
                     <Spinner size="sm" centered={false} />
                   ) : (
-                    <>
-                      <X className="w-4 h-4" />
-                      Confirm Reject
-                    </>
+                    <><X className="w-4 h-4" />Confirm Reject</>
                   )}
                 </motion.button>
               </div>
@@ -287,13 +285,22 @@ export default function BookingRequestsPage() {
       
       fetchPendingBookings();
     } catch (err) {
-      setError(err.message);
       logger.error('Error approving booking:', err);
-      addToast({
-        message: 'Failed to approve booking. Please try again.',
-        type: 'error',
-        duration: 6000
-      });
+
+      // 409 = overlap conflict — show the server's descriptive message
+      if (err.response?.status === 409) {
+        addToast({
+          message: err.response.data.msg || 'This time slot is already booked for this venue.',
+          type: 'error',
+          duration: 9000
+        });
+      } else {
+        addToast({
+          message: 'Failed to approve booking. Please try again.',
+          type: 'error',
+          duration: 6000
+        });
+      }
     } finally {
       setProcessingBookingId(null);
       setProcessingAction(null);
@@ -344,7 +351,7 @@ export default function BookingRequestsPage() {
     return (
       <div className="flex-1 flex flex-col overflow-hidden">
         <PageHeader title="Booking Requests" subtitle="Review and manage pending booking requests" />
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50 dark:bg-slate-900 p-6">
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50 dark:bg-black p-4 sm:p-6 transition-colors">
           <EmptyState
             icon={AlertCircle}
             title="Error Loading Requests"
@@ -362,7 +369,7 @@ export default function BookingRequestsPage() {
     <div className="flex-1 flex flex-col overflow-hidden">
       <PageHeader title="Booking Requests" subtitle="Review and manage pending booking requests" />
       <ToastContainer />
-      <main className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50 dark:bg-slate-900 p-6">
+      <main className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50 dark:bg-black p-4 sm:p-6 transition-colors">
         <div className="max-w-4xl mx-auto">
           {/* Header with count */}
           <motion.div 
@@ -386,11 +393,7 @@ export default function BookingRequestsPage() {
           </motion.div>
 
           {/* Content */}
-          {loading ? (
-            <div className="flex justify-center items-center h-64">
-              <Spinner size="lg" centered={false} text="Loading booking requests" />
-            </div>
-          ) : pendingBookings.length === 0 ? (
+          {pendingBookings.length === 0 ? (
             <EmptyState
               icon={Inbox}
               title="No Pending Requests"

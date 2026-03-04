@@ -18,10 +18,10 @@ const ActionCard = ({ icon: Icon, text, color }) => {
     blue: "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400",
     green: "bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400",
     purple: "bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400",
-    slate: "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400",
+    slate: "bg-slate-100 dark:bg-[#1a1a1a] text-slate-600 dark:text-slate-400",
   }
   return (
-    <button className="flex items-center space-x-4 p-4 bg-white dark:bg-slate-800 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 border border-slate-100 dark:border-slate-700">
+    <button className="flex items-center space-x-4 p-4 bg-white dark:bg-[#0a0a0a] rounded-xl shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 border border-slate-100 dark:border-[#1a1a1a]">
       <div className={`p-3 rounded-full ${colors[color]}`}>
         <Icon size={20} />
       </div>

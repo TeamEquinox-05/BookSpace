@@ -2,13 +2,13 @@ import React from 'react';
 
 const DetailViewSkeleton = () => {
   const SkeletonLine = ({ width }) => (
-    <div className={`h-4 bg-slate-200 dark:bg-slate-700 rounded ${width}`}></div>
+    <div className={`h-4 bg-slate-200 dark:bg-[#1a1a1a] rounded ${width}`}></div>
   );
 
   return (
     <div className="animate-pulse max-w-4xl mx-auto">
-      <div className="h-8 bg-slate-200 dark:bg-slate-700 rounded w-1/2 mb-4"></div>
-      <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-6">
+      <div className="h-8 bg-slate-200 dark:bg-[#1a1a1a] rounded w-1/2 mb-4"></div>
+      <div className="bg-white dark:bg-[#0a0a0a] rounded-lg shadow p-6">
         <div className="space-y-4">
           <SkeletonLine width="w-full" />
           <SkeletonLine width="w-5/6" />

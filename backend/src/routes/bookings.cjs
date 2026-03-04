@@ -180,6 +180,37 @@ router.put('/:id/status',
       return res.status(404).json({ msg: 'Booking not found' });
     }
 
+    // --- Overlap check before approving ---
+    if (status === 'approved') {
+      const s = new Date(booking.eventStartTime);
+      const e = new Date(booking.eventEndTime);
+
+      const conflict = await Booking.findOne({
+        _id: { $ne: id },
+        placeId: booking.placeId._id,
+        status: 'approved',
+        $or: [
+          { eventStartTime: { $lt: e }, eventEndTime: { $gt: s } }
+        ]
+      }).populate('userId', ['name', 'email']);
+
+      if (conflict) {
+        const cs = new Date(conflict.eventStartTime).toLocaleString();
+        const ce = new Date(conflict.eventEndTime).toLocaleString();
+        return res.status(409).json({
+          msg: `Cannot approve: "${conflict.eventTitle}" (by ${conflict.userId?.name || 'another user'}) is already approved for this venue from ${cs} to ${ce}.`,
+          conflict: {
+            eventTitle: conflict.eventTitle,
+            userName: conflict.userId?.name,
+            userEmail: conflict.userId?.email,
+            startTime: conflict.eventStartTime,
+            endTime: conflict.eventEndTime
+          }
+        });
+      }
+    }
+    // --- End overlap check ---
+
     booking.status = status;
     if (status === 'rejected') {
       booking.reason = reason;

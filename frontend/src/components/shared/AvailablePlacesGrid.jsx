@@ -20,11 +20,11 @@ const AvailablePlacesGrid = ({ places, role }) => {
           <Link 
             to={`/${role === 'admin' ? 'admin/' : ''}places/${place._id}`} 
             key={place._id} 
-            className="group bg-white dark:bg-slate-800 rounded-xl shadow-md overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-slate-100 dark:border-slate-700"
+            className="group bg-white dark:bg-[#0a0a0a] rounded-2xl shadow-sm overflow-hidden hover:shadow-md hover:-translate-y-1 transition-all border border-slate-200 dark:border-[#1a1a1a]"
           >
-            <div className="h-40 bg-slate-200 dark:bg-slate-700 flex items-center justify-center">
+            <div className="h-40 bg-slate-200 dark:bg-[#1a1a1a] flex items-center justify-center">
               {/* Replace with <img /> when available */}
-              <Building size={48} className="text-slate-400 dark:text-slate-500" />
+              <Building size={48} className="text-slate-400 dark:text-zinc-500" />
             </div>
             <div className="p-5">
               <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{place.name}</h3>

@@ -87,7 +87,7 @@ export default function VenueManagementPage() {
   if (error) return (
     <div className="flex-1 flex flex-col overflow-hidden">
       <PageHeader title="Venue Management" subtitle="Manage your venues and spaces" />
-      <main className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50 dark:bg-slate-900 p-6">
+      <main className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50 dark:bg-black p-4 sm:p-6 transition-colors">
         <EmptyState
           icon={Building2}
           title="Error Loading Venues"
@@ -104,7 +104,7 @@ export default function VenueManagementPage() {
     <>
       <div className="flex-1 flex flex-col overflow-hidden">
         <PageHeader title="Venue Management" subtitle="Manage your venues and spaces" />
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50 dark:bg-slate-900 p-6">
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50 dark:bg-black p-4 sm:p-6 transition-colors">
           <div className="max-w-7xl mx-auto">
             {/* Header */}
             <motion.div 
@@ -153,13 +153,13 @@ export default function VenueManagementPage() {
               <>
                 {/* Desktop Table View */}
                 <motion.div 
-                  className="hidden md:block bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden"
+                  className="hidden md:block bg-white dark:bg-[#0a0a0a] rounded-xl shadow-sm border border-slate-200 dark:border-[#1a1a1a] overflow-hidden"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                 >
                   <table className="min-w-full">
                     <thead>
-                      <tr className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700">
+                      <tr className="bg-slate-50 dark:bg-[#0a0a0a] border-b border-slate-200 dark:border-[#1a1a1a]">
                         <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                           Name
                         </th>
@@ -187,7 +187,7 @@ export default function VenueManagementPage() {
                             exit={{ opacity: 0 }}
                             transition={{ delay: index * 0.03 }}
                             className={`
-                              ${index % 2 === 0 ? 'bg-white dark:bg-slate-900' : 'bg-slate-50/50 dark:bg-slate-800/30'}
+                              ${index % 2 === 0 ? 'bg-white dark:bg-black' : 'bg-slate-50/50 dark:bg-[#0a0a0a]'}
                               hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-colors
                             `}
                           >
@@ -269,7 +269,7 @@ export default function VenueManagementPage() {
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.95 }}
-                        className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden"
+                        className="bg-white dark:bg-[#0a0a0a] rounded-xl shadow-sm border border-slate-200 dark:border-[#1a1a1a] overflow-hidden"
                       >
                         <div className={`h-1 ${venue.status === 'active' ? 'bg-green-500' : 'bg-slate-300'}`} />
                         <div className="p-4">

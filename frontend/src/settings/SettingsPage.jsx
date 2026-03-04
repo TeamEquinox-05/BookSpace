@@ -10,12 +10,12 @@ import { User, Mail, Phone, Shield, Lock, Sun, Moon, Monitor, Save, Eye, EyeOff,
 
 const SettingsSection = ({ icon: Icon, title, description, children, delay = 0 }) => (
   <motion.div 
-    className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden"
+    className="bg-white dark:bg-[#0a0a0a] rounded-2xl shadow-sm border border-slate-200 dark:border-[#1a1a1a] overflow-hidden"
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
     transition={{ duration: 0.4, delay }}
   >
-    <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
+    <div className="px-6 py-4 border-b border-slate-200 dark:border-[#1a1a1a] bg-slate-50 dark:bg-[#0a0a0a]">
       <div className="flex items-center gap-3">
         <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
           <Icon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
@@ -39,7 +39,7 @@ const ThemeOption = ({ icon: Icon, label, value, selected, onChange }) => (
     className={`relative flex flex-col items-center gap-2 p-5 rounded-xl border-2 transition-all ${
       selected 
         ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-md' 
-        : 'border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-sm'
+        : 'border-slate-200 dark:border-[#1a1a1a] hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-sm'
     }`}
     whileHover={{ scale: 1.03, y: -2 }}
     whileTap={{ scale: 0.97 }}
@@ -58,7 +58,7 @@ const ThemeOption = ({ icon: Icon, label, value, selected, onChange }) => (
       className={`p-3 rounded-xl transition-colors ${
         selected 
           ? 'bg-blue-500 dark:bg-blue-600' 
-          : 'bg-slate-100 dark:bg-slate-700'
+          : 'bg-slate-100 dark:bg-[#1a1a1a]'
       }`}
       animate={{ 
         backgroundColor: selected 
@@ -102,8 +102,8 @@ const InputField = ({ icon: Icon, label, type = 'text', value, onChange, disable
           onChange={onChange}
           disabled={disabled}
           placeholder={placeholder}
-          className={`w-full pl-11 ${isPassword ? 'pr-11' : 'pr-4'} py-3 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-800 dark:text-white placeholder-slate-400 ${
-            disabled ? 'bg-slate-50 dark:bg-slate-700/50 cursor-not-allowed opacity-60' : ''
+          className={`w-full pl-11 ${isPassword ? 'pr-11' : 'pr-4'} py-3 bg-white dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#2a2a2a] rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-800 dark:text-white placeholder-slate-400 ${
+            disabled ? 'bg-slate-50 dark:bg-[#0a0a0a] cursor-not-allowed opacity-60' : ''
           }`}
         />
         {isPassword && (
@@ -226,7 +226,7 @@ export default function SettingsPage() {
     return (
       <div className="flex-1 flex flex-col overflow-hidden">
         <PageHeader title="Settings" />
-        <main className="flex-1 flex items-center justify-center bg-slate-50 dark:bg-slate-900">
+        <main className="flex-1 flex items-center justify-center bg-slate-50 dark:bg-black">
           <div className="text-center">
             <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
               <Shield className="w-8 h-8 text-red-500" />
@@ -242,13 +242,9 @@ export default function SettingsPage() {
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       <PageHeader title="Settings" />
-      <main className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50 dark:bg-slate-900 p-6">
+      <main className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50 dark:bg-black p-4 sm:p-6 transition-colors">
         <div className="max-w-4xl mx-auto space-y-6">
-          {loading ? (
-            <div className="flex justify-center items-center h-64">
-              <Spinner size="lg" />
-            </div>
-          ) : !user ? (
+          {!user ? (
             <div className="text-center py-12">
               <p className="text-slate-500 dark:text-slate-400">No user data found.</p>
             </div>

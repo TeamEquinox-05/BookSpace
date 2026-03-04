@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+﻿import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { X, Calendar, Clock, MapPin, Users, FileText, Settings, CheckCircle, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../utils/api';
@@ -28,6 +28,13 @@ const BookingModal = ({ isOpen, onClose, places, onBookingSubmit, initialBooking
   // Determine if this is an edit mode (existing booking with an ID)
   const isEditMode = initialBooking && initialBooking._id;
 
+  // Reliable datetime-local input formatter (avoids locale-dependent toLocaleString output)
+  const formatForInput = (date) => {
+    const d = new Date(date);
+    const pad = n => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  };
+
   const getMinBookingTime = () => new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 16);
   const getMaxBookingTime = () => {
     const now = new Date();
@@ -39,18 +46,21 @@ const BookingModal = ({ isOpen, onClose, places, onBookingSubmit, initialBooking
     if (isOpen) {
       if (isEditMode && initialBooking.eventStartTime && initialBooking.eventEndTime) {
         // For editing existing bookings with dates
+        // placeId may be a populated object or a plain string ID â€” normalize to string
+        const placeId = initialBooking.placeId?._id ?? initialBooking.placeId ?? '';
         setBookingDetails({
-          placeId: initialBooking.placeId || '',
+          placeId: typeof placeId === 'object' ? placeId.toString() : placeId,
           eventTitle: initialBooking.eventTitle || '',
           description: initialBooking.description || '',
-          eventStartTime: new Date(initialBooking.eventStartTime).toLocaleString('sv-SE', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).replace(' ', 'T'),
-          eventEndTime: new Date(initialBooking.eventEndTime).toLocaleString('sv-SE', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).replace(' ', 'T'),
+          eventStartTime: formatForInput(initialBooking.eventStartTime),
+          eventEndTime: formatForInput(initialBooking.eventEndTime),
         });
         setSelectedFacilities(initialBooking.requestedFacilities || []);
       } else if (initialBooking && initialBooking.placeId) {
-        // For new bookings with a pre-selected place
+        // For new bookings with a pre-selected place â€” normalize ID
+        const placeId = initialBooking.placeId?._id ?? initialBooking.placeId;
         setBookingDetails({ 
-          placeId: initialBooking.placeId, 
+          placeId: typeof placeId === 'object' ? placeId.toString() : String(placeId), 
           eventTitle: '', 
           description: '', 
           eventStartTime: '', 
@@ -101,6 +111,13 @@ const BookingModal = ({ isOpen, onClose, places, onBookingSubmit, initialBooking
       if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
         setIsAvailable(false);
         setAvailabilityMessage('Please enter valid start and end times.');
+        return;
+      }
+
+      // Guard: don't hit the server with an invalid range
+      if (endDate <= startDate) {
+        setIsAvailable(false);
+        setAvailabilityMessage('End time must be after start time.');
         return;
       }
 
@@ -209,350 +226,261 @@ const BookingModal = ({ isOpen, onClose, places, onBookingSubmit, initialBooking
   return (
     <AnimatePresence>
       {isOpen && (
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex justify-center items-center p-4"
+          className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex justify-center items-center p-4"
           onClick={onClose}
         >
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.96, y: 16 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            transition={{ type: "spring", duration: 0.5 }}
-            className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden"
+            exit={{ opacity: 0, scale: 0.96, y: 16 }}
+            transition={{ type: 'spring', duration: 0.4, bounce: 0.2 }}
+            className="bg-white dark:bg-[#0a0a0a] rounded-2xl shadow-2xl w-full max-w-2xl max-h-[92vh] overflow-hidden border border-slate-200 dark:border-[#1a1a1a] flex flex-col"
             onClick={e => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="bg-blue-600 px-6 py-4">
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-white/20 rounded-lg">
-                    <Calendar className="text-white" size={24} />
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-bold text-white">
-                      {isEditMode ? "Edit Booking" : "Create New Booking"}
-                    </h2>
-                    <p className="text-blue-100 text-sm">
-                      {isEditMode ? "Modify your booking details" : "Reserve your perfect venue"}
-                    </p>
-                  </div>
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-[#1a1a1a] flex-shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-blue-600 dark:bg-blue-500 flex items-center justify-center flex-shrink-0">
+                  <Calendar className="text-white" size={18} />
                 </div>
-                <motion.button 
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={onClose} 
-                  className="p-2 rounded-full text-white/80 hover:text-white hover:bg-white/20 transition-all duration-200"
-                >
-                  <X size={24} />
-                </motion.button>
+                <div>
+                  <h2 className="text-base font-semibold text-slate-900 dark:text-white leading-tight">
+                    {isEditMode ? 'Edit Booking' : 'New Booking'}
+                  </h2>
+                  <p className="text-xs text-slate-400 dark:text-zinc-500">
+                    {isEditMode ? 'Update your reservation details' : 'Reserve your perfect venue'}
+                  </p>
+                </div>
               </div>
+              <button
+                onClick={onClose}
+                className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 dark:text-zinc-500 hover:bg-slate-100 dark:hover:bg-[#1a1a1a] hover:text-slate-700 dark:hover:text-white transition-colors"
+              >
+                <X size={18} />
+              </button>
             </div>
 
-            {/* Content */}
-            <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
-              <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Venue Selection */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 }}
-                  className="space-y-3"
-                >
-                  <label htmlFor="placeId" className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
-                    <MapPin size={16} className="text-blue-500" />
-                    Select Venue
+            {/* Scrollable Body */}
+            <div className="overflow-y-auto flex-1 px-6 py-5">
+              <form onSubmit={handleSubmit} className="space-y-5">
+
+                {/* Venue */}
+                <div className="space-y-1.5">
+                  <label htmlFor="placeId" className="flex items-center gap-2 text-xs font-semibold text-slate-600 dark:text-zinc-400 uppercase tracking-wide">
+                    <MapPin size={13} className="text-blue-500" />
+                    Venue
                   </label>
                   <div className="relative">
-                    <select 
-                      id="placeId" 
-                      name="placeId" 
-                      value={bookingDetails.placeId} 
-                      onChange={handleChange} 
-                      className="w-full p-4 bg-white dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 dark:text-white appearance-none cursor-pointer shadow-sm hover:shadow-md"
+                    <select
+                      id="placeId"
+                      name="placeId"
+                      value={bookingDetails.placeId}
+                      onChange={handleChange}
+                      className="w-full h-11 px-4 pr-10 bg-slate-50 dark:bg-[#111111] border border-slate-200 dark:border-[#2a2a2a] rounded-xl text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 dark:focus:border-blue-500 transition-colors appearance-none cursor-pointer"
                     >
                       {places.map(place => (
                         <option key={place._id} value={place._id}>
-                          {place.name} - Capacity: {place.capacity}
+                          {place.name} â€” Capacity: {place.capacity}
                         </option>
                       ))}
                     </select>
-                    <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
-                      <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
+                      <svg className="w-4 h-4 text-slate-400 dark:text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
                       </svg>
                     </div>
                   </div>
-                </motion.div>
+                </div>
 
-                {/* Facilities Selection */}
+                {/* Facilities */}
                 {availableFacilities.length > 0 && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.15 }}
-                    className="space-y-3"
-                  >
-                    <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
-                      <Settings size={16} className="text-green-500" />
-                      Available Facilities
-                      <span className="text-xs text-gray-500 dark:text-gray-400 ml-1">
-                        (Select as needed)
-                      </span>
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2 text-xs font-semibold text-slate-600 dark:text-zinc-400 uppercase tracking-wide">
+                      <Settings size={13} className="text-green-500" />
+                      Facilities
+                      <span className="normal-case font-normal text-slate-400 dark:text-zinc-600">(select as needed)</span>
                     </label>
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                      {availableFacilities.map(facility => (
-                        <motion.label 
-                          key={facility.name}
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                          className={`flex items-center space-x-3 p-4 rounded-xl cursor-pointer transition-all duration-200 border-2 shadow-sm hover:shadow-md ${
-                            selectedFacilities.some(f => f.name === facility.name)
-                              ? 'bg-blue-50 dark:bg-blue-900/30 border-blue-500 text-blue-700 dark:text-blue-300 shadow-blue-200 dark:shadow-blue-900/50'
-                              : 'bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300'
-                          }`}
-                        >
-                          <div className="relative">
-                            <input 
-                              type="checkbox" 
-                              checked={selectedFacilities.some(f => f.name === facility.name)} 
-                              onChange={() => handleFacilityChange(facility)} 
-                              className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-2 border-gray-300 dark:border-gray-500 rounded-md bg-white dark:bg-gray-600"
-                            />
-                            
-                          </div>
-                          <span className="text-sm font-medium flex-1">{facility.name}</span>
-                        </motion.label>
-                      ))}
+                    <div className="flex flex-wrap gap-2">
+                      {availableFacilities.map(facility => {
+                        const checked = selectedFacilities.some(f => f.name === facility.name);
+                        return (
+                          <button
+                            key={facility.name}
+                            type="button"
+                            onClick={() => handleFacilityChange(facility)}
+                            className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm font-medium border transition-all ${
+                              checked
+                                ? 'bg-blue-600 dark:bg-blue-500 text-white border-blue-600 dark:border-blue-500 shadow-sm shadow-blue-500/20'
+                                : 'bg-slate-50 dark:bg-[#111111] text-slate-600 dark:text-zinc-400 border-slate-200 dark:border-[#2a2a2a] hover:border-blue-400 dark:hover:border-blue-600 hover:text-blue-600 dark:hover:text-blue-400'
+                            }`}
+                          >
+                            <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${checked ? 'bg-white' : 'bg-slate-300 dark:bg-zinc-600'}`} />
+                            {facility.name}
+                          </button>
+                        );
+                      })}
                     </div>
-                  </motion.div>
+                  </div>
                 )}
 
-                {/* Event Details */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 }}
-                    className="space-y-3"
-                  >
-                    <label htmlFor="eventTitle" className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
-                      <FileText size={16} className="text-purple-500" />
-                      Event Title
-                      <span className="text-red-500">*</span>
+                {/* Event Title + Availability */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label htmlFor="eventTitle" className="flex items-center gap-2 text-xs font-semibold text-slate-600 dark:text-zinc-400 uppercase tracking-wide">
+                      <FileText size={13} className="text-purple-500" />
+                      Event Title <span className="text-red-500 normal-case font-normal">*</span>
                     </label>
-                    <div className="relative">
-                      <input 
-                        type="text" 
-                        id="eventTitle" 
-                        name="eventTitle" 
-                        value={bookingDetails.eventTitle} 
-                        onChange={handleChange} 
-                        required 
-                        placeholder="Enter a descriptive event title..."
-                        className="w-full p-4 bg-white dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 shadow-sm hover:shadow-md" 
-                      />
-                      <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
-                        <FileText className="w-5 h-5 text-gray-400" />
-                      </div>
-                    </div>
-                  </motion.div>
+                    <input
+                      type="text"
+                      id="eventTitle"
+                      name="eventTitle"
+                      value={bookingDetails.eventTitle}
+                      onChange={handleChange}
+                      required
+                      placeholder="e.g. Annual Tech Fest"
+                      className="w-full h-11 px-4 bg-slate-50 dark:bg-[#111111] border border-slate-200 dark:border-[#2a2a2a] rounded-xl text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 dark:focus:border-blue-500 transition-colors"
+                    />
+                  </div>
 
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.25 }}
-                    className="space-y-3"
-                  >
-                    <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
-                      <Users size={16} className="text-yellow-500" />
-                      Availability Status
+                  {/* Availability pill */}
+                  <div className="space-y-1.5">
+                    <label className="flex items-center gap-2 text-xs font-semibold text-slate-600 dark:text-zinc-400 uppercase tracking-wide">
+                      <Users size={13} className="text-yellow-500" />
+                      Availability
                     </label>
-                    <div className={`p-4 rounded-xl border-2 transition-all duration-200 ${
-                      isAvailable 
-                        ? 'bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-700 shadow-green-100 dark:shadow-green-900/30' 
-                        : 'bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-700 shadow-red-100 dark:shadow-red-900/30'
-                    } shadow-md`}>
-                      <div className="flex items-center gap-3">
-                        {isAvailable ? (
-                          <div className="flex items-center justify-center w-8 h-8 bg-green-500 rounded-full">
-                            <CheckCircle className="text-white" size={20} />
-                          </div>
-                        ) : (
-                          <div className="flex items-center justify-center w-8 h-8 bg-red-500 rounded-full">
-                            <AlertCircle className="text-white" size={20} />
-                          </div>
-                        )}
-                        <div className="flex-1">
-                          <span className={`text-sm font-semibold ${
-                            isAvailable ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'
-                          }`}>
-                            {isAvailable ? 'Venue Available' : 'Venue Not Available'}
-                          </span>
-                          {availabilityMessage && (
-                            <p className={`text-xs mt-1 ${
-                              isAvailable ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
-                            }`}>
-                              {availabilityMessage}
-                            </p>
-                          )}
-                        </div>
-                      </div>
+                    <div className={`h-11 px-4 rounded-xl border flex items-center gap-3 text-sm font-medium transition-colors ${
+                      !bookingDetails.eventStartTime || !bookingDetails.eventEndTime
+                        ? 'bg-slate-50 dark:bg-[#111111] border-slate-200 dark:border-[#2a2a2a] text-slate-400 dark:text-zinc-600'
+                        : isAvailable
+                          ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800/50 text-green-700 dark:text-green-400'
+                          : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800/50 text-red-600 dark:text-red-400'
+                    }`}>
+                      {!bookingDetails.eventStartTime || !bookingDetails.eventEndTime ? (
+                        <span className="text-slate-400 dark:text-zinc-600 text-xs">Pick dates to check</span>
+                      ) : isAvailable ? (
+                        <>
+                          <CheckCircle size={16} className="text-green-500 flex-shrink-0" />
+                          Available
+                        </>
+                      ) : (
+                        <>
+                          <AlertCircle size={16} className="text-red-500 flex-shrink-0" />
+                          <span className="truncate text-xs">{availabilityMessage || 'Not available'}</span>
+                        </>
+                      )}
                     </div>
-                  </motion.div>
+                  </div>
                 </div>
 
                 {/* Description */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 }}
-                  className="space-y-3"
-                >
-                  <label htmlFor="description" className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
-                    <FileText size={16} className="text-indigo-500" />
-                    Event Description
-                    <span className="text-xs text-gray-500 dark:text-gray-400 ml-1">
-                      (Optional)
-                    </span>
+                <div className="space-y-1.5">
+                  <label htmlFor="description" className="flex items-center gap-2 text-xs font-semibold text-slate-600 dark:text-zinc-400 uppercase tracking-wide">
+                    <FileText size={13} className="text-indigo-500" />
+                    Description
+                    <span className="normal-case font-normal text-slate-400 dark:text-zinc-600">(optional)</span>
                   </label>
-                  <div className="relative">
-                    <textarea 
-                      id="description" 
-                      name="description" 
-                      value={bookingDetails.description} 
-                      onChange={handleChange} 
-                      rows="4" 
-                      placeholder="Provide details about your event, special requirements, expected attendance, etc..."
-                      className="w-full p-4 bg-white dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 resize-none shadow-sm hover:shadow-md"
-                    />
-                    <div className="absolute top-4 right-4 pointer-events-none">
-                      <FileText className="w-5 h-5 text-gray-400" />
-                    </div>
-                  </div>
-                </motion.div>
-
-                {/* Date and Time */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.35 }}
-                    className="space-y-3"
-                  >
-                    <label htmlFor="eventStartTime" className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
-                      <Clock size={16} className="text-green-500" />
-                      Start Date & Time
-                      <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <input 
-                        type="datetime-local" 
-                        id="eventStartTime" 
-                        name="eventStartTime" 
-                        value={bookingDetails.eventStartTime} 
-                        onChange={handleChange} 
-                        min={getMinBookingTime()} 
-                        max={getMaxBookingTime()} 
-                        required 
-                        className="w-full p-4 bg-white dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 dark:text-white shadow-sm hover:shadow-md [&::-webkit-calendar-picker-indicator]:dark:invert [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:hover:bg-gray-100 [&::-webkit-calendar-picker-indicator]:dark:hover:bg-gray-600 [&::-webkit-calendar-picker-indicator]:p-1 [&::-webkit-calendar-picker-indicator]:rounded" 
-                      />
-                      <div className="absolute inset-y-0 right-12 flex items-center pr-2 pointer-events-none">
-                        <Clock className="w-5 h-5 text-gray-400" />
-                      </div>
-                    </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      Select when your event begins
-                    </p>
-                  </motion.div>
-
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.4 }}
-                    className="space-y-3"
-                  >
-                    <label htmlFor="eventEndTime" className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
-                      <Clock size={16} className="text-red-500" />
-                      End Date & Time
-                      <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <input 
-                        type="datetime-local" 
-                        id="eventEndTime" 
-                        name="eventEndTime" 
-                        value={bookingDetails.eventEndTime} 
-                        onChange={handleChange} 
-                        min={bookingDetails.eventStartTime || getMinBookingTime()} 
-                        required 
-                        className="w-full p-4 bg-white dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 dark:text-white shadow-sm hover:shadow-md [&::-webkit-calendar-picker-indicator]:dark:invert [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:hover:bg-gray-100 [&::-webkit-calendar-picker-indicator]:dark:hover:bg-gray-600 [&::-webkit-calendar-picker-indicator]:p-1 [&::-webkit-calendar-picker-indicator]:rounded" 
-                      />
-                      <div className="absolute inset-y-0 right-12 flex items-center pr-2 pointer-events-none">
-                        <Clock className="w-5 h-5 text-gray-400" />
-                      </div>
-                    </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      Select when your event ends
-                    </p>
-                  </motion.div>
+                  <textarea
+                    id="description"
+                    name="description"
+                    value={bookingDetails.description}
+                    onChange={handleChange}
+                    rows="3"
+                    placeholder="Special requirements, expected attendance, notesâ€¦"
+                    className="w-full px-4 py-3 bg-slate-50 dark:bg-[#111111] border border-slate-200 dark:border-[#2a2a2a] rounded-xl text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 dark:focus:border-blue-500 transition-colors resize-none"
+                  />
                 </div>
 
-                {/* Error Message */}
+                {/* Date & Time */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label htmlFor="eventStartTime" className="flex items-center gap-2 text-xs font-semibold text-slate-600 dark:text-zinc-400 uppercase tracking-wide">
+                      <Clock size={13} className="text-green-500" />
+                      Start <span className="text-red-500 normal-case font-normal">*</span>
+                    </label>
+                    <input
+                      type="datetime-local"
+                      id="eventStartTime"
+                      name="eventStartTime"
+                      value={bookingDetails.eventStartTime}
+                      onChange={handleChange}
+                      min={getMinBookingTime()}
+                      max={getMaxBookingTime()}
+                      required
+                      className="w-full h-11 px-4 bg-slate-50 dark:bg-[#111111] border border-slate-200 dark:border-[#2a2a2a] rounded-xl text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 dark:focus:border-blue-500 transition-colors [&::-webkit-calendar-picker-indicator]:dark:invert [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-50 [&::-webkit-calendar-picker-indicator]:hover:opacity-100"
+                    />
+                    <p className="text-xs text-slate-400 dark:text-zinc-600">When your event begins</p>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label htmlFor="eventEndTime" className="flex items-center gap-2 text-xs font-semibold text-slate-600 dark:text-zinc-400 uppercase tracking-wide">
+                      <Clock size={13} className="text-red-500" />
+                      End <span className="text-red-500 normal-case font-normal">*</span>
+                    </label>
+                    <input
+                      type="datetime-local"
+                      id="eventEndTime"
+                      name="eventEndTime"
+                      value={bookingDetails.eventEndTime}
+                      onChange={handleChange}
+                      min={bookingDetails.eventStartTime || getMinBookingTime()}
+                      required
+                      className="w-full h-11 px-4 bg-slate-50 dark:bg-[#111111] border border-slate-200 dark:border-[#2a2a2a] rounded-xl text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 dark:focus:border-blue-500 transition-colors [&::-webkit-calendar-picker-indicator]:dark:invert [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-50 [&::-webkit-calendar-picker-indicator]:hover:opacity-100"
+                    />
+                    <p className="text-xs text-slate-400 dark:text-zinc-600">When your event ends</p>
+                  </div>
+                </div>
+
+                {/* Error */}
                 <AnimatePresence>
                   {error && (
                     <motion.div
-                      initial={{ opacity: 0, y: -10 }}
+                      initial={{ opacity: 0, y: -8 }}
                       animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl"
+                      exit={{ opacity: 0, y: -8 }}
+                      className="flex items-start gap-3 p-3.5 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 rounded-xl"
                     >
-                      <AlertCircle className="text-red-500" size={18} />
-                      <p className="text-red-700 dark:text-red-300 text-sm font-medium">{error}</p>
+                      <AlertCircle className="text-red-500 flex-shrink-0 mt-0.5" size={15} />
+                      <p className="text-red-700 dark:text-red-400 text-sm">{error}</p>
                     </motion.div>
                   )}
                 </AnimatePresence>
 
-                {/* Form Actions */}
-                <motion.div 
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.45 }}
-                  className="flex flex-col sm:flex-row justify-end gap-4 pt-6 border-t border-gray-200 dark:border-gray-700"
-                >
-                  <motion.button 
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    type="button" 
-                    onClick={onClose} 
-                    className="flex-1 sm:flex-none px-6 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-200 border-2 border-transparent hover:border-gray-300 dark:hover:border-gray-500 shadow-sm hover:shadow-md"
-                  >
-                    Cancel
-                  </motion.button>
-                  <motion.button 
-                    whileHover={{ scale: isAvailable && !isSubmitting ? 1.02 : 1 }}
-                    whileTap={{ scale: isAvailable && !isSubmitting ? 0.98 : 1 }}
-                    type="submit" 
-                    disabled={!isAvailable || isSubmitting} 
-                    className={`flex-1 sm:flex-none px-6 py-3 font-semibold rounded-xl transition-all duration-200 flex items-center justify-center gap-2 ${
-                      isAvailable && !isSubmitting
-                        ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg hover:shadow-xl transform hover:scale-[1.02]' 
-                        : 'bg-gray-400 dark:bg-gray-600 text-gray-600 dark:text-gray-400 cursor-not-allowed opacity-50'
-                    }`}
-                  >
-                    {isSubmitting ? (
-                      <Spinner centered={false} size="sm" text="Processing" />
-                    ) : (
-                      <>
-                        <Calendar className="w-5 h-5" />
-                        {isEditMode ? "Update Booking" : "Create Booking"}
-                      </>
-                    )}
-                  </motion.button>
-                </motion.div>
               </form>
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-100 dark:border-[#1a1a1a] flex-shrink-0">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-5 h-10 text-sm font-medium text-slate-600 dark:text-zinc-400 bg-slate-100 dark:bg-[#1a1a1a] hover:bg-slate-200 dark:hover:bg-[#2a2a2a] border border-slate-200 dark:border-[#2a2a2a] rounded-xl transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                form="booking-form"
+                disabled={!isAvailable || isSubmitting}
+                onClick={handleSubmit}
+                className={`px-5 h-10 text-sm font-semibold rounded-xl transition-colors flex items-center gap-2 ${
+                  isAvailable && !isSubmitting
+                    ? 'bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white shadow-sm shadow-blue-500/20'
+                    : 'bg-slate-200 dark:bg-[#1a1a1a] text-slate-400 dark:text-zinc-600 cursor-not-allowed'
+                }`}
+              >
+                {isSubmitting ? (
+                  <Spinner centered={false} size="sm" text="Savingâ€¦" />
+                ) : (
+                  <>
+                    <Calendar size={15} />
+                    {isEditMode ? 'Update Booking' : 'Create Booking'}
+                  </>
+                )}
+              </button>
             </div>
           </motion.div>
         </motion.div>
