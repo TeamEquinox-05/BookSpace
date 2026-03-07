@@ -1,5 +1,4 @@
 import React from 'react';
-import Spinner from './Spinner';
 
 /**
  * Unified Button component for consistent styling across the app
@@ -59,7 +58,7 @@ const Button = React.forwardRef(({
   const buttonContent = (
     <>
       {loading ? (
-        <Spinner size="sm" centered={false} text="" />
+        <div className="w-4 h-4 border-2 border-current/30 border-t-current rounded-full animate-spin" />
       ) : icon ? (
         <span className="flex-shrink-0">{icon}</span>
       ) : null}

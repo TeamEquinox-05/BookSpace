@@ -1,7 +1,6 @@
 import React from 'react';
 import { NavLink as RouterNavLink, useNavigate } from 'react-router-dom';
 import { Home, ClipboardCheck, Calendar, Building, Users, Settings, LogOut, ChevronRight } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 
 // Helper for conditional class names (similar to clsx)
@@ -43,61 +42,26 @@ const Sidebar = ({ isExpanded, setIsExpanded: _setIsExpanded, onMouseEnter, onMo
     })
   })).filter(section => section.items.length > 0); // Remove empty sections
 
-  const sidebarVariants = {
-    expanded: { width: 256 },
-    collapsed: { width: 80 }
-  };
-
-  const textVariants = {
-    expanded: { opacity: 1, x: 0, display: 'block' },
-    collapsed: { opacity: 0, x: -10, transitionEnd: { display: 'none' } }
-  };
-
   return (
-    <motion.div
+    <div
       className={cn(
         "fixed left-0 top-0 h-screen bg-white dark:bg-[#0a0a0a] border-r border-slate-200 dark:border-[#1a1a1a] z-50",
-        "shadow-lg overflow-hidden flex flex-col"
+        "shadow-lg overflow-hidden flex flex-col transition-all duration-300 ease-in-out",
+        isExpanded ? "w-64" : "w-20"
       )}
-      initial={false}
-      animate={isExpanded ? "expanded" : "collapsed"}
-      variants={sidebarVariants}
-      transition={{ duration: 0.3, ease: "easeInOut" }}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
       {/* Header */}
       <div className="flex items-center h-16 px-4 border-b border-slate-200 dark:border-[#1a1a1a] flex-shrink-0">
         <div className="flex items-center gap-3 min-w-0">
-          <motion.div 
-            className="w-10 h-10 flex items-center justify-center flex-shrink-0"
-            whileHover={{ scale: 1.05 }}
-            transition={{ type: "spring", stiffness: 400 }}
-          >
+          <div className="w-10 h-10 flex items-center justify-center flex-shrink-0">
             <img 
               src="/cropped-NEW-PCCE-LOGO.png" 
               alt="PCCE Logo" 
               className="w-full h-full object-contain"
             />
-          </motion.div>
-          <AnimatePresence>
-            {isExpanded && (
-              <motion.div 
-                className="overflow-hidden min-w-0"
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -10 }}
-                transition={{ duration: 0.2 }}
-              >
-                <h1 className="text-slate-900 dark:text-white font-bold text-lg whitespace-nowrap overflow-hidden text-ellipsis">
-                  PCCE BookSpace
-                </h1>
-                <p className="text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap overflow-hidden text-ellipsis">
-                  Venue Booking System
-                </p>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          </div>
         </div>
       </div>
 
@@ -106,21 +70,15 @@ const Sidebar = ({ isExpanded, setIsExpanded: _setIsExpanded, onMouseEnter, onMo
         {filteredSidebarSections.map((section, sectionIndex) => (
           <div key={section.title} className="mb-6">
             {/* Section Header */}
-            <AnimatePresence>
-              {isExpanded && (
-                <motion.div 
-                  className="px-4 mb-2"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                >
+            {isExpanded && (
+              <div 
+                className="px-4 mb-2"
+              >
                   <h2 className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
                     {section.title}
                   </h2>
-                </motion.div>
-              )}
-            </AnimatePresence>
+              </div>
+            )}
 
             {/* Section Items */}
             <div className={cn("space-y-1", isExpanded ? "px-3" : "px-2")}>
@@ -143,39 +101,23 @@ const Sidebar = ({ isExpanded, setIsExpanded: _setIsExpanded, onMouseEnter, onMo
                 >
                   {({ isActive }) => (
                     <>
-                      <motion.div
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.95 }}
-                        transition={{ type: "spring", stiffness: 400 }}
-                      >
+                      <div>
                         <item.icon className={cn("w-5 h-5 flex-shrink-0", isActive && "text-white")} />
-                      </motion.div>
+                      </div>
                       
-                      <AnimatePresence>
-                        {isExpanded && (
-                          <motion.span 
-                            className="font-medium whitespace-nowrap overflow-hidden text-ellipsis min-w-0"
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -10 }}
-                            transition={{ duration: 0.2 }}
-                          >
+                      {isExpanded && (
+                        <span 
+                          className="font-medium whitespace-nowrap overflow-hidden text-ellipsis min-w-0"
+                        >
                             {item.title}
-                          </motion.span>
-                        )}
-                      </AnimatePresence>
+                        </span>
+                      )}
 
                       {/* Active Indicator for expanded state */}
                       {isActive && isExpanded && (
-                        <motion.div
-                          layoutId="activeIndicator"
-                          className="absolute right-3"
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          transition={{ type: "spring", stiffness: 300 }}
-                        >
+                        <div className="absolute right-3">
                           <ChevronRight className="w-4 h-4" />
-                        </motion.div>
+                        </div>
                       )}
 
                       {/* Tooltip for collapsed state */}
@@ -197,15 +139,10 @@ const Sidebar = ({ isExpanded, setIsExpanded: _setIsExpanded, onMouseEnter, onMo
       {/* User Profile & Logout Section */}
       <div className="border-t border-slate-200 dark:border-[#1a1a1a] p-3 flex-shrink-0">
         {/* User Profile */}
-        <AnimatePresence>
-          {isExpanded && (
-            <motion.div 
-              className="flex items-center gap-3 px-2 py-2 mb-2 rounded-xl bg-slate-50 dark:bg-[#1a1a1a]"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 10 }}
-              transition={{ duration: 0.2 }}
-            >
+        {isExpanded && (
+          <div 
+            className="flex items-center gap-3 px-2 py-2 mb-2 rounded-xl bg-slate-50 dark:bg-[#1a1a1a]"
+          >
               <div className="w-9 h-9 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
                 <span className="text-white font-semibold text-sm">
                   {(user?.name || 'U').charAt(0).toUpperCase()}
@@ -219,10 +156,8 @@ const Sidebar = ({ isExpanded, setIsExpanded: _setIsExpanded, onMouseEnter, onMo
                   {user?.role || 'user'}
                 </p>
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
+          </div>
+        )}
         {/* Collapsed User Avatar */}
         {!isExpanded && (
           <div className="flex justify-center mb-2">
@@ -241,7 +176,7 @@ const Sidebar = ({ isExpanded, setIsExpanded: _setIsExpanded, onMouseEnter, onMo
         )}
 
         {/* Logout Button */}
-        <motion.button
+        <button
           onClick={async () => {
             await logout();
             navigate('/login', { replace: true });
@@ -254,26 +189,18 @@ const Sidebar = ({ isExpanded, setIsExpanded: _setIsExpanded, onMouseEnter, onMo
               ? "w-full gap-3 px-3 py-2.5" 
               : "justify-center w-12 h-12 mx-auto px-2 py-2.5"
           )}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
         >
           <LogOut className="w-5 h-5 flex-shrink-0" />
-          <AnimatePresence>
-            {isExpanded && (
-              <motion.span 
-                className="font-medium whitespace-nowrap"
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -10 }}
-                transition={{ duration: 0.2 }}
-              >
-                Logout
-              </motion.span>
-            )}
-          </AnimatePresence>
-        </motion.button>
+          {isExpanded && (
+            <span 
+              className="font-medium whitespace-nowrap"
+            >
+              Logout
+            </span>
+          )}
+        </button>
       </div>
-    </motion.div>
+    </div>
   );
 };
 

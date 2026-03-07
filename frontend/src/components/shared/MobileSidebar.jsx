@@ -1,5 +1,4 @@
 import React from 'react';
-import { motion } from 'framer-motion';
 import { X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { NavLink as RouterNavLink } from 'react-router-dom';
@@ -45,22 +44,15 @@ const MobileSidebar = ({ isOpen, onClose }) => {
     <>
       {/* Overlay */}
       {isOpen && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.2 }}
+        <div
           className="fixed inset-0 bg-black/50 z-40 md:hidden"
           onClick={onClose}
         />
       )}
 
       {/* Mobile Sidebar */}
-      <motion.div
-        initial={{ x: '-100%' }}
-        animate={{ x: isOpen ? '0%' : '-100%' }}
-        transition={{ duration: 0.3, ease: 'easeInOut' }}
-        className="fixed left-0 top-0 h-screen w-64 bg-white dark:bg-[#0a0a0a] border-r border-slate-200 dark:border-[#1a1a1a] z-50 flex flex-col md:hidden shadow-lg"
+      <div
+        className={`fixed left-0 top-0 h-screen w-64 bg-white dark:bg-[#0a0a0a] border-r border-slate-200 dark:border-[#1a1a1a] z-50 flex flex-col md:hidden shadow-lg transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
       >
         {/* Header */}
         <div className="flex items-center justify-between h-16 px-4 border-b border-slate-200 dark:border-[#1a1a1a]">
@@ -71,10 +63,6 @@ const MobileSidebar = ({ isOpen, onClose }) => {
                 alt="PCCE Logo" 
                 className="w-full h-full object-contain"
               />
-            </div>
-            <div>
-              <h1 className="text-slate-900 dark:text-white font-bold text-lg leading-tight">PCCE BookSpace</h1>
-              <p className="text-xs text-slate-600 dark:text-slate-400 leading-tight">Venue Booking</p>
             </div>
           </div>
           <button onClick={onClose} className="p-2 rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
@@ -143,7 +131,7 @@ const MobileSidebar = ({ isOpen, onClose }) => {
             </span>
           </RouterNavLink>
         </div>
-      </motion.div>
+      </div>
     </>
   );
 };

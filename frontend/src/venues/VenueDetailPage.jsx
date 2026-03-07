@@ -1,9 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import api from '../utils/api';
+import { API_URL } from '../config/api-config';
 import logger from '../utils/logger';
 import { useParams } from 'react-router-dom';
 import { PageHeader } from '../components/shared';
 import DetailViewSkeleton from '../components/ui/DetailViewSkeleton';
+
+const resolveImageUrl = (path) => {
+  if (!path) return '';
+  if (path.startsWith('http')) return path;
+  const base = API_URL.replace(/\/api\/?$/, '');
+  return `${base}${path}`;
+};
 export default function VenueDetailPage({ role = 'user' }) {
   const { id } = useParams();
   const [venue, setVenue] = useState(null);
@@ -42,6 +50,13 @@ export default function VenueDetailPage({ role = 'user' }) {
           ) : (
             <div className="max-w-4xl mx-auto">
               <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                {venue.image && (
+                  <img
+                    src={resolveImageUrl(venue.image)}
+                    alt={venue.name}
+                    className="w-full h-56 object-cover rounded-lg mb-4 shadow-md"
+                  />
+                )}
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">{venue.name}</h2>
                 <p className="text-lg text-gray-600 dark:text-gray-400 mb-4">{venue.details}</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">

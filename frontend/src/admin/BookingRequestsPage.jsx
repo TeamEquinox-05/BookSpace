@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import api from '../utils/api';
 import { PageHeader } from '../components/shared';
 import { Check, X, Calendar, Clock, User, MapPin, Package, Mail, AlertCircle, Inbox, Building2 } from 'lucide-react';
-import { Spinner, useToast, EmptyState, Badge } from '../components/ui';
+import { useToast, EmptyState, Badge } from '../components/ui';
 import logger from '../utils/logger';
 
 const BookingRequestCard = ({ booking, onApprove, onReject, isProcessing, processingAction }) => {
@@ -22,21 +21,17 @@ const BookingRequestCard = ({ booking, onApprove, onReject, isProcessing, proces
   const userInitials = (booking.userId?.name || '?').split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
 
   return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20, transition: { duration: 0.2 } }}
+    <div
       className="bg-white dark:bg-[#0a0a0a] rounded-2xl border border-slate-200 dark:border-[#1a1a1a] overflow-hidden shadow-sm"
     >
-      {/* Amber top accent */}
-      <div className="h-0.5 bg-gradient-to-r from-amber-400 via-orange-400 to-amber-300" />
+      {/* Blue top accent */}
+      <div className="h-0.5 bg-blue-500" />
 
       {/* Card Header */}
       <div className="px-5 pt-5 pb-4 flex items-start gap-4">
         {/* Venue Icon Block */}
-        <div className="flex-shrink-0 w-11 h-11 rounded-xl bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center border border-amber-100 dark:border-amber-800/30">
-          <Building2 className="w-5 h-5 text-amber-500" />
+        <div className="flex-shrink-0 w-11 h-11 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center border border-blue-100 dark:border-blue-800/30">
+          <Building2 className="w-5 h-5 text-blue-500" />
         </div>
 
         <div className="flex-1 min-w-0">
@@ -50,8 +45,8 @@ const BookingRequestCard = ({ booking, onApprove, onReject, isProcessing, proces
                 {booking.placeId?.name || 'N/A'}
               </p>
             </div>
-            <span className="flex-shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border border-amber-200 dark:border-amber-800/40">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+            <span className="flex-shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 border border-blue-200 dark:border-blue-800/40">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
               Pending
             </span>
           </div>
@@ -111,48 +106,31 @@ const BookingRequestCard = ({ booking, onApprove, onReject, isProcessing, proces
 
       {/* Action Footer */}
       <div className="px-5 pb-5">
-        <AnimatePresence mode="wait">
           {!showRejectForm ? (
-            <motion.div
-              key="buttons"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="flex gap-3"
-            >
-              <motion.button
+            <div className="flex gap-3">
+              <button
                 onClick={() => onApprove(booking._id)}
                 disabled={isProcessing}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
                 className="flex-1 h-10 bg-green-500 hover:bg-green-600 active:bg-green-700 text-white rounded-xl font-semibold text-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm shadow-green-500/20"
               >
                 {isProcessing && processingAction === 'approve' ? (
-                  <Spinner size="sm" centered={false} />
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 ) : (
                   <><Check className="w-4 h-4" />Approve</>
                 )}
-              </motion.button>
+              </button>
 
-              <motion.button
+              <button
                 onClick={handleRejectClick}
                 disabled={isProcessing}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
                 className="flex-1 h-10 bg-white dark:bg-[#0a0a0a] hover:bg-red-50 dark:hover:bg-red-950/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900/50 rounded-xl font-semibold text-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <X className="w-4 h-4" />
                 Reject
-              </motion.button>
-            </motion.div>
+              </button>
+            </div>
           ) : (
-            <motion.div
-              key="reject-form"
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="space-y-3"
-            >
+            <div className="space-y-3">
               <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 text-sm font-medium">
                 <AlertCircle className="w-4 h-4 flex-shrink-0" />
                 Provide a reason for rejection
@@ -166,34 +144,29 @@ const BookingRequestCard = ({ booking, onApprove, onReject, isProcessing, proces
                 autoFocus
               />
               <div className="flex justify-end gap-2">
-                <motion.button
+                <button
                   onClick={handleCancelReject}
                   disabled={isProcessing}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
                   className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-zinc-400 bg-slate-100 dark:bg-[#1a1a1a] hover:bg-slate-200 dark:hover:bg-[#2a2a2a] rounded-xl transition-colors"
                 >
                   Cancel
-                </motion.button>
-                <motion.button
+                </button>
+                <button
                   onClick={handleConfirmReject}
                   disabled={isProcessing || !rejectionReason.trim()}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
                   className="px-4 py-2 text-sm font-semibold text-white bg-red-500 hover:bg-red-600 rounded-xl transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isProcessing && processingAction === 'reject' ? (
-                    <Spinner size="sm" centered={false} />
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   ) : (
                     <><X className="w-4 h-4" />Confirm Reject</>
                   )}
-                </motion.button>
+                </button>
               </div>
-            </motion.div>
+            </div>
           )}
-        </AnimatePresence>
       </div>
-    </motion.div>
+    </div>
   );
 };
 
@@ -372,11 +345,7 @@ export default function BookingRequestsPage() {
       <main className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50 dark:bg-black p-4 sm:p-6 transition-colors">
         <div className="max-w-4xl mx-auto">
           {/* Header with count */}
-          <motion.div 
-            className="flex items-center justify-between mb-6"
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
+          <div className="flex items-center justify-between mb-6">
             <div>
               <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Pending Requests</h2>
               {!loading && pendingBookings.length > 0 && (
@@ -386,14 +355,34 @@ export default function BookingRequestsPage() {
               )}
             </div>
             {!loading && pendingBookings.length > 0 && (
-              <Badge variant="warning" size="md">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400 border border-blue-200 dark:border-blue-800/40">
                 {pendingBookings.length} Pending
-              </Badge>
+              </span>
             )}
-          </motion.div>
+          </div>
 
           {/* Content */}
-          {pendingBookings.length === 0 ? (
+          {loading ? (
+            <div className="space-y-4">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="bg-white dark:bg-[#0a0a0a] rounded-2xl border border-slate-200 dark:border-[#1a1a1a] overflow-hidden animate-pulse">
+                  <div className="h-0.5 bg-blue-500" />
+                  <div className="px-5 pt-5 pb-4 flex items-start gap-4">
+                    <div className="w-11 h-11 rounded-xl bg-slate-200 dark:bg-[#1a1a1a]" />
+                    <div className="flex-1 space-y-2">
+                      <div className="h-4 bg-slate-200 dark:bg-[#1a1a1a] rounded w-2/3" />
+                      <div className="h-3 bg-slate-200 dark:bg-[#1a1a1a] rounded w-1/3" />
+                    </div>
+                  </div>
+                  <div className="mx-5 border-t border-slate-100 dark:border-[#1a1a1a]" />
+                  <div className="px-5 py-4 space-y-3">
+                    <div className="h-10 bg-slate-200 dark:bg-[#1a1a1a] rounded-xl" />
+                    <div className="h-10 bg-slate-200 dark:bg-[#1a1a1a] rounded-xl" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : pendingBookings.length === 0 ? (
             <EmptyState
               icon={Inbox}
               title="No Pending Requests"
@@ -401,22 +390,8 @@ export default function BookingRequestsPage() {
               size="lg"
             />
           ) : (
-            <motion.div 
-              className="space-y-4"
-              initial="hidden"
-              animate="visible"
-              variants={{
-                hidden: { opacity: 0 },
-                visible: {
-                  opacity: 1,
-                  transition: {
-                    staggerChildren: 0.1
-                  }
-                }
-              }}
-            >
-              <AnimatePresence>
-                {pendingBookings.map((booking) => (
+            <div className="space-y-4">
+              {pendingBookings.map((booking) => (
                   <BookingRequestCard
                     key={booking._id}
                     booking={booking}
@@ -426,8 +401,7 @@ export default function BookingRequestsPage() {
                     processingAction={processingAction}
                   />
                 ))}
-              </AnimatePresence>
-            </motion.div>
+            </div>
           )}
         </div>
       </main>

@@ -3,17 +3,25 @@ import api from '../utils/api';
 import logger from '../utils/logger';
 import { useParams, useNavigate } from 'react-router-dom';
 import { PageHeader, BookingModal } from '../components/shared';
-import { Spinner } from '../components/ui';
+import { DetailViewSkeleton } from '../components/ui';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { Calendar, momentLocalizer } from 'react-big-calendar';
 import moment from 'moment';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, Users, MapPin, Plus, X, FileText } from 'lucide-react';
-import { motion } from 'framer-motion';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import '../styles/custom-calendar.css'; // Custom styles for calendar
 
+import { API_URL } from '../config/api-config';
+
 const localizer = momentLocalizer(moment);
+
+const resolveImageUrl = (path) => {
+  if (!path) return '';
+  if (path.startsWith('http')) return path;
+  const base = API_URL.replace(/\/api\/?$/, '');
+  return `${base}${path}`;
+};
 
 export default function PlaceDetailsPage() {
   const { id } = useParams();
@@ -274,10 +282,7 @@ export default function PlaceDetailsPage() {
 
   const CustomToolbar = ({ date, view, onNavigate, onView }) => {
     return (
-      <motion.div 
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
+      <div 
         className="mb-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden"
       >
         {/* Top Section: Date & Navigation */}
@@ -338,7 +343,7 @@ export default function PlaceDetailsPage() {
             </button>
           ))}
         </div>
-      </motion.div>
+      </div>
     );
   };
 
@@ -393,26 +398,22 @@ export default function PlaceDetailsPage() {
     <div className="flex-1 flex flex-col overflow-hidden">
       <PageHeader title={place?.name || 'Details'} />
       <main className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50 dark:bg-black p-4 sm:p-6 transition-colors">
-        {!place ? (
+        {loading ? (
+          <DetailViewSkeleton />
+        ) : !place ? (
           <div className="text-center text-gray-600 dark:text-gray-400">Place not found.</div>
         ) : (
           <div className="max-w-7xl mx-auto">
             {/* Main Content */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               {/* Place Details */}
-              <motion.div 
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.5 }}
+              <div 
                 className="lg:col-span-1"
               >
                 <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700">
-                  {place?.imageUrl && (
-                    <motion.img
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.3 }}
-                      src={place.imageUrl}
+                  {place?.image && (
+                    <img
+                      src={resolveImageUrl(place.image)}
                       alt={place.name}
                       className="w-full h-48 object-cover rounded-lg mb-4 shadow-md"
                     />
@@ -452,35 +453,28 @@ export default function PlaceDetailsPage() {
                   
                   {/* Quick Actions */}
                   <div className="mt-6 space-y-3">
-                    <motion.button
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
+                    <button
                       onClick={() => setBookingModalOpen(true)}
                       className="w-full flex items-center justify-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-white py-3 px-4 rounded-lg font-medium transition-all duration-200 shadow-md hover:shadow-lg"
                     >
                       <Plus size={20} />
                       Create Booking
-                    </motion.button>
-                    <motion.button
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
+                    </button>
+                    <button
                       onClick={() => navigate(-1)}
                       className="w-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 py-3 px-4 rounded-lg font-medium transition-all duration-200"
                     >
                       Go Back
-                    </motion.button>
+                    </button>
                   </div>
                 </div>
                   <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
                     Each approved booking has a unique color for easy identification
                   </p>
-              </motion.div>
+              </div>
                   
               {/* Calendar Section */}
-              <motion.div 
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.5, delay: 0.1 }}
+              <div 
                 className="lg:col-span-2"
               >
                 <CustomToolbar
@@ -499,12 +493,10 @@ export default function PlaceDetailsPage() {
                     
                     {bookingsLoading ? (
                       <div className="flex justify-center items-center h-96">
-                        <Spinner size="lg" />
+                        <div className="w-10 h-10 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin" />
                       </div>
                     ) : events.length === 0 ? (
-                      <motion.div 
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
+                      <div 
                         className="text-center py-12 bg-gray-50 dark:bg-gray-700 rounded-lg"
                       >
                         <CalendarIcon className="mx-auto text-gray-400 mb-4" size={48} />
@@ -514,21 +506,16 @@ export default function PlaceDetailsPage() {
                         <p className="text-sm text-gray-500 dark:text-gray-500 mb-4">
                           Only approved bookings are displayed on the calendar.
                         </p>
-                        <motion.button
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
+                        <button
                           onClick={() => setBookingModalOpen(true)}
                           className="inline-flex items-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-2 rounded-lg transition-colors"
                         >
                           <Plus size={18} />
                           Create Booking Request
-                        </motion.button>
-                      </motion.div>
+                        </button>
+                      </div>
                     ) : (
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ duration: 0.3 }}
+                      <div
                         className="calendar-container"
                       >
                         <Calendar
@@ -598,11 +585,11 @@ export default function PlaceDetailsPage() {
                             return {};
                           }}
                         />
-                      </motion.div>
+                      </div>
                     )}
                   </div>
                 </div>
-              </motion.div>
+              </div>
             </div>
           </div>
         )}
@@ -617,19 +604,13 @@ export default function PlaceDetailsPage() {
       
       {/* Event Details Modal */}
       {selectedEvent && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
+        <div
           onClick={() => setIsEventDetailsOpen(false)}
           className={`fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 ${
             isEventDetailsOpen ? '' : 'hidden'
           }`}
         >
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.9, opacity: 0 }}
+          <div
             onClick={(e) => e.stopPropagation()}
             className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-gray-200 dark:border-gray-700"
           >
@@ -774,8 +755,8 @@ export default function PlaceDetailsPage() {
                 Close
               </button>
             </div>
-          </motion.div>
-        </motion.div>
+          </div>
+        </div>
       )}
     </div>
   );

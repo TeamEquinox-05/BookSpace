@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Mail, KeyRound, Lock, X } from 'lucide-react';
-import { Spinner } from '../ui';
 import api from '../../utils/api';
 import axios from 'axios';
 import logger from '../../utils/logger';
@@ -125,6 +124,27 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
     setMessage('');
     
     const trimmedEmail = email.trim();
+
+    // Check if email exists in DB first (only on first attempt, not resend)
+    if (!isResend) {
+      try {
+        const checkRes = await api.post('/auth/check-email', { email: trimmedEmail });
+        if (!checkRes.data.exists) {
+          setMessage({ text: 'No account found with this email address', type: 'error' });
+          setLoading(false);
+          return;
+        }
+      } catch (checkErr) {
+        if (checkErr.response?.status === 404) {
+          setMessage({ text: 'No account found with this email address', type: 'error' });
+          setLoading(false);
+          return;
+        }
+        // If check fails for other reasons, proceed with OTP send anyway
+        logger.warn('Email check failed, proceeding with OTP send:', checkErr);
+      }
+    }
+
     logger.auth(`Sending OTP to email:`, trimmedEmail, isResend ? '(resend)' : '(first attempt)');
     
     // Clean up any existing abort controller/timeout
@@ -482,7 +502,7 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
               className="w-full flex justify-center items-center mt-4 px-4 py-3 text-white bg-blue-600 rounded-lg font-semibold hover:bg-blue-700 disabled:bg-blue-400 transition-all"
             >
               {loading ? 
-                <Spinner centered={false} size="sm" text="Sending verification code" color="white" /> : 
+                <span className="inline-flex items-center gap-2"><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Sending verification code</span> : 
                 'Send Verification Code'
               }
             </button>
@@ -536,7 +556,7 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
                 disabled={loading || otp.length !== 6} 
                 className="w-full flex justify-center items-center mt-4 px-4 py-3 text-white bg-blue-600 rounded-lg font-semibold hover:bg-blue-700 disabled:bg-blue-400 transition-all"
               >
-                {loading ? <Spinner centered={false} size="sm" text="Verifying" color="white" /> : 'Verify Code'}
+                {loading ? <span className="inline-flex items-center gap-2"><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Verifying</span> : 'Verify Code'}
               </button>
               
               <div className="flex justify-between items-center mt-6 pt-4 border-t border-slate-200 dark:border-[#1a1a1a]">
@@ -651,7 +671,7 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
                     className="w-full flex justify-center items-center mt-6 px-4 py-3 text-white bg-blue-600 rounded-lg font-semibold hover:bg-blue-700 disabled:bg-blue-400 transition-all"
                 >
                     {loading ? 
-                        <Spinner centered={false} size="sm" text="Resetting password" color="white" /> : 
+                        <span className="inline-flex items-center gap-2"><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Resetting password</span> : 
                         'Reset Password'
                     }
                 </button>

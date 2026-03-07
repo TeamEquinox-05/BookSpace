@@ -1,6 +1,6 @@
 import React from 'react';
 
-const StatCard = ({ icon: Icon, title, value, change, color = 'bg-blue-500', isLoading = false }) => {
+const StatCard = ({ icon: Icon, title, value, change, isLoading = false }) => {
   const getTrendColor = () => {
     if (change > 0) return 'text-green-600 dark:text-green-400';
     if (change < 0) return 'text-red-600 dark:text-red-400';
@@ -29,7 +29,7 @@ const StatCard = ({ icon: Icon, title, value, change, color = 'bg-blue-500', isL
             </>
           )}
         </div>
-        <div className={color + ' p-2.5 rounded-xl text-white shadow-md'}>
+        <div className="bg-blue-50 dark:bg-blue-900/20 p-2.5 rounded-xl text-blue-600 dark:text-blue-400">
           <Icon size={20} />
         </div>
       </div>

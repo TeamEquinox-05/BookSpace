@@ -300,6 +300,32 @@ router.post('/login',
   }
 });
 
+// @route   POST api/auth/check-email
+// @desc    Check if an email exists in the database (for forgot password)
+// @access  Public
+router.post('/check-email',
+  [
+    body('email').isEmail().normalizeEmail().withMessage('Please provide a valid email')
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ msg: 'Please provide a valid email address', exists: false });
+    }
+    try {
+      const { email } = req.body;
+      const user = await User.findOne({ email });
+      if (!user) {
+        return res.status(404).json({ msg: 'No account found with this email address', exists: false });
+      }
+      return res.status(200).json({ msg: 'Email found', exists: true });
+    } catch (err) {
+      logger.error('Error checking email:', err.message);
+      return res.status(500).json({ msg: 'Server error', exists: false });
+    }
+  }
+);
+
 // @route   POST api/auth/forgot-password
 // @desc    Send OTP for password reset
 // @access  Public

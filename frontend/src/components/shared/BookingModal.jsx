@@ -1,82 +1,139 @@
 ﻿import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { X, Calendar, Clock, MapPin, Users, FileText, Settings, CheckCircle, AlertCircle } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../utils/api';
-import { Spinner } from '../ui';
+
 import logger from '../../utils/logger';
 
 const BookingModal = ({ isOpen, onClose, places, onBookingSubmit, initialBooking }) => {
   const [bookingDetails, setBookingDetails] = useState({
-    placeId: '', 
-    eventTitle: '', 
-    description: '', 
-    eventStartTime: '', 
+    placeId: '',
+    eventTitle: '',
+    description: '',
+    eventStartTime: '',
     eventEndTime: ''
   });
+
+  // Separate date / time / period state
+  const [startDate, setStartDate] = useState('');
+  const [startHour, setStartHour] = useState('9');
+  const [startMinute, setStartMinute] = useState('00');
+  const [startPeriod, setStartPeriod] = useState('AM');
+
+  const [endDate, setEndDate] = useState('');
+  const [endHour, setEndHour] = useState('10');
+  const [endMinute, setEndMinute] = useState('00');
+  const [endPeriod, setEndPeriod] = useState('AM');
+
   const [selectedFacilities, setSelectedFacilities] = useState([]);
   const [availableFacilities, setAvailableFacilities] = useState([]);
   const [error, setError] = useState(null);
   const [isAvailable, setIsAvailable] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [availabilityMessage, setAvailabilityMessage] = useState('');
-  
+
   // Ref to track if component is mounted (to prevent state updates on unmounted component)
   const isMountedRef = useRef(true);
   // Ref to store abort controller for cancelling pending requests
   const abortControllerRef = useRef(null);
-  
+
   // Determine if this is an edit mode (existing booking with an ID)
   const isEditMode = initialBooking && initialBooking._id;
 
-  // Reliable datetime-local input formatter (avoids locale-dependent toLocaleString output)
-  const formatForInput = (date) => {
-    const d = new Date(date);
-    const pad = n => String(n).padStart(2, '0');
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  // --- helpers ---
+  const to12h = (h24) => {
+    const period = h24 >= 12 ? 'PM' : 'AM';
+    let hour = h24 % 12;
+    if (hour === 0) hour = 12;
+    return { hour: String(hour), period };
   };
 
-  const getMinBookingTime = () => new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 16);
-  const getMaxBookingTime = () => {
-    const now = new Date();
-    now.setMonth(now.getMonth() + 1);
-    return now.toISOString().slice(0, 16);
+  const to24h = (hour, period) => {
+    let h = parseInt(hour, 10);
+    if (period === 'AM' && h === 12) h = 0;
+    if (period === 'PM' && h !== 12) h += 12;
+    return h;
   };
+
+  const pad = (n) => String(n).padStart(2, '0');
+
+  const composeDateTime = (date, hour, minute, period) => {
+    if (!date) return '';
+    const h24 = to24h(hour, period);
+    return `${date}T${pad(h24)}:${pad(minute)}`;
+  };
+
+  const getMinDate = () => {
+    const d = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  };
+
+  const getMaxDate = () => {
+    const d = new Date();
+    d.setMonth(d.getMonth() + 1);
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  };
+
+  // Sync composed datetime into bookingDetails whenever parts change
+  useEffect(() => {
+    const start = composeDateTime(startDate, startHour, startMinute, startPeriod);
+    const end = composeDateTime(endDate, endHour, endMinute, endPeriod);
+    setBookingDetails(prev => ({ ...prev, eventStartTime: start, eventEndTime: end }));
+  }, [startDate, startHour, startMinute, startPeriod, endDate, endHour, endMinute, endPeriod]);
 
   useEffect(() => {
     if (isOpen) {
       if (isEditMode && initialBooking.eventStartTime && initialBooking.eventEndTime) {
         // For editing existing bookings with dates
-        // placeId may be a populated object or a plain string ID â€” normalize to string
+        // placeId may be a populated object or a plain string ID - normalize to string
         const placeId = initialBooking.placeId?._id ?? initialBooking.placeId ?? '';
-        setBookingDetails({
+        const sDate = new Date(initialBooking.eventStartTime);
+        const eDate = new Date(initialBooking.eventEndTime);
+        const s12 = to12h(sDate.getHours());
+        const e12 = to12h(eDate.getHours());
+
+        setBookingDetails(prev => ({
+          ...prev,
           placeId: typeof placeId === 'object' ? placeId.toString() : placeId,
           eventTitle: initialBooking.eventTitle || '',
           description: initialBooking.description || '',
-          eventStartTime: formatForInput(initialBooking.eventStartTime),
-          eventEndTime: formatForInput(initialBooking.eventEndTime),
-        });
+        }));
+
+        setStartDate(`${sDate.getFullYear()}-${pad(sDate.getMonth() + 1)}-${pad(sDate.getDate())}`);
+        setStartHour(s12.hour);
+        setStartMinute(pad(sDate.getMinutes()));
+        setStartPeriod(s12.period);
+
+        setEndDate(`${eDate.getFullYear()}-${pad(eDate.getMonth() + 1)}-${pad(eDate.getDate())}`);
+        setEndHour(e12.hour);
+        setEndMinute(pad(eDate.getMinutes()));
+        setEndPeriod(e12.period);
+
         setSelectedFacilities(initialBooking.requestedFacilities || []);
       } else if (initialBooking && initialBooking.placeId) {
-        // For new bookings with a pre-selected place â€” normalize ID
+        // For new bookings with a pre-selected place - normalize ID
         const placeId = initialBooking.placeId?._id ?? initialBooking.placeId;
-        setBookingDetails({ 
-          placeId: typeof placeId === 'object' ? placeId.toString() : String(placeId), 
-          eventTitle: '', 
-          description: '', 
-          eventStartTime: '', 
-          eventEndTime: '' 
+        setBookingDetails({
+          placeId: typeof placeId === 'object' ? placeId.toString() : String(placeId),
+          eventTitle: '',
+          description: '',
+          eventStartTime: '',
+          eventEndTime: ''
         });
+        setStartDate(''); setStartHour('9'); setStartMinute('00'); setStartPeriod('AM');
+        setEndDate(''); setEndHour('10'); setEndMinute('00'); setEndPeriod('AM');
         setSelectedFacilities([]);
       } else {
         // For completely new bookings
         const initialPlaceId = places.length > 0 ? places[0]._id : '';
-        setBookingDetails({ 
-          placeId: initialPlaceId, 
-          eventTitle: '', 
-          description: '', 
-          eventStartTime: '', 
-          eventEndTime: '' 
+        setBookingDetails({
+          placeId: initialPlaceId,
+          eventTitle: '',
+          description: '',
+          eventStartTime: '',
+          eventEndTime: ''
         });
+        setStartDate(''); setStartHour('9'); setStartMinute('00'); setStartPeriod('AM');
+        setEndDate(''); setEndHour('10'); setEndMinute('00'); setEndPeriod('AM');
         setSelectedFacilities([]);
       }
     }
@@ -104,18 +161,18 @@ const BookingModal = ({ isOpen, onClose, places, onBookingSubmit, initialBooking
     }
 
     try {
-      const startDate = new Date(bookingDetails.eventStartTime);
-      const endDate = new Date(bookingDetails.eventEndTime);
-      
+      const startDateObj = new Date(bookingDetails.eventStartTime);
+      const endDateObj = new Date(bookingDetails.eventEndTime);
+
       // Check if dates are valid
-      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      if (isNaN(startDateObj.getTime()) || isNaN(endDateObj.getTime())) {
         setIsAvailable(false);
         setAvailabilityMessage('Please enter valid start and end times.');
         return;
       }
 
       // Guard: don't hit the server with an invalid range
-      if (endDate <= startDate) {
+      if (endDateObj <= startDateObj) {
         setIsAvailable(false);
         setAvailabilityMessage('End time must be after start time.');
         return;
@@ -123,10 +180,10 @@ const BookingModal = ({ isOpen, onClose, places, onBookingSubmit, initialBooking
 
       const res = await api.post('/bookings/check-availability', {
         placeId: bookingDetails.placeId,
-        eventStartTime: startDate.toISOString(),
-        eventEndTime: endDate.toISOString(),
+        eventStartTime: startDateObj.toISOString(),
+        eventEndTime: endDateObj.toISOString(),
       }, { signal });
-      
+
       // Only update state if component is still mounted
       if (isMountedRef.current) {
         setIsAvailable(res.data.available);
@@ -148,7 +205,7 @@ const BookingModal = ({ isOpen, onClose, places, onBookingSubmit, initialBooking
   useEffect(() => {
     // Set mounted ref
     isMountedRef.current = true;
-    
+
     // Cleanup function to abort pending requests and mark component as unmounted
     return () => {
       isMountedRef.current = false;
@@ -163,14 +220,14 @@ const BookingModal = ({ isOpen, onClose, places, onBookingSubmit, initialBooking
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
-    
+
     // Create new abort controller for this request
     abortControllerRef.current = new AbortController();
-    
+
     const timeoutId = setTimeout(() => {
       checkAvailability(abortControllerRef.current.signal);
     }, 500); // Debounce for 500ms
-    
+
     return () => {
       clearTimeout(timeoutId);
       if (abortControllerRef.current) {
@@ -183,28 +240,28 @@ const BookingModal = ({ isOpen, onClose, places, onBookingSubmit, initialBooking
     e.preventDefault();
     setError(null);
     setIsSubmitting(true);
-    
-    const startDate = new Date(bookingDetails.eventStartTime);
-    const endDate = new Date(bookingDetails.eventEndTime);
-    
+
+    const startDateObj = new Date(bookingDetails.eventStartTime);
+    const endDateObj = new Date(bookingDetails.eventEndTime);
+
     // Validate dates
-    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+    if (isNaN(startDateObj.getTime()) || isNaN(endDateObj.getTime())) {
       setError('Please enter valid start and end times.');
       setIsSubmitting(false);
       return;
     }
-    
-    if (endDate <= startDate) {
+
+    if (endDateObj <= startDateObj) {
       setError('End time must be after start time.');
       setIsSubmitting(false);
       return;
     }
-    
+
     try {
       const submissionDetails = {
         ...bookingDetails,
-        eventStartTime: startDate.toISOString(),
-        eventEndTime: endDate.toISOString(),
+        eventStartTime: startDateObj.toISOString(),
+        eventEndTime: endDateObj.toISOString(),
         requestedFacilities: selectedFacilities
       };
       await onBookingSubmit(submissionDetails);
@@ -223,21 +280,101 @@ const BookingModal = ({ isOpen, onClose, places, onBookingSubmit, initialBooking
 
   if (!isOpen) return null;
 
+  // Common input styling
+  const inputCls = 'h-11 px-3 bg-slate-50 dark:bg-[#111111] border border-slate-200 dark:border-[#2a2a2a] rounded-xl text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 dark:focus:border-blue-500 transition-colors';
+  const selectCls = `${inputCls} appearance-none cursor-pointer`;
+
+  // Reusable time selector row
+  const renderTimeRow = ({ label, date, setDate, hour, setHour, minute, setMinute, period, setPeriod }) => (
+    <div className="space-y-1.5">
+      <label className="flex items-center gap-2 text-xs font-semibold text-slate-600 dark:text-zinc-400 uppercase tracking-wide">
+        <Clock size={13} className="text-blue-500" />
+        {label} <span className="text-red-500 normal-case font-normal">*</span>
+      </label>
+
+      <div className="flex items-center gap-2">
+        {/* Date */}
+        <input
+          type="date"
+          value={date}
+          onChange={e => setDate(e.target.value)}
+          min={getMinDate()}
+          max={getMaxDate()}
+          required
+          className={`${inputCls} flex-1 min-w-0 [color-scheme:light] dark:[color-scheme:dark]`}
+        />
+
+        {/* Hour */}
+        <div className="relative">
+          <select
+            value={hour}
+            onChange={e => setHour(e.target.value)}
+            className={`${selectCls} w-[4.25rem] pr-7 text-center`}
+          >
+            {Array.from({ length: 12 }, (_, i) => i + 1).map(h => (
+              <option key={h} value={String(h)}>{h}</option>
+            ))}
+          </select>
+          <div className="absolute inset-y-0 right-1.5 flex items-center pointer-events-none">
+            <svg className="w-3 h-3 text-slate-400 dark:text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+        </div>
+
+        <span className="text-slate-400 dark:text-zinc-500 font-bold select-none">:</span>
+
+        {/* Minute */}
+        <div className="relative">
+          <select
+            value={minute}
+            onChange={e => setMinute(e.target.value)}
+            className={`${selectCls} w-[4.25rem] pr-7 text-center`}
+          >
+            {['00', '15', '30', '45'].map(m => (
+              <option key={m} value={m}>{m}</option>
+            ))}
+          </select>
+          <div className="absolute inset-y-0 right-1.5 flex items-center pointer-events-none">
+            <svg className="w-3 h-3 text-slate-400 dark:text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+        </div>
+
+        {/* AM / PM toggle */}
+        <div className="flex rounded-xl border border-slate-200 dark:border-[#2a2a2a] overflow-hidden flex-shrink-0">
+          {['AM', 'PM'].map(p => (
+            <button
+              key={p}
+              type="button"
+              onClick={() => setPeriod(p)}
+              className={`h-11 px-3 text-xs font-semibold transition-colors ${
+                period === p
+                  ? 'bg-blue-600 dark:bg-blue-500 text-white'
+                  : 'bg-slate-50 dark:bg-[#111111] text-slate-500 dark:text-zinc-500 hover:bg-slate-100 dark:hover:bg-[#1a1a1a]'
+              }`}
+            >
+              {p}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <p className="text-xs text-slate-400 dark:text-zinc-600">
+        {label === 'Start' ? 'When your event begins' : 'When your event ends'}
+      </p>
+    </div>
+  );
+
   return (
-    <AnimatePresence>
+    <>
       {isOpen && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
+        <div
           className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex justify-center items-center p-4"
           onClick={onClose}
         >
-          <motion.div
-            initial={{ opacity: 0, scale: 0.96, y: 16 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.96, y: 16 }}
-            transition={{ type: 'spring', duration: 0.4, bounce: 0.2 }}
+          <div
             className="bg-white dark:bg-[#0a0a0a] rounded-2xl shadow-2xl w-full max-w-2xl max-h-[92vh] overflow-hidden border border-slate-200 dark:border-[#1a1a1a] flex flex-col"
             onClick={e => e.stopPropagation()}
           >
@@ -284,7 +421,7 @@ const BookingModal = ({ isOpen, onClose, places, onBookingSubmit, initialBooking
                     >
                       {places.map(place => (
                         <option key={place._id} value={place._id}>
-                          {place.name} â€” Capacity: {place.capacity}
+                          {place.name}
                         </option>
                       ))}
                     </select>
@@ -300,7 +437,7 @@ const BookingModal = ({ isOpen, onClose, places, onBookingSubmit, initialBooking
                 {availableFacilities.length > 0 && (
                   <div className="space-y-2">
                     <label className="flex items-center gap-2 text-xs font-semibold text-slate-600 dark:text-zinc-400 uppercase tracking-wide">
-                      <Settings size={13} className="text-green-500" />
+                      <Settings size={13} className="text-blue-500" />
                       Facilities
                       <span className="normal-case font-normal text-slate-400 dark:text-zinc-600">(select as needed)</span>
                     </label>
@@ -314,8 +451,8 @@ const BookingModal = ({ isOpen, onClose, places, onBookingSubmit, initialBooking
                             onClick={() => handleFacilityChange(facility)}
                             className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm font-medium border transition-all ${
                               checked
-                                ? 'bg-blue-600 dark:bg-blue-500 text-white border-blue-600 dark:border-blue-500 shadow-sm shadow-blue-500/20'
-                                : 'bg-slate-50 dark:bg-[#111111] text-slate-600 dark:text-zinc-400 border-slate-200 dark:border-[#2a2a2a] hover:border-blue-400 dark:hover:border-blue-600 hover:text-blue-600 dark:hover:text-blue-400'
+                                ? 'bg-blue-600 dark:bg-blue-500 text-white border-blue-600 dark:border-blue-500 shadow-sm'
+                                : 'bg-slate-50 dark:bg-[#111111] text-slate-600 dark:text-zinc-400 border-slate-200 dark:border-[#2a2a2a] hover:border-blue-400 dark:hover:border-blue-600'
                             }`}
                           >
                             <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${checked ? 'bg-white' : 'bg-slate-300 dark:bg-zinc-600'}`} />
@@ -331,7 +468,7 @@ const BookingModal = ({ isOpen, onClose, places, onBookingSubmit, initialBooking
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <label htmlFor="eventTitle" className="flex items-center gap-2 text-xs font-semibold text-slate-600 dark:text-zinc-400 uppercase tracking-wide">
-                      <FileText size={13} className="text-purple-500" />
+                      <FileText size={13} className="text-blue-500" />
                       Event Title <span className="text-red-500 normal-case font-normal">*</span>
                     </label>
                     <input
@@ -349,7 +486,7 @@ const BookingModal = ({ isOpen, onClose, places, onBookingSubmit, initialBooking
                   {/* Availability pill */}
                   <div className="space-y-1.5">
                     <label className="flex items-center gap-2 text-xs font-semibold text-slate-600 dark:text-zinc-400 uppercase tracking-wide">
-                      <Users size={13} className="text-yellow-500" />
+                      <Users size={13} className="text-slate-500" />
                       Availability
                     </label>
                     <div className={`h-11 px-4 rounded-xl border flex items-center gap-3 text-sm font-medium transition-colors ${
@@ -379,7 +516,7 @@ const BookingModal = ({ isOpen, onClose, places, onBookingSubmit, initialBooking
                 {/* Description */}
                 <div className="space-y-1.5">
                   <label htmlFor="description" className="flex items-center gap-2 text-xs font-semibold text-slate-600 dark:text-zinc-400 uppercase tracking-wide">
-                    <FileText size={13} className="text-indigo-500" />
+                    <FileText size={13} className="text-slate-400" />
                     Description
                     <span className="normal-case font-normal text-slate-400 dark:text-zinc-600">(optional)</span>
                   </label>
@@ -389,65 +526,38 @@ const BookingModal = ({ isOpen, onClose, places, onBookingSubmit, initialBooking
                     value={bookingDetails.description}
                     onChange={handleChange}
                     rows="3"
-                    placeholder="Special requirements, expected attendance, notesâ€¦"
+                    placeholder="Special requirements, expected attendance, notes..."
                     className="w-full px-4 py-3 bg-slate-50 dark:bg-[#111111] border border-slate-200 dark:border-[#2a2a2a] rounded-xl text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 dark:focus:border-blue-500 transition-colors resize-none"
                   />
                 </div>
 
                 {/* Date & Time */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label htmlFor="eventStartTime" className="flex items-center gap-2 text-xs font-semibold text-slate-600 dark:text-zinc-400 uppercase tracking-wide">
-                      <Clock size={13} className="text-green-500" />
-                      Start <span className="text-red-500 normal-case font-normal">*</span>
-                    </label>
-                    <input
-                      type="datetime-local"
-                      id="eventStartTime"
-                      name="eventStartTime"
-                      value={bookingDetails.eventStartTime}
-                      onChange={handleChange}
-                      min={getMinBookingTime()}
-                      max={getMaxBookingTime()}
-                      required
-                      className="w-full h-11 px-4 bg-slate-50 dark:bg-[#111111] border border-slate-200 dark:border-[#2a2a2a] rounded-xl text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 dark:focus:border-blue-500 transition-colors [&::-webkit-calendar-picker-indicator]:dark:invert [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-50 [&::-webkit-calendar-picker-indicator]:hover:opacity-100"
-                    />
-                    <p className="text-xs text-slate-400 dark:text-zinc-600">When your event begins</p>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label htmlFor="eventEndTime" className="flex items-center gap-2 text-xs font-semibold text-slate-600 dark:text-zinc-400 uppercase tracking-wide">
-                      <Clock size={13} className="text-red-500" />
-                      End <span className="text-red-500 normal-case font-normal">*</span>
-                    </label>
-                    <input
-                      type="datetime-local"
-                      id="eventEndTime"
-                      name="eventEndTime"
-                      value={bookingDetails.eventEndTime}
-                      onChange={handleChange}
-                      min={bookingDetails.eventStartTime || getMinBookingTime()}
-                      required
-                      className="w-full h-11 px-4 bg-slate-50 dark:bg-[#111111] border border-slate-200 dark:border-[#2a2a2a] rounded-xl text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 dark:focus:border-blue-500 transition-colors [&::-webkit-calendar-picker-indicator]:dark:invert [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-50 [&::-webkit-calendar-picker-indicator]:hover:opacity-100"
-                    />
-                    <p className="text-xs text-slate-400 dark:text-zinc-600">When your event ends</p>
-                  </div>
+                <div className="space-y-4">
+                  {renderTimeRow({
+                    label: 'Start',
+                    date: startDate, setDate: setStartDate,
+                    hour: startHour, setHour: setStartHour,
+                    minute: startMinute, setMinute: setStartMinute,
+                    period: startPeriod, setPeriod: setStartPeriod,
+                  })}
+                  {renderTimeRow({
+                    label: 'End',
+                    date: endDate, setDate: setEndDate,
+                    hour: endHour, setHour: setEndHour,
+                    minute: endMinute, setMinute: setEndMinute,
+                    period: endPeriod, setPeriod: setEndPeriod,
+                  })}
                 </div>
 
                 {/* Error */}
-                <AnimatePresence>
-                  {error && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -8 }}
-                      className="flex items-start gap-3 p-3.5 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 rounded-xl"
-                    >
+                {error && (
+                  <div
+                    className="flex items-start gap-3 p-3.5 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 rounded-xl"
+                  >
                       <AlertCircle className="text-red-500 flex-shrink-0 mt-0.5" size={15} />
                       <p className="text-red-700 dark:text-red-400 text-sm">{error}</p>
-                    </motion.div>
+                    </div>
                   )}
-                </AnimatePresence>
 
               </form>
             </div>
@@ -473,7 +583,7 @@ const BookingModal = ({ isOpen, onClose, places, onBookingSubmit, initialBooking
                 }`}
               >
                 {isSubmitting ? (
-                  <Spinner centered={false} size="sm" text="Savingâ€¦" />
+                  <span className="inline-flex items-center gap-2"><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Saving...</span>
                 ) : (
                   <>
                     <Calendar size={15} />
@@ -482,10 +592,10 @@ const BookingModal = ({ isOpen, onClose, places, onBookingSubmit, initialBooking
                 )}
               </button>
             </div>
-          </motion.div>
-        </motion.div>
+          </div>
+        </div>
       )}
-    </AnimatePresence>
+    </>
   );
 };
 

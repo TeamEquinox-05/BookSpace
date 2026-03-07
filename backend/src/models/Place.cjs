@@ -15,6 +15,10 @@ const PlaceSchema = new mongoose.Schema({
   location: {
     type: String
   },
+  image: {
+    type: String,
+    default: ''
+  },
   status: {
     type: String,
     default: 'available'

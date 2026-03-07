@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import api from '../utils/api';
 import moment from 'moment';
 import { PageHeader } from '../components/shared';
-import { Spinner, TableSkeleton, Badge, EmptyState } from '../components/ui';
+import { TableSkeleton, Badge, EmptyState } from '../components/ui';
 import { ShieldX, Download, FileText, FileType, FileJson, Calendar, Search, Filter, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import logger from '../utils/logger';
 
@@ -57,15 +56,13 @@ const FilterControls = ({ places, filters, setFilters }) => {
   const activeFilterCount = getActiveFilterCount();
 
   const DatePresetButton = ({ onClick, children }) => (
-    <motion.button
+    <button
       onClick={onClick}
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
       className="px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors flex items-center gap-1"
     >
       <Calendar className="w-3 h-3" />
       {children}
-    </motion.button>
+    </button>
   );
 
   return (
@@ -81,25 +78,20 @@ const FilterControls = ({ places, filters, setFilters }) => {
           <DatePresetButton onClick={() => setDatePreset('week')}>This Week</DatePresetButton>
           <DatePresetButton onClick={() => setDatePreset('month')}>This Month</DatePresetButton>
           <DatePresetButton onClick={() => setDatePreset('last30')}>Last 30 Days</DatePresetButton>
-          <AnimatePresence>
-            {activeFilterCount > 0 && (
-              <motion.span
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400"
-              >
+          {activeFilterCount > 0 && (
+            <span
+              className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400"
+            >
                 {activeFilterCount} filter{activeFilterCount > 1 ? 's' : ''} active
-              </motion.span>
-            )}
-          </AnimatePresence>
+            </span>
+          )}
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+      <div className="flex flex-col lg:flex-row lg:items-end gap-3">
         {/* Search Box */}
-        <div className="w-full xl:col-span-2">
-          <label htmlFor="search-filter" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Search</label>
+        <div className="flex-1 min-w-0">
+          <label htmlFor="search-filter" className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Search</label>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
@@ -109,20 +101,20 @@ const FilterControls = ({ places, filters, setFilters }) => {
               value={filters.search}
               onChange={handleInputChange}
               placeholder="Event, user, or ID..."
-              className="block w-full pl-10 pr-4 py-2.5 text-sm border border-slate-200 dark:border-[#2a2a2a] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 rounded-lg bg-white dark:bg-[#1a1a1a] text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 transition-all"
+              className="block w-full pl-10 pr-4 py-2 text-sm border border-slate-200 dark:border-[#2a2a2a] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 rounded-lg bg-white dark:bg-[#1a1a1a] text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 transition-all"
             />
           </div>
         </div>
 
         {/* Status Filter */}
-        <div className="w-full">
-          <label htmlFor="status-filter" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Status</label>
+        <div className="w-full lg:w-36">
+          <label htmlFor="status-filter" className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Status</label>
           <select
             id="status-filter"
             name="status"
             value={filters.status}
             onChange={handleInputChange}
-            className="block w-full px-3 py-2.5 text-sm border border-slate-200 dark:border-[#2a2a2a] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 rounded-lg bg-white dark:bg-[#1a1a1a] text-slate-900 dark:text-white transition-all"
+            className="block w-full px-3 py-2 text-sm border border-slate-200 dark:border-[#2a2a2a] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 rounded-lg bg-white dark:bg-[#1a1a1a] text-slate-900 dark:text-white transition-all"
           >
             <option value="">All Statuses</option>
             <option value="approved">Approved</option>
@@ -132,14 +124,14 @@ const FilterControls = ({ places, filters, setFilters }) => {
         </div>
 
         {/* Place Filter */}
-        <div className="w-full">
-          <label htmlFor="place-filter" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Place</label>
+        <div className="w-full lg:w-44">
+          <label htmlFor="place-filter" className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Place</label>
           <select
             id="place-filter"
             name="placeId"
             value={filters.placeId}
             onChange={handleInputChange}
-            className="block w-full px-3 py-2.5 text-sm border border-slate-200 dark:border-[#2a2a2a] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 rounded-lg bg-white dark:bg-[#1a1a1a] text-slate-900 dark:text-white transition-all"
+            className="block w-full px-3 py-2 text-sm border border-slate-200 dark:border-[#2a2a2a] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 rounded-lg bg-white dark:bg-[#1a1a1a] text-slate-900 dark:text-white transition-all"
           >
             <option value="">All Places</option>
             {places.map(place => (
@@ -149,52 +141,45 @@ const FilterControls = ({ places, filters, setFilters }) => {
         </div>
 
         {/* Date From */}
-        <div className="w-full">
-          <label htmlFor="date-from-filter" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">From Date</label>
+        <div className="w-full lg:w-40">
+          <label htmlFor="date-from-filter" className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">From</label>
           <input
             type="date"
             id="date-from-filter"
             name="dateFrom"
             value={filters.dateFrom}
             onChange={handleInputChange}
-            className="block w-full px-3 py-2.5 text-sm border border-slate-200 dark:border-[#2a2a2a] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 rounded-lg bg-white dark:bg-[#1a1a1a] text-slate-900 dark:text-white transition-all"
+            className="block w-full px-3 py-2 text-sm border border-slate-200 dark:border-[#2a2a2a] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 rounded-lg bg-white dark:bg-[#1a1a1a] text-slate-900 dark:text-white transition-all"
           />
         </div>
 
-        {/* Date To */}}
-        <div className="w-full">
-          <label htmlFor="date-to-filter" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">To Date</label>
+        {/* Date To */}
+        <div className="w-full lg:w-40">
+          <label htmlFor="date-to-filter" className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">To</label>
           <input
             type="date"
             id="date-to-filter"
             name="dateTo"
             value={filters.dateTo}
             onChange={handleInputChange}
-            className="block w-full px-3 py-2.5 text-sm border border-slate-200 dark:border-[#2a2a2a] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 rounded-lg bg-white dark:bg-[#1a1a1a] text-slate-900 dark:text-white transition-all"
+            className="block w-full px-3 py-2 text-sm border border-slate-200 dark:border-[#2a2a2a] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 rounded-lg bg-white dark:bg-[#1a1a1a] text-slate-900 dark:text-white transition-all"
           />
         </div>
       </div>
 
-      {/* Clear Filters Button */}}
-      <AnimatePresence>
-        {activeFilterCount > 0 && (
-          <motion.div 
-            className="mt-4"
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
+      {/* Clear Filters Button */}
+      {activeFilterCount > 0 && (
+        <div 
+          className="mt-4"
+        >
+          <button
+            onClick={clearFilters}
+            className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 bg-white dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#2a2a2a] rounded-lg hover:bg-slate-50 dark:hover:bg-[#2a2a2a] transition-colors"
           >
-            <motion.button
-              onClick={clearFilters}
-              whileHover={{ scale: 1.01 }}
-              whileTap={{ scale: 0.99 }}
-              className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 bg-white dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#2a2a2a] rounded-lg hover:bg-slate-50 dark:hover:bg-[#2a2a2a] transition-colors"
-            >
               Clear All Filters
-            </motion.button>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </button>
+        </div>
+      )}
     </div>
   );
 };
@@ -300,7 +285,7 @@ const DownloadReport = ({ filters, sortConfig, disabled }) => {
         className="inline-flex justify-center w-full rounded-md border border-slate-300 dark:border-[#2a2a2a] shadow-sm px-4 py-2 bg-white dark:bg-[#1a1a1a] text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-[#2a2a2a] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {isDownloading ? (
-          <><Spinner size="sm" className="mr-2" /> Downloading...</>
+          <><div className="w-4 h-4 border-2 border-current/30 border-t-current rounded-full animate-spin mr-2" /> Downloading...</>
         ) : (
           <><Download className="mr-2 h-5 w-5" /> Download Report</>
         )}
@@ -446,7 +431,7 @@ const AllBookingsPage = () => {
   };
 
   const renderContent = () => {
-    if (loading) return <TableSkeleton rows={10} columns={7} />;
+    if (loading) return <TableSkeleton rows={6} cols={7} />;
     if (error) return (
       <EmptyState
         icon={ShieldX}
@@ -511,7 +496,6 @@ const AllBookingsPage = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
-                <AnimatePresence>
                   {filteredAndSortedBookings.map((booking, index) => {
                     const duration = moment.duration(moment(booking.eventEndTime).diff(moment(booking.eventStartTime)));
                     const hours = Math.floor(duration.asHours());
@@ -519,12 +503,8 @@ const AllBookingsPage = () => {
                     const durationText = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
                     
                     return (
-                      <motion.tr 
+                      <tr 
                         key={booking._id}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.2, delay: index * 0.02 }}
                         className={`
                           ${index % 2 === 0 ? 'bg-white dark:bg-black' : 'bg-slate-50/50 dark:bg-[#0a0a0a]'}
                           hover:bg-blue-50/50 dark:hover:bg-blue-900/10 
@@ -566,10 +546,10 @@ const AllBookingsPage = () => {
                             {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
                           </Badge>
                         </td>
-                      </motion.tr>
+                      </tr>
                     );
                   })}
-                </AnimatePresence>
+                
               </tbody>
             </table>
           </div>
@@ -583,14 +563,11 @@ const AllBookingsPage = () => {
       <PageHeader title="All Bookings" subtitle="View and manage all bookings in the system" />
       <main className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50 dark:bg-black p-4 sm:p-6 transition-colors">
         <div className="max-w-7xl mx-auto">
-          <motion.div 
+          <div 
             className="bg-white dark:bg-[#0a0a0a] rounded-xl shadow-sm border border-slate-200 dark:border-[#1a1a1a] overflow-hidden"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
           >
             {renderContent()}
-          </motion.div>
+          </div>
         </div>
       </main>
     </div>

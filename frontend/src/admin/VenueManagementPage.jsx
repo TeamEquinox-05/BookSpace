@@ -1,12 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import api from '../utils/api';
+import { API_URL } from '../config/api-config';
 import { PageHeader } from '../components/shared';
 import { Plus, Edit, Trash2, MapPin, Users, Building2 } from 'lucide-react';
 import VenueModal from '../components/admin/VenueModal';
 import ConfirmationModal from '../components/shared/ConfirmationModal';
 import { TableSkeleton, Badge, EmptyState } from '../components/ui';
 import logger from '../utils/logger';
+
+const resolveImageUrl = (path) => {
+  if (!path) return '';
+  if (path.startsWith('http')) return path;
+  const base = API_URL.replace(/\/api\/?$/, '');
+  return `${base}${path}`;
+};
 
 export default function VenueManagementPage() {
   const [venues, setVenues] = useState([]);
@@ -84,6 +91,15 @@ export default function VenueManagementPage() {
     }
   };
 
+  if (loading) return (
+    <div className="flex-1 flex flex-col overflow-hidden">
+      <PageHeader title="Venue Management" subtitle="Manage your venues and spaces" />
+      <main className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50 dark:bg-black p-4 sm:p-6 transition-colors">
+        <TableSkeleton rows={5} cols={5} />
+      </main>
+    </div>
+  );
+
   if (error) return (
     <div className="flex-1 flex flex-col overflow-hidden">
       <PageHeader title="Venue Management" subtitle="Manage your venues and spaces" />
@@ -107,10 +123,8 @@ export default function VenueManagementPage() {
         <main className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50 dark:bg-black p-4 sm:p-6 transition-colors">
           <div className="max-w-7xl mx-auto">
             {/* Header */}
-            <motion.div 
+            <div 
               className="flex justify-between items-center mb-6"
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
             >
               <div>
                 <h2 className="text-2xl font-bold text-slate-900 dark:text-white">All Venues</h2>
@@ -120,23 +134,19 @@ export default function VenueManagementPage() {
                   </p>
                 )}
               </div>
-              <motion.button
+              <button
                 onClick={() => {
                   setSelectedVenue(null);
                   setIsModalOpen(true);
                 }}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
                 className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2 shadow-sm"
               >
                 <Plus size={20} />
                 Add New Venue
-              </motion.button>
-            </motion.div>
+              </button>
+            </div>
 
-            {loading ? (
-              <TableSkeleton rows={5} columns={5} />
-            ) : venues.length === 0 ? (
+            {!loading && venues.length === 0 ? (
               <EmptyState
                 icon={Building2}
                 title="No Venues Yet"
@@ -152,16 +162,14 @@ export default function VenueManagementPage() {
             ) : (
               <>
                 {/* Desktop Table View */}
-                <motion.div 
+                <div 
                   className="hidden md:block bg-white dark:bg-[#0a0a0a] rounded-xl shadow-sm border border-slate-200 dark:border-[#1a1a1a] overflow-hidden"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
                 >
                   <table className="min-w-full">
                     <thead>
                       <tr className="bg-slate-50 dark:bg-[#0a0a0a] border-b border-slate-200 dark:border-[#1a1a1a]">
                         <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                          Name
+                          Venue
                         </th>
                         <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                           Capacity
@@ -178,23 +186,27 @@ export default function VenueManagementPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
-                      <AnimatePresence>
                         {venues.map((venue, index) => (
-                          <motion.tr 
+                          <tr 
                             key={venue._id}
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            transition={{ delay: index * 0.03 }}
                             className={`
                               ${index % 2 === 0 ? 'bg-white dark:bg-black' : 'bg-slate-50/50 dark:bg-[#0a0a0a]'}
                               hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-colors
                             `}
                           >
                             <td className="px-6 py-4 whitespace-nowrap">
-                              <span className="text-sm font-medium text-slate-900 dark:text-white">
-                                {venue.name}
-                              </span>
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-lg bg-slate-200 dark:bg-[#1a1a1a] flex items-center justify-center overflow-hidden flex-shrink-0">
+                                  {venue.image ? (
+                                    <img src={resolveImageUrl(venue.image)} alt={venue.name} className="w-full h-full object-cover" />
+                                  ) : (
+                                    <Building2 size={18} className="text-slate-400 dark:text-zinc-500" />
+                                  )}
+                                </div>
+                                <span className="text-sm font-medium text-slate-900 dark:text-white">
+                                  {venue.name}
+                                </span>
+                              </div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
@@ -215,60 +227,41 @@ export default function VenueManagementPage() {
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-right">
                               <div className="flex items-center justify-end gap-2">
-                                <motion.button
+                                <button
                                   onClick={() => {
                                     setSelectedVenue(venue);
                                     setIsModalOpen(true);
                                   }}
-                                  whileHover={{ scale: 1.1 }}
-                                  whileTap={{ scale: 0.9 }}
                                   className="p-2 rounded-lg text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
                                   title="Edit venue"
                                 >
                                   <Edit size={18} />
-                                </motion.button>
-                                <motion.button
+                                </button>
+                                <button
                                   onClick={() => {
                                     setVenueToDelete(venue._id);
                                     setIsConfirmModalOpen(true);
                                   }}
-                                  whileHover={{ scale: 1.1 }}
-                                  whileTap={{ scale: 0.9 }}
                                   className="p-2 rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
                                   title="Delete venue"
                                 >
                                   <Trash2 size={18} />
-                                </motion.button>
+                                </button>
                               </div>
                             </td>
-                          </motion.tr>
+                          </tr>
                         ))}
-                      </AnimatePresence>
                     </tbody>
                   </table>
-                </motion.div>
+                </div>
 
                 {/* Mobile Card View */}
-                <motion.div 
+                <div 
                   className="md:hidden grid grid-cols-1 gap-4"
-                  initial="hidden"
-                  animate="visible"
-                  variants={{
-                    hidden: { opacity: 0 },
-                    visible: {
-                      opacity: 1,
-                      transition: { staggerChildren: 0.05 }
-                    }
-                  }}
                 >
-                  <AnimatePresence>
                     {venues.map((venue) => (
-                      <motion.div
+                      <div
                         key={venue._id}
-                        layout
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.95 }}
                         className="bg-white dark:bg-[#0a0a0a] rounded-xl shadow-sm border border-slate-200 dark:border-[#1a1a1a] overflow-hidden"
                       >
                         <div className={`h-1 ${venue.status === 'active' ? 'bg-green-500' : 'bg-slate-300'}`} />
@@ -278,26 +271,24 @@ export default function VenueManagementPage() {
                               {venue.name}
                             </h3>
                             <div className="flex gap-1">
-                              <motion.button
+                              <button
                                 onClick={() => {
                                   setSelectedVenue(venue);
                                   setIsModalOpen(true);
                                 }}
-                                whileTap={{ scale: 0.95 }}
                                 className="p-2 rounded-lg text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30"
                               >
                                 <Edit size={18} />
-                              </motion.button>
-                              <motion.button
+                              </button>
+                              <button
                                 onClick={() => {
                                   setVenueToDelete(venue._id);
                                   setIsConfirmModalOpen(true);
                                 }}
-                                whileTap={{ scale: 0.95 }}
                                 className="p-2 rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30"
                               >
                                 <Trash2 size={18} />
-                              </motion.button>
+                              </button>
                             </div>
                           </div>
                           <div className="space-y-2 text-sm text-slate-600 dark:text-slate-400">
@@ -316,10 +307,9 @@ export default function VenueManagementPage() {
                             </Badge>
                           </div>
                         </div>
-                      </motion.div>
+                      </div>
                     ))}
-                  </AnimatePresence>
-                </motion.div>
+                </div>
               </>
             )}
           </div>

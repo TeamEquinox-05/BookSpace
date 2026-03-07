@@ -7,7 +7,7 @@ import { PageHeader } from '../components/shared';
 import { AdminStatsGrid } from '../components/admin';
 import AvailablePlacesGrid from '../components/shared/AvailablePlacesGrid';
 import CardGridSkeleton from '../components/ui/CardGridSkeleton';
-import { Spinner } from '../components/ui';
+
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -99,7 +99,9 @@ export default function AdminDashboardPage() {
       <div className="flex-1 flex flex-col overflow-hidden">
         <PageHeader title="Admin Dashboard" />
         <main className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50 dark:bg-black p-4 sm:p-6 transition-colors">
-          {error ? (
+          {loading ? (
+            <CardGridSkeleton count={8} />
+          ) : error ? (
             <div className="text-center text-red-500">{error}</div>
           ) : (
             <>

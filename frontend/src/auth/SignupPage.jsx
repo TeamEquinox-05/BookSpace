@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { User, Mail, Lock, Phone, Briefcase, Eye, EyeOff } from 'lucide-react';
+import { User, Mail, Lock, Phone, Eye, EyeOff } from 'lucide-react';
 import api from '../utils/api';
-import { Spinner } from '../components/ui';
+
 import logger from '../utils/logger';
 
 const SignupPage = ({ onSignupSuccess: _onSignupSuccess }) => {
@@ -201,16 +201,21 @@ const SignupPage = ({ onSignupSuccess: _onSignupSuccess }) => {
     <div className="min-h-screen bg-slate-50 dark:bg-black text-slate-800 dark:text-slate-200 flex items-center justify-center p-4 transition-colors">
       <div className="w-full max-w-4xl bg-white dark:bg-[#0a0a0a] rounded-2xl shadow-lg flex overflow-hidden">
         {/* Left Side: Branding */}
-        <div className="hidden md:flex flex-col justify-center items-center w-1/2 bg-blue-800 text-white p-12">
-          <div className="w-32 h-32 mb-6 bg-white rounded-2xl flex items-center justify-center p-4 shadow-xl">
-            <img 
-              src="/cropped-NEW-PCCE-LOGO.png" 
-              alt="PCCE Logo" 
-              className="w-full h-full object-contain"
-            />
+        <div className="hidden md:flex flex-col justify-center items-center w-1/2 bg-blue-600 text-white p-12 relative overflow-hidden">
+          <div className="absolute inset-0 bg-blue-500/10"></div>
+          <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full -translate-y-20 translate-x-20"></div>
+          <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/5 rounded-full translate-y-16 -translate-x-16"></div>
+          <div className="relative z-10 text-center">
+            <div className="w-20 h-20 mx-auto mb-6 bg-white rounded-2xl flex items-center justify-center p-3 shadow-lg">
+              <img 
+                src="/cropped-NEW-PCCE-LOGO.png" 
+                alt="PCCE Logo" 
+                className="w-full h-full object-contain"
+              />
+            </div>
+            <h1 className="text-3xl font-bold mb-2">PCCE BookSpace</h1>
+            <p className="text-blue-100 text-base leading-relaxed">Create an account to start booking<br />venues at PCCE.</p>
           </div>
-          <h1 className="text-4xl font-bold mb-3">Join PCCE BookSpace</h1>
-          <p className="text-center text-blue-100">Start booking venues at Padre Conceição College of Engineering.</p>
         </div>
 
         {/* Right Side: Form */}
@@ -254,13 +259,6 @@ const SignupPage = ({ onSignupSuccess: _onSignupSuccess }) => {
                     <div className="relative">
                       <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
                       <input type="text" name="phone" value={phone} onChange={onChange} placeholder="Phone Number (Optional)" className="w-full pl-10 pr-3 py-3 bg-slate-100 dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#2a2a2a] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
-                    </div>
-                    <div className="relative">
-                      <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-                      <select name="role" value={role} onChange={onChange} className="w-full pl-10 pr-3 py-3 bg-slate-100 dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#2a2a2a] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition appearance-none">
-                        <option value="user">User</option>
-                        {/* Admin role removed from public signup */}
-                      </select>
                     </div>
                   </>
                 ) : (
@@ -314,9 +312,9 @@ const SignupPage = ({ onSignupSuccess: _onSignupSuccess }) => {
                     className="w-full px-4 py-3 text-white bg-blue-600 rounded-lg font-semibold hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-slate-800 transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
                   >
                     {sendingOtp ? (
-                      <span className="flex items-center justify-center">
-                        <Spinner centered={false} size="sm" color="white" />
-                        <span className="ml-2">Sending OTP...</span>
+                      <span className="flex items-center justify-center gap-2">
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        <span>Sending OTP...</span>
                       </span>
                     ) : 'Send OTP & Continue'}
                   </button>
@@ -328,9 +326,9 @@ const SignupPage = ({ onSignupSuccess: _onSignupSuccess }) => {
                       className="w-full px-4 py-3 text-white bg-green-600 rounded-lg font-semibold hover:bg-green-700 disabled:bg-green-400 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 dark:focus:ring-offset-slate-800 transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
                     >
                       {loading ? (
-                        <span className="flex items-center justify-center">
-                          <Spinner centered={false} size="sm" color="white" />
-                          <span className="ml-2">Creating Account...</span>
+                        <span className="flex items-center justify-center gap-2">
+                          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          <span>Creating Account...</span>
                         </span>
                       ) : 'Create Account'}
                     </button>

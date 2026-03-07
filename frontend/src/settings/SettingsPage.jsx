@@ -1,19 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import api from '../utils/api';
 import logger from '../utils/logger';
 import { PageHeader } from '../components/shared';
-import FormSkeleton from '../components/ui/FormSkeleton';
-import { Spinner } from '../components/ui';
+import { FormSkeleton } from '../components/ui';
 import { useTheme } from '../context/ThemeContext';
 import { User, Mail, Phone, Shield, Lock, Sun, Moon, Monitor, Save, Eye, EyeOff, Check } from 'lucide-react';
 
 const SettingsSection = ({ icon: Icon, title, description, children, delay = 0 }) => (
-  <motion.div 
+  <div 
     className="bg-white dark:bg-[#0a0a0a] rounded-2xl shadow-sm border border-slate-200 dark:border-[#1a1a1a] overflow-hidden"
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ duration: 0.4, delay }}
   >
     <div className="px-6 py-4 border-b border-slate-200 dark:border-[#1a1a1a] bg-slate-50 dark:bg-[#0a0a0a]">
       <div className="flex items-center gap-3">
@@ -29,11 +24,11 @@ const SettingsSection = ({ icon: Icon, title, description, children, delay = 0 }
       </div>
     </div>
     <div className="p-6">{children}</div>
-  </motion.div>
+  </div>
 );
 
 const ThemeOption = ({ icon: Icon, label, value, selected, onChange }) => (
-  <motion.button
+  <button
     type="button"
     onClick={() => onChange(value)}
     className={`relative flex flex-col items-center gap-2 p-5 rounded-xl border-2 transition-all ${
@@ -41,38 +36,27 @@ const ThemeOption = ({ icon: Icon, label, value, selected, onChange }) => (
         ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-md' 
         : 'border-slate-200 dark:border-[#1a1a1a] hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-sm'
     }`}
-    whileHover={{ scale: 1.03, y: -2 }}
-    whileTap={{ scale: 0.97 }}
   >
     {selected && (
-      <motion.div
-        initial={{ scale: 0, rotate: -180 }}
-        animate={{ scale: 1, rotate: 0 }}
-        transition={{ type: "spring", stiffness: 200, damping: 15 }}
+      <div
         className="absolute top-2 right-2 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center shadow-lg"
       >
         <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />
-      </motion.div>
+      </div>
     )}
-    <motion.div 
+    <div 
       className={`p-3 rounded-xl transition-colors ${
         selected 
           ? 'bg-blue-500 dark:bg-blue-600' 
           : 'bg-slate-100 dark:bg-[#1a1a1a]'
       }`}
-      animate={{ 
-        backgroundColor: selected 
-          ? ['#3b82f6', '#2563eb', '#3b82f6'] 
-          : undefined 
-      }}
-      transition={{ duration: 2, repeat: selected ? Infinity : 0 }}
     >
       <Icon className={`w-6 h-6 transition-colors ${
         selected 
           ? 'text-white' 
           : 'text-slate-500 dark:text-slate-400'
       }`} />
-    </motion.div>
+    </div>
     <span className={`text-sm font-medium transition-colors ${
       selected 
         ? 'text-blue-600 dark:text-blue-400' 
@@ -80,7 +64,7 @@ const ThemeOption = ({ icon: Icon, label, value, selected, onChange }) => (
     }`}>
       {label}
     </span>
-  </motion.button>
+  </button>
 );
 
 const InputField = ({ icon: Icon, label, type = 'text', value, onChange, disabled = false, placeholder }) => {
@@ -180,11 +164,14 @@ export default function SettingsPage() {
     setSuccess(null);
     
     try {
-      // Add your API call here
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulated delay
+      const res = await api.put('/users/me', {
+        name: formData.name,
+        phone: formData.phone
+      });
+      setUser(res.data);
       setSuccess('Profile updated successfully!');
     } catch (err) {
-      setError('Failed to update profile. Please try again.');
+      setError(err.response?.data?.msg || 'Failed to update profile. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -206,8 +193,10 @@ export default function SettingsPage() {
     setSuccess(null);
     
     try {
-      // Add your API call here
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulated delay
+      await api.put('/users/me/password', {
+        currentPassword: formData.currentPassword,
+        newPassword: formData.newPassword
+      });
       setSuccess('Password changed successfully!');
       setFormData(prev => ({ 
         ...prev, 
@@ -216,7 +205,7 @@ export default function SettingsPage() {
         confirmPassword: '' 
       }));
     } catch (err) {
-      setError('Failed to change password. Please check your current password.');
+      setError(err.response?.data?.msg || 'Failed to change password. Please check your current password.');
     } finally {
       setSaving(false);
     }
@@ -244,7 +233,9 @@ export default function SettingsPage() {
       <PageHeader title="Settings" />
       <main className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50 dark:bg-black p-4 sm:p-6 transition-colors">
         <div className="max-w-4xl mx-auto space-y-6">
-          {!user ? (
+          {loading ? (
+            <FormSkeleton />
+          ) : !user ? (
             <div className="text-center py-12">
               <p className="text-slate-500 dark:text-slate-400">No user data found.</p>
             </div>
@@ -252,10 +243,7 @@ export default function SettingsPage() {
             <>
               {/* Success/Error Messages */}
               {(success || error) && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
+                <div
                   className={`p-4 rounded-xl flex items-center gap-3 ${
                     success 
                       ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400'
@@ -272,7 +260,7 @@ export default function SettingsPage() {
                     </div>
                   )}
                   <span className="font-medium flex-1">{success || error}</span>
-                </motion.div>
+                </div>
               )}
 
               {/* Appearance Section */}
@@ -345,16 +333,14 @@ export default function SettingsPage() {
                     />
                   </div>
                   <div className="flex justify-end pt-2">
-                    <motion.button
+                    <button
                       onClick={handleUpdateProfile}
                       disabled={saving}
                       className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
                     >
                       {saving ? (
                         <>
-                          <Spinner size="sm" />
+                          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                           <span>Saving...</span>
                         </>
                       ) : (
@@ -363,7 +349,7 @@ export default function SettingsPage() {
                           <span>Update Profile</span>
                         </>
                       )}
-                    </motion.button>
+                    </button>
                   </div>
                 </div>
               </SettingsSection>
@@ -403,16 +389,14 @@ export default function SettingsPage() {
                     />
                   </div>
                   <div className="flex justify-end pt-2">
-                    <motion.button
+                    <button
                       onClick={handleChangePassword}
                       disabled={saving || !formData.currentPassword || !formData.newPassword || !formData.confirmPassword}
                       className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
                     >
                       {saving ? (
                         <>
-                          <Spinner size="sm" />
+                          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                           <span>Changing...</span>
                         </>
                       ) : (
@@ -421,7 +405,7 @@ export default function SettingsPage() {
                           <span>Change Password</span>
                         </>
                       )}
-                    </motion.button>
+                    </button>
                   </div>
                 </div>
               </SettingsSection>

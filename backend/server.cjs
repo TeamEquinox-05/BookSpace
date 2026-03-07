@@ -71,6 +71,9 @@ app.use((req, res, next) => {
   next();
 });
 
+// Serve uploaded files statically
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 // Health check endpoint with database connectivity verification
 app.get('/api/health', async (req, res) => {
   try {

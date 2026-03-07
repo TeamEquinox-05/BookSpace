@@ -1,5 +1,4 @@
 import React from 'react';
-import { motion } from 'framer-motion';
 import { Inbox } from 'lucide-react';
 import Button from './Button';
 
@@ -52,11 +51,8 @@ const EmptyState = ({
   const styles = sizeStyles[size];
 
   return (
-    <motion.div
+    <div
       className={`flex flex-col items-center justify-center text-center ${styles.container} ${className}`}
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.3 }}
     >
       <div className={`inline-flex items-center justify-center ${styles.iconWrapper} bg-slate-100 dark:bg-[#1a1a1a] rounded-2xl mb-4`}>
         <Icon className={`${styles.icon} text-slate-400 dark:text-zinc-500`} />
@@ -80,7 +76,7 @@ const EmptyState = ({
           {actionLabel}
         </Button>
       )}
-    </motion.div>
+    </div>
   );
 };
 

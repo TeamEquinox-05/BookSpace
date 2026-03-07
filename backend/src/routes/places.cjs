@@ -2,11 +2,40 @@ const express = require('express');
 const { body, validationResult } = require('express-validator');
 const router = express.Router();
 const mongoose = require('mongoose');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 const Place = require('../models/Place.cjs');
 const Booking = require('../models/Booking.cjs');
 const auth = require('../middleware/auth.cjs');
 const verifyRole = require('../middleware/verifyRole.cjs');
 const logger = require('../utils/logger.cjs');
+
+// --- Multer setup for venue image uploads ---
+const uploadDir = path.join(__dirname, '..', '..', 'uploads', 'venue');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+  destination: (_req, _file, cb) => cb(null, uploadDir),
+  filename: (_req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+    const ext = path.extname(file.originalname);
+    cb(null, `venue-${uniqueSuffix}${ext}`);
+  }
+});
+
+const fileFilter = (_req, file, cb) => {
+  const allowed = /jpeg|jpg|png|gif|webp/;
+  if (allowed.test(file.mimetype) && allowed.test(path.extname(file.originalname).toLowerCase().slice(1))) {
+    cb(null, true);
+  } else {
+    cb(new Error('Only image files (jpg, png, gif, webp) are allowed'), false);
+  }
+};
+
+const upload = multer({ storage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } }); // 5 MB max
 
 // Middleware to validate MongoDB ObjectId
 const validateObjectId = (req, res, next) => {
@@ -15,6 +44,29 @@ const validateObjectId = (req, res, next) => {
   }
   next();
 };
+
+// @route   POST api/places/upload-image
+// @desc    Upload a venue image
+// @access  Private/Admin
+router.post('/upload-image', auth, verifyRole('admin'), (req, res) => {
+  upload.single('image')(req, res, (err) => {
+    if (err instanceof multer.MulterError) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ msg: 'File too large. Maximum size is 5 MB.' });
+      }
+      return res.status(400).json({ msg: err.message });
+    }
+    if (err) {
+      return res.status(400).json({ msg: err.message });
+    }
+    if (!req.file) {
+      return res.status(400).json({ msg: 'No image file provided' });
+    }
+    // Return the path relative to the server so the frontend can use it
+    const imageUrl = `/uploads/venue/${req.file.filename}`;
+    res.json({ imageUrl });
+  });
+});
 
 // @route   POST api/places
 // @desc    Create a new place

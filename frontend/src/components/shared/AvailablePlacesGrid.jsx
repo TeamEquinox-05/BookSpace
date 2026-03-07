@@ -2,6 +2,15 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 // FIX: Added 'Building' to the import list
 import { Users, MapPin, Building } from 'lucide-react';
+import { API_URL } from '../../config/api-config';
+
+// Resolve a venue image path to a full URL
+const resolveImageUrl = (image) => {
+  if (!image) return '';
+  if (image.startsWith('http://') || image.startsWith('https://')) return image;
+  const baseUrl = API_URL.replace(/\/api\/?$/, '');
+  return `${baseUrl}${image}`;
+};
 
 const AvailablePlacesGrid = ({ places, role }) => {
   if (!places || places.length === 0) {
@@ -22,9 +31,18 @@ const AvailablePlacesGrid = ({ places, role }) => {
             key={place._id} 
             className="group bg-white dark:bg-[#0a0a0a] rounded-2xl shadow-sm overflow-hidden hover:shadow-md hover:-translate-y-1 transition-all border border-slate-200 dark:border-[#1a1a1a]"
           >
-            <div className="h-40 bg-slate-200 dark:bg-[#1a1a1a] flex items-center justify-center">
-              {/* Replace with <img /> when available */}
-              <Building size={48} className="text-slate-400 dark:text-zinc-500" />
+            <div className="h-40 bg-slate-200 dark:bg-[#1a1a1a] flex items-center justify-center overflow-hidden">
+              {place.image ? (
+                <img
+                  src={resolveImageUrl(place.image)}
+                  alt={place.name}
+                  className="w-full h-full object-cover"
+                  onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
+                />
+              ) : null}
+              <div className={`items-center justify-center ${place.image ? 'hidden' : 'flex'} w-full h-full`}>
+                <Building size={48} className="text-slate-400 dark:text-zinc-500" />
+              </div>
             </div>
             <div className="p-5">
               <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{place.name}</h3>

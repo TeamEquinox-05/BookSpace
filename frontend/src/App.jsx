@@ -1,7 +1,6 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext.jsx';
-import { PageLoader } from './components/ui';
 
 import PrivateRoute from './components/shared/PrivateRoute.jsx';
 import Layout from './components/shared/Layout.jsx';
@@ -25,11 +24,7 @@ function App() {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-black flex justify-center items-center">
-        <PageLoader />
-      </div>
-    );
+    return null;
   }
 
   return (

@@ -1,15 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { X, AlertCircle, CheckCircle, Info } from 'lucide-react';
-import { AnimatePresence, motion } from 'framer-motion';
 
 export const Toast = ({ message, type = 'info', duration = 5000, onClose }) => {
-  const [visible, setVisible] = useState(true);
+  const [visible, setVisible] = useState(false);
+
+  // Trigger slide-down on mount
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setVisible(true));
+    return () => cancelAnimationFrame(frame);
+  }, []);
 
   useEffect(() => {
     if (duration !== Infinity) {
       const timer = setTimeout(() => {
         setVisible(false);
-        setTimeout(() => onClose && onClose(), 300); // Wait for animation to finish
+        setTimeout(() => onClose && onClose(), 300);
       }, duration);
       
       return () => clearTimeout(timer);
@@ -52,61 +57,46 @@ export const Toast = ({ message, type = 'info', duration = 5000, onClose }) => {
 
   const handleClose = () => {
     setVisible(false);
-    setTimeout(() => onClose && onClose(), 300); // Wait for animation to finish
+    setTimeout(() => onClose && onClose(), 300);
   };
 
   return (
-    <AnimatePresence>
-      {visible && (
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-          transition={{ duration: 0.2 }}
-          className={`rounded-lg shadow-lg border p-4 flex items-start ${getBgColor()}`}
-        >
-          <div className="flex-shrink-0 mt-0.5">
-            {getIcon()}
-          </div>
-          <div className={`ml-3 flex-1 ${getTextColor()}`}>
-            <p className="text-sm font-medium">{message}</p>
-          </div>
-          <button
-            type="button"
-            className={`ml-auto flex-shrink-0 -mr-1 -mt-1 p-1 rounded-full ${getTextColor()} opacity-60 hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-${type}-500`}
-            onClick={handleClose}
-          >
-            <X size={16} />
-          </button>
-        </motion.div>
-      )}
-    </AnimatePresence>
+    <div
+      className={`rounded-lg shadow-lg border p-4 flex items-start transition-all duration-300 ease-out ${getBgColor()} ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-5'}`}
+    >
+      <div className="flex-shrink-0 mt-0.5">
+        {getIcon()}
+      </div>
+      <div className={`ml-3 flex-1 ${getTextColor()}`}>
+        <p className="text-sm font-medium">{message}</p>
+      </div>
+      <button
+        type="button"
+        className={`ml-auto flex-shrink-0 -mr-1 -mt-1 p-1 rounded-full ${getTextColor()} opacity-60 hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-${type}-500`}
+        onClick={handleClose}
+      >
+        <X size={16} />
+      </button>
+    </div>
   );
 };
 
 export const ToastContainer = ({ toasts, removeToast }) => {
   return (
     <div className="fixed top-4 right-4 z-50 w-72 space-y-3 pointer-events-none">
-      <AnimatePresence>
-        {toasts.map(toast => (
-          <motion.div
-            key={toast.id}
-            layout
-            className="pointer-events-auto"
-            initial={{ opacity: 0, y: -20, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -20, scale: 0.95 }}
-            transition={{ duration: 0.2 }}
-          >
-            <Toast
-              message={toast.message}
-              type={toast.type}
-              duration={toast.duration}
-              onClose={() => removeToast(toast.id)}
-            />
-          </motion.div>
-        ))}
-      </AnimatePresence>
+      {toasts.map(toast => (
+        <div
+          key={toast.id}
+          className="pointer-events-auto"
+        >
+          <Toast
+            message={toast.message}
+            type={toast.type}
+            duration={toast.duration}
+            onClose={() => removeToast(toast.id)}
+          />
+        </div>
+      ))}
     </div>
   );
 };

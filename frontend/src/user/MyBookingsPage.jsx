@@ -1,11 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import api from '../utils/api';
 import logger from '../utils/logger';
 import { PageHeader } from '../components/shared';
 import BookingModal from '../components/shared/BookingModal';
 import ConfirmationModal from '../components/shared/ConfirmationModal';
+import { CardGridSkeleton } from '../components/ui';
 import { Calendar, Clock, MapPin, Package, Pencil, Trash2, CheckCircle2, XCircle, Timer, CalendarX } from 'lucide-react';
 
 const STATUS_CONFIG = {
@@ -26,9 +26,7 @@ const BookingCard = ({ booking, onEdit, onDelete }) => {
   const endTime = endDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
+    <div
       className="bg-white dark:bg-[#0a0a0a] rounded-2xl border border-slate-200 dark:border-[#1a1a1a] overflow-hidden shadow-sm flex flex-col"
     >
       {/* Gradient top accent */}
@@ -104,7 +102,7 @@ const BookingCard = ({ booking, onEdit, onDelete }) => {
           </div>
         </>
       )}
-    </motion.div>
+    </div>
   );
 };
 
@@ -170,7 +168,9 @@ const MyBookingsPage = () => {
         <PageHeader title="My Bookings" subtitle="Track and manage your venue reservations" />
         <main className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50 dark:bg-black p-4 sm:p-6 transition-colors">
           <div className="max-w-6xl mx-auto">
-            {bookings.length === 0 ? (
+            {loading ? (
+              <CardGridSkeleton count={6} />
+            ) : bookings.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-24 text-center">
                 <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-[#1a1a1a] flex items-center justify-center mb-4">
                   <CalendarX className="w-7 h-7 text-slate-400 dark:text-zinc-600" />

@@ -19,43 +19,31 @@ const AdminStatsGrid = ({ stats }) => {
         icon={MapPin} 
         title="Total Venues" 
         value={safeStats.totalPlaces.value} 
-        lightColor="bg-blue-500" 
-        darkColor="dark:bg-blue-600" 
       />
       <StatCard 
         icon={CheckCircle} 
         title="Active Bookings" 
         value={safeStats.activeBookings.value} 
-        lightColor="bg-green-500" 
-        darkColor="dark:bg-green-600" 
       />
       <StatCard 
         icon={Clock} 
         title="Pending Approvals" 
         value={safeStats.pendingApprovals.value} 
-        lightColor="bg-yellow-500" 
-        darkColor="dark:bg-yellow-600" 
       />
       <StatCard 
         icon={Calendar} 
         title="Today's Bookings" 
         value={safeStats.todayBookings.value} 
-        lightColor="bg-purple-500" 
-        darkColor="dark:bg-purple-600" 
       />
       <StatCard 
         icon={FileText} 
         title="Total Bookings" 
         value={safeStats.totalBookings.value} 
-        lightColor="bg-indigo-500" 
-        darkColor="dark:bg-indigo-600"
       />
       <StatCard 
         icon={XCircle} 
         title="Rejected Bookings" 
         value={safeStats.rejectedBookings.value} 
-        lightColor="bg-red-500" 
-        darkColor="dark:bg-red-600" 
       />
     </div>
   );

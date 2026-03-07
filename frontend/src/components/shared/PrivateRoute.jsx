@@ -1,7 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { Spinner } from '../ui';
 import logger from '../../utils/logger';
 
 const PrivateRoute = ({ adminOnly }) => {
@@ -24,7 +23,7 @@ const PrivateRoute = ({ adminOnly }) => {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-full min-h-[50vh]">
-        <Spinner size="lg" color="blue" />
+        <div className="w-12 h-12 border-4 border-blue-600/20 border-t-blue-600 dark:border-blue-400/20 dark:border-t-blue-400 rounded-full animate-spin" />
       </div>
     );
   }

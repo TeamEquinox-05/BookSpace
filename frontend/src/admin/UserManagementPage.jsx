@@ -1,20 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import api from '../utils/api';
 import { PageHeader, ConfirmationModal } from '../components/shared';
 import { Check, X, Trash2, Search, Filter, User as UserIcon, ChevronLeft, ChevronRight, Users } from 'lucide-react';
-import { Spinner, Badge, EmptyState } from '../components/ui';
+import { Badge, EmptyState } from '../components/ui';
 import logger from '../utils/logger';
 
 const UserCard = ({ user, onApprove, onReject, onRemove }) => {
   return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.95 }}
-      whileHover={{ y: -4, boxShadow: '0 10px 40px -10px rgba(0,0,0,0.1)' }}
-      className="bg-white dark:bg-[#0a0a0a] rounded-xl shadow-sm border border-slate-200 dark:border-[#1a1a1a] overflow-hidden transition-shadow"
+    <div
+      className="bg-white dark:bg-[#0a0a0a] rounded-xl shadow-sm border border-slate-200 dark:border-[#1a1a1a] overflow-hidden transition-shadow hover:shadow-md"
     >
       {/* Status bar at top */}
       <div className={`h-1 ${
@@ -57,38 +51,32 @@ const UserCard = ({ user, onApprove, onReject, onRemove }) => {
         <div className="mt-4 pt-4 border-t border-slate-100 dark:border-[#1a1a1a] flex items-center justify-end gap-2">
           {user.status === 'pending' && (
             <>
-              <motion.button
+              <button
                 onClick={() => onApprove(user)}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
                 className="p-2 rounded-lg text-green-600 bg-green-50 dark:bg-green-900/30 hover:bg-green-100 dark:hover:bg-green-900/50 transition-colors"
                 title="Approve user"
               >
                 <Check size={18} />
-              </motion.button>
-              <motion.button
+              </button>
+              <button
                 onClick={() => onReject(user)}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
                 className="p-2 rounded-lg text-red-600 bg-red-50 dark:bg-red-900/30 hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors"
                 title="Reject user"
               >
                 <X size={18} />
-              </motion.button>
+              </button>
             </>
           )}
-          <motion.button
+          <button
             onClick={() => onRemove(user)}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
             className="p-2 rounded-lg text-slate-500 bg-slate-50 dark:bg-[#1a1a1a] hover:bg-slate-100 dark:hover:bg-[#2a2a2a] transition-colors"
             title="Remove user"
           >
             <Trash2 size={18} />
-          </motion.button>
+          </button>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 };
 
@@ -172,10 +160,8 @@ export default function UserManagementPage() {
         <main className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50 dark:bg-black p-4 sm:p-6 transition-colors">
           <div className="max-w-7xl mx-auto">
             {/* Filters */}
-            <motion.div 
+            <div 
               className="bg-white dark:bg-[#0a0a0a] rounded-xl shadow-sm border border-slate-200 dark:border-[#1a1a1a] p-4 mb-6"
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
             >
               <div className="flex flex-col md:flex-row justify-between items-center gap-4">
                 <div className="relative w-full md:w-1/3">
@@ -202,10 +188,28 @@ export default function UserManagementPage() {
                   </select>
                 </div>
               </div>
-            </motion.div>
+            </div>
 
             {/* Content */}
-            {error ? (
+            {loading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="bg-white dark:bg-[#0a0a0a] rounded-xl border border-slate-200 dark:border-[#1a1a1a] p-5 animate-pulse">
+                    <div className="flex items-start gap-4">
+                      <div className="h-12 w-12 rounded-xl bg-slate-200 dark:bg-[#1a1a1a]" />
+                      <div className="flex-1 space-y-2">
+                        <div className="h-4 bg-slate-200 dark:bg-[#1a1a1a] rounded w-3/4" />
+                        <div className="h-3 bg-slate-200 dark:bg-[#1a1a1a] rounded w-1/2" />
+                        <div className="flex gap-2 mt-2">
+                          <div className="h-5 w-14 bg-slate-200 dark:bg-[#1a1a1a] rounded-full" />
+                          <div className="h-5 w-14 bg-slate-200 dark:bg-[#1a1a1a] rounded-full" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : error ? (
               <EmptyState
                 icon={UserIcon}
                 title="Error Loading Users"
@@ -222,19 +226,9 @@ export default function UserManagementPage() {
                 size="lg"
               />
             ) : (
-              <motion.div 
+              <div 
                 className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"
-                initial="hidden"
-                animate="visible"
-                variants={{
-                  hidden: { opacity: 0 },
-                  visible: {
-                    opacity: 1,
-                    transition: { staggerChildren: 0.05 }
-                  }
-                }}
               >
-                <AnimatePresence>
                   {users.map((user) => (
                     <UserCard
                       key={user._id}
@@ -244,44 +238,36 @@ export default function UserManagementPage() {
                       onRemove={(u) => openConfirmation(u, 'remove')}
                     />
                   ))}
-                </AnimatePresence>
-              </motion.div>
+              </div>
             )}
 
             {/* Pagination */}
             {!loading && !error && users.length > 0 && (
-              <motion.div 
+              <div 
                 className="mt-8 flex justify-center"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.2 }}
               >
                 <div className="inline-flex items-center gap-1 bg-white dark:bg-[#0a0a0a] rounded-lg shadow-sm border border-slate-200 dark:border-[#1a1a1a] p-1">
-                  <motion.button
+                  <button
                     onClick={() => setCurrentPage(currentPage - 1)}
                     disabled={currentPage === 1}
-                    whileHover={{ scale: currentPage === 1 ? 1 : 1.05 }}
-                    whileTap={{ scale: currentPage === 1 ? 1 : 0.95 }}
                     className="flex items-center gap-1 px-3 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <ChevronLeft className="w-4 h-4" />
                     Previous
-                  </motion.button>
+                  </button>
                   <span className="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 border-x border-slate-200 dark:border-[#1a1a1a]">
                     Page {currentPage} of {totalPages}
                   </span>
-                  <motion.button
+                  <button
                     onClick={() => setCurrentPage(currentPage + 1)}
                     disabled={currentPage === totalPages}
-                    whileHover={{ scale: currentPage === totalPages ? 1 : 1.05 }}
-                    whileTap={{ scale: currentPage === totalPages ? 1 : 0.95 }}
                     className="flex items-center gap-1 px-3 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Next
                     <ChevronRight className="w-4 h-4" />
-                  </motion.button>
+                  </button>
                 </div>
-              </motion.div>
+              </div>
             )}
           </div>
         </main>
