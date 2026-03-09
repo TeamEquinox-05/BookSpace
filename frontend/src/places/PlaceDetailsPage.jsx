@@ -12,14 +12,14 @@ import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, Users, MapP
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import '../styles/custom-calendar.css'; // Custom styles for calendar
 
-import { API_URL } from '../config/api-config';
+import { API_URL, getBackendBaseUrl } from '../config/api-config';
 
 const localizer = momentLocalizer(moment);
 
 const resolveImageUrl = (path) => {
   if (!path) return '';
   if (path.startsWith('http')) return path;
-  const base = API_URL.replace(/\/api\/?$/, '');
+  const base = getBackendBaseUrl();
   return `${base}${path}`;
 };
 
@@ -35,17 +35,23 @@ export default function PlaceDetailsPage() {
   const [error, setError] = useState(null);
   const [isBookingModalOpen, setBookingModalOpen] = useState(false);
   const [date, setDate] = useState(() => {
-    const savedDate = localStorage.getItem('calendarDate');
+    const key = user ? `calendarDate_${user._id || user.id}` : 'calendarDate';
+    const savedDate = localStorage.getItem(key);
     return savedDate ? new Date(savedDate) : new Date();
   });
-  const [view, setView] = useState(() => localStorage.getItem('calendarView') || 'month');
+  const [view, setView] = useState(() => {
+    const key = user ? `calendarView_${user._id || user.id}` : 'calendarView';
+    return localStorage.getItem(key) || 'month';
+  });
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [isEventDetailsOpen, setIsEventDetailsOpen] = useState(false);
 
   useEffect(() => {
-    localStorage.setItem('calendarView', view);
-    localStorage.setItem('calendarDate', date.toISOString());
-  }, [view, date]);
+    const viewKey = user ? `calendarView_${user._id || user.id}` : 'calendarView';
+    const dateKey = user ? `calendarDate_${user._id || user.id}` : 'calendarDate';
+    localStorage.setItem(viewKey, view);
+    localStorage.setItem(dateKey, date.toISOString());
+  }, [view, date, user]);
 
   useEffect(() => {
     const fetchPlaceDetails = async () => {
@@ -116,12 +122,14 @@ export default function PlaceDetailsPage() {
     }
     
     setDate(targetDate);
-    localStorage.setItem('calendarDate', targetDate.toISOString());
+    const dateKey = user ? `calendarDate_${user._id || user.id}` : 'calendarDate';
+    localStorage.setItem(dateKey, targetDate.toISOString());
   };
 
   const handleViewChange = (newView) => {
     setView(newView);
-    localStorage.setItem('calendarView', newView);
+    const viewKey = user ? `calendarView_${user._id || user.id}` : 'calendarView';
+    localStorage.setItem(viewKey, newView);
   };
 
   const handleEventClick = (event) => {
@@ -697,7 +705,7 @@ export default function PlaceDetailsPage() {
                       {selectedEvent.userId?.name || 'Unknown User'}
                     </span>
                   </div>
-                  {user?.role === 'admin' && (
+                  {(user?.role === 'admin' || user?.role === 'superadmin') && (
                     <>
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-gray-500 dark:text-gray-400">Email</span>

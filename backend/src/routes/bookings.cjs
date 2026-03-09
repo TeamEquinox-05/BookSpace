@@ -49,14 +49,32 @@ router.post('/check-availability', [
       return res.status(400).json({ msg: 'End time must be after start time' });
     }
 
+    // BUG-018: Validate booking is not in the past
+    if (newEventStartTime <= new Date()) {
+      return res.status(400).json({ msg: 'Booking start time must be in the future' });
+    }
+
+    // BUG-019: Validate booking is within 90 days
+    const maxDate = new Date();
+    maxDate.setDate(maxDate.getDate() + 90);
+    if (newEventStartTime > maxDate) {
+      return res.status(400).json({ msg: 'Bookings cannot be made more than 90 days in advance' });
+    }
+
+    // BUG-016: Add 30-minute buffer around the requested time
+    const bufferMs = 30 * 60 * 1000; // 30 minutes
+    const bufferedStart = new Date(newEventStartTime.getTime() - bufferMs);
+    const bufferedEnd = new Date(newEventEndTime.getTime() + bufferMs);
+
+    // BUG-017: Include both approved AND pending bookings in overlap check
     const overlappingBookings = await Booking.find({
       placeId,
-      status: 'approved',
+      status: { $in: ['approved', 'pending'] },
       $or: [
-        { eventStartTime: { $lt: newEventEndTime, $gte: newEventStartTime } },
-        { eventEndTime: { $lte: newEventEndTime, $gt: newEventStartTime } },
-        { eventStartTime: { $lte: newEventStartTime }, eventEndTime: { $gte: newEventEndTime } },
-        { eventStartTime: { $gte: newEventStartTime }, eventEndTime: { $lte: newEventEndTime } }
+        { eventStartTime: { $lt: bufferedEnd, $gte: bufferedStart } },
+        { eventEndTime: { $lte: bufferedEnd, $gt: bufferedStart } },
+        { eventStartTime: { $lte: bufferedStart }, eventEndTime: { $gte: bufferedEnd } },
+        { eventStartTime: { $gte: bufferedStart }, eventEndTime: { $lte: bufferedEnd } }
       ]
     });
 
@@ -103,15 +121,36 @@ router.post('/', [
     const newEventStartTime = new Date(eventStartTime);
     const newEventEndTime = new Date(eventEndTime);
 
-    // Check for overlapping bookings within the transaction
+    // Validate booking is not in the past
+    if (newEventStartTime <= new Date()) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({ msg: 'Booking start time must be in the future' });
+    }
+
+    // Validate booking is within 90 days
+    const maxDate = new Date();
+    maxDate.setDate(maxDate.getDate() + 90);
+    if (newEventStartTime > maxDate) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({ msg: 'Bookings cannot be made more than 90 days in advance' });
+    }
+
+    // Add 30-minute buffer for gap between bookings
+    const bufferMs = 30 * 60 * 1000;
+    const bufferedStart = new Date(newEventStartTime.getTime() - bufferMs);
+    const bufferedEnd = new Date(newEventEndTime.getTime() + bufferMs);
+
+    // Check for overlapping bookings (approved AND pending) within the transaction
     const overlappingBookings = await Booking.find({
       placeId,
-      status: 'approved',
+      status: { $in: ['approved', 'pending'] },
       $or: [
-        { eventStartTime: { $lt: newEventEndTime, $gte: newEventStartTime } },
-        { eventEndTime: { $lte: newEventEndTime, $gt: newEventStartTime } },
-        { eventStartTime: { $lte: newEventStartTime }, eventEndTime: { $gte: newEventEndTime } },
-        { eventStartTime: { $gte: newEventStartTime }, eventEndTime: { $lte: newEventEndTime } }
+        { eventStartTime: { $lt: bufferedEnd, $gte: bufferedStart } },
+        { eventEndTime: { $lte: bufferedEnd, $gt: bufferedStart } },
+        { eventStartTime: { $lte: bufferedStart }, eventEndTime: { $gte: bufferedEnd } },
+        { eventStartTime: { $gte: bufferedStart }, eventEndTime: { $lte: bufferedEnd } }
       ]
     }).session(session);
 
@@ -150,7 +189,7 @@ router.post('/', [
 // @access  Private/Admin
 router.put('/:id/status', 
   auth, 
-  verifyRole('admin'),
+  verifyRole(['admin', 'superadmin']),
   validateObjectId,
   [
     body('status').isIn(['approved', 'rejected']).withMessage('Status must be approved or rejected'),
@@ -503,7 +542,7 @@ router.get('/recent', auth, async (req, res) => {
 // @route   GET api/bookings/pending
 // @desc    Get all pending bookings
 // @access  Private (Admin only)
-router.get('/pending', auth, verifyRole('admin'), async (req, res) => {
+router.get('/pending', auth, verifyRole(['admin', 'superadmin']), async (req, res) => {
   try {
     const bookings = await Booking.find({ status: 'pending' })
       .populate('userId', ['name', 'email'])
@@ -518,7 +557,7 @@ router.get('/pending', auth, verifyRole('admin'), async (req, res) => {
 // @route   GET api/bookings/approved
 // @desc    Get all approved bookings
 // @access  Private (Admin only)
-router.get('/approved', auth, verifyRole('admin'), async (req, res) => {
+router.get('/approved', auth, verifyRole(['admin', 'superadmin']), async (req, res) => {
   try {
     const bookings = await Booking.find({ status: 'approved' }).sort({ eventStartTime: -1 }).populate('userId', ['name', 'email']).populate('placeId', ['name']);
     res.json(bookings);
@@ -531,7 +570,7 @@ router.get('/approved', auth, verifyRole('admin'), async (req, res) => {
 // @route   GET api/bookings
 // @desc    Get all bookings
 // @access  Private (Admin only)
-router.get('/', auth, verifyRole('admin'), async (req, res) => {
+router.get('/', auth, verifyRole(['admin', 'superadmin']), async (req, res) => {
   try {
     const bookings = await Booking.find().populate('userId', ['name', 'email']).populate('placeId', ['name']);
     res.json(bookings);
@@ -544,7 +583,7 @@ router.get('/', auth, verifyRole('admin'), async (req, res) => {
 // @route   GET api/bookings/report
 // @desc    Generate a report of bookings
 // @access  Private/Admin
-router.get('/report', auth, verifyRole('admin'), async (req, res) => {
+router.get('/report', auth, verifyRole(['admin', 'superadmin']), async (req, res) => {
   const { format, status, placeId, dateFrom, dateTo, search, sortKey, sortDirection } = req.query;
 
   try {

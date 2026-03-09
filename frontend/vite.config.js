@@ -19,8 +19,6 @@ export default defineConfig({
   server: {
     host: true, // Allow access from network
     allowedHosts: [
-      '7143f8d8db88.ngrok-free.app',
-      '.ngrok-free.app', // Allow all ngrok hosts
       'localhost',
       '127.0.0.1'
     ],
@@ -30,6 +28,11 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
         ws: true // Enable WebSocket proxying if needed
+      },
+      '/uploads': {
+        target: 'http://localhost:10000',
+        changeOrigin: true,
+        secure: false
       }
     },
   },

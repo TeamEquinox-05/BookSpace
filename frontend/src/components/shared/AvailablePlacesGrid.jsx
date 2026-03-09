@@ -27,7 +27,7 @@ const AvailablePlacesGrid = ({ places, role }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {places.map(place => (
           <Link 
-            to={`/${role === 'admin' ? 'admin/' : ''}places/${place._id}`} 
+            to={`/${(role === 'admin' || role === 'superadmin') ? 'admin/' : ''}places/${place._id}`} 
             key={place._id} 
             className="group bg-white dark:bg-[#0a0a0a] rounded-2xl shadow-sm overflow-hidden hover:shadow-md hover:-translate-y-1 transition-all border border-slate-200 dark:border-[#1a1a1a]"
           >

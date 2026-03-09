@@ -151,7 +151,7 @@ router.post('/send-otp',
 router.post('/signup', [
   body('name').isLength({ min: 2, max: 50 }).trim().escape().withMessage('Name must be 2-50 characters'),
   body('email').isEmail().normalizeEmail().withMessage('Please include a valid email'),
-  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+  body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
   body('phone').optional({ checkFalsy: true }).isMobilePhone().withMessage('Please include a valid phone number'),
   body('otp').isLength({ min: 6, max: 6 }).isNumeric().withMessage('OTP must be 6 digits')
 ], async (req, res) => {
@@ -233,7 +233,7 @@ router.post('/login',
     let user = await User.findOne({ email });
     if (!user || user.isDeleted) {
       logger.auth('Login failed: User not registered or is deleted', email);
-      return res.status(400).json({ msg: 'User not registered' });
+      return res.status(400).json({ msg: 'Invalid email or password' });
     }
     logger.debug('User found:', user.email);
 
@@ -250,7 +250,7 @@ router.post('/login',
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       logger.auth('Login failed: Password not matching', email);
-      return res.status(400).json({ msg: 'Password not matching' });
+      return res.status(400).json({ msg: 'Invalid email or password' });
     }
 
     // Create payload
@@ -273,23 +273,19 @@ router.post('/login',
           return res.status(500).json({ msg: 'Error generating authentication token' });
         }
         
-        // Enhanced cookie settings for cross-domain usage
-        // Don't specify domain to let browser handle it correctly
+        // Cookie settings - use 'lax' since frontend proxies API requests (same-origin)
         res.cookie('token', token, {
           httpOnly: true,
-          secure: true, // Always use secure cookies
-          sameSite: 'none', // Required for cross-domain cookies
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
           maxAge: 86400000, // 24 hours
           path: '/',
         });
         
         logger.auth('Login successful, token set in cookie', email);
-        logger.debug('Origin header:', req.headers.origin);
-        logger.debug('Referer header:', req.headers.referer);
         
         res.status(200).json({ 
           msg: 'Logged in successfully', 
-          token, // Also sending token in response body for debugging
           user: { id: user.id, name: user.name, email: user.email, role: user.role } 
         });
       }
@@ -315,13 +311,14 @@ router.post('/check-email',
     try {
       const { email } = req.body;
       const user = await User.findOne({ email });
+      // Always return the same response to prevent user enumeration
       if (!user) {
-        return res.status(404).json({ msg: 'No account found with this email address', exists: false });
+        return res.status(200).json({ msg: 'If this email is registered, you can proceed with password reset' });
       }
-      return res.status(200).json({ msg: 'Email found', exists: true });
+      return res.status(200).json({ msg: 'If this email is registered, you can proceed with password reset' });
     } catch (err) {
       logger.error('Error checking email:', err.message);
-      return res.status(500).json({ msg: 'Server error', exists: false });
+      return res.status(200).json({ msg: 'If this email is registered, you can proceed with password reset' });
     }
   }
 );
@@ -455,7 +452,7 @@ router.post('/verify-otp',
 router.post('/reset-password', [
   body('email').isEmail().normalizeEmail().withMessage('Please provide a valid email'),
   body('otp').isLength({ min: 6, max: 6 }).isNumeric().withMessage('OTP must be 6 digits'),
-  body('newPassword').isLength({ min: 6 }).withMessage('Password must be at least 6 characters')
+  body('newPassword').isLength({ min: 8 }).withMessage('Password must be at least 8 characters')
 ], async (req, res) => {
   // Check for validation errors
   const errors = validationResult(req);
@@ -506,35 +503,23 @@ router.post('/logout', (req, res) => {
   
   // Try multiple approaches to ensure cookie is properly cleared
   
-  // Clear the cookie without specifying domain
+  // Clear the auth cookie
   res.cookie('token', '', {
     httpOnly: true,
-    secure: true,
-    sameSite: 'none',
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
     path: '/',
-    expires: new Date(0), // Set expiration to a past date to clear the cookie
+    expires: new Date(0),
   });
-  
-  // For Render hosting specifically, also try clearing with the domain
-  if (req.headers.origin && req.headers.origin.includes('vercel.app')) {
-    res.cookie('token', '', {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'none',
-      path: '/',
-      expires: new Date(0),
-      domain: '.vercel.app'
-    });
-  }
   
   logger.auth('Logout successful, cookie cleared');
   res.status(200).json({ msg: 'Logged out successfully', success: true });
 });
 
-module.exports = router;
-
 // Export cleanup function for graceful shutdown
-module.exports.cleanup = () => {
+router.cleanup = () => {
   clearInterval(otpCleanupInterval);
   logger.info('Auth module cleanup: OTP cleanup interval cleared');
 };
+
+module.exports = router;

@@ -4,14 +4,13 @@
   "description": "",
   "main": "src/server.cjs",
   "scripts": {
-    "start": "server.cjs"
+    "start": "node server.cjs"
   },
   "engines": {
     "node": ">=18.0.0"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
-    "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "docx": "^8.5.0",

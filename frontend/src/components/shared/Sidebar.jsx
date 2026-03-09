@@ -15,18 +15,18 @@ const Sidebar = ({ isExpanded, setIsExpanded: _setIsExpanded, onMouseEnter, onMo
     {
       title: "Main",
       items: [
-        { id: "dashboard", title: "Dashboard", icon: Home, href: user?.role === 'admin' ? "/admin" : "/dashboard", end: true },
+        { id: "dashboard", title: "Dashboard", icon: Home, href: ['admin', 'superadmin'].includes(user?.role) ? "/admin" : "/dashboard", end: true },
         { id: "my-bookings", title: "My Bookings", icon: ClipboardCheck, href: "/my-bookings", roles: ['user'] },
-        { id: "booking-requests", title: "Booking Requests", icon: ClipboardCheck, href: "/admin/requests", roles: ['admin'] },
-        { id: "all-bookings", title: "All Bookings", icon: Calendar, href: "/admin/bookings", roles: ['admin'] },
-        { id: "venue-management", title: "Venue Management", icon: Building, href: "/admin/venues", roles: ['admin'] },
-        { id: "user-management", title: "User Management", icon: Users, href: "/admin/users", roles: ['admin'] },
+        { id: "booking-requests", title: "Booking Requests", icon: ClipboardCheck, href: "/admin/requests", roles: ['admin', 'superadmin'] },
+        { id: "all-bookings", title: "All Bookings", icon: Calendar, href: "/admin/bookings", roles: ['admin', 'superadmin'] },
+        { id: "venue-management", title: "Venue Management", icon: Building, href: "/admin/venues", roles: ['admin', 'superadmin'] },
+        { id: "user-management", title: "User Management", icon: Users, href: "/admin/users", roles: ['admin', 'superadmin'] },
       ]
     },
     {
       title: "System",
       items: [
-        { id: "settings", title: "Settings", icon: Settings, href: user?.role === 'admin' ? "/admin/settings" : "/settings" },
+        { id: "settings", title: "Settings", icon: Settings, href: ['admin', 'superadmin'].includes(user?.role) ? "/admin/settings" : "/settings" },
       ]
     }
   ];

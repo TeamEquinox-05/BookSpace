@@ -12,7 +12,6 @@ const SignupPage = ({ onSignupSuccess: _onSignupSuccess }) => {
     email: '',
     password: '',
     phone: '',
-    role: 'user',
     otp: '',
   });
   const [otpSent, setOtpSent] = useState(false);
@@ -24,7 +23,7 @@ const SignupPage = ({ onSignupSuccess: _onSignupSuccess }) => {
   const [otpTimer, setOtpTimer] = useState(0);
   const [isResendDisabled, setIsResendDisabled] = useState(false);
 
-  const { name, email, password, phone, role, otp } = formData;
+  const { name, email, password, phone, otp } = formData;
   
   // Countdown timer effect for OTP resending
   useEffect(() => {
@@ -80,8 +79,8 @@ const SignupPage = ({ onSignupSuccess: _onSignupSuccess }) => {
       return;
     }
     
-    if (!password || password.length < 6) {
-      setError('Password must be at least 6 characters long');
+    if (!password || password.length < 8) {
+      setError('Password must be at least 8 characters long');
       return;
     }
     

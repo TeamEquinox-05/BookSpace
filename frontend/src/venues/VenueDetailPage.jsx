@@ -77,7 +77,7 @@ export default function VenueDetailPage({ role = 'user' }) {
                     ))}
                   </ul>
                 </div>
-                {role === 'admin' && (
+                {(role === 'admin' || role === 'superadmin') && (
                   <div className="mt-6 text-right">
                     <button className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 mr-2">Edit Venue</button>
                     <button className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700">Delete Venue</button>

@@ -39,22 +39,14 @@ const logger = {
   },
 
   /**
-   * Log API request/response info (only in development)
+   * Log API request/response info (disabled to reduce console noise)
    */
-  api: (message, ...args) => {
-    if (isDevelopment) {
-      console.log('[API]', message, ...args);
-    }
-  },
+  api: () => {},
 
   /**
-   * Log authentication events (only in development)
+   * Log authentication events (disabled to reduce console noise)
    */
-  auth: (message, ...args) => {
-    if (isDevelopment) {
-      console.log('[AUTH]', message, ...args);
-    }
-  }
+  auth: () => {}
 };
 
 export default logger;

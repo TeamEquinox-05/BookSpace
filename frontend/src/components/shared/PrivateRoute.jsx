@@ -35,14 +35,14 @@ const PrivateRoute = ({ adminOnly }) => {
   }
 
   // 2. Check if the route is for admins and if the user has the correct role.
-  if (adminOnly && user.role !== 'admin') {
+  if (adminOnly && user.role !== 'admin' && user.role !== 'superadmin') {
     logger.debug('PrivateRoute: User is not admin, redirecting to dashboard');
     // If a non-admin tries to access an admin route, send them to their own dashboard.
     return <Navigate to="/dashboard" replace={true} />;
   }
 
   // 3. Prevent admins from accessing non-admin specific routes (like user dashboard)
-  if (!adminOnly && user.role === 'admin') {
+  if (!adminOnly && (user.role === 'admin' || user.role === 'superadmin')) {
     logger.debug('PrivateRoute: Admin accessing user route, redirecting to admin dashboard');
     return <Navigate to="/admin" replace={true} />;
   }

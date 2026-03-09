@@ -9,7 +9,7 @@ const logger = require('../utils/logger.cjs');
 // @route   GET api/stats
 // @desc    Get admin dashboard stats
 // @access  Private/Admin
-router.get('/', auth, verifyRole('admin'), async (req, res) => {
+router.get('/', auth, verifyRole(['admin', 'superadmin']), async (req, res) => {
   try {
     // Get total places count
     const totalPlaces = await Place.countDocuments();
@@ -62,7 +62,7 @@ router.get('/', auth, verifyRole('admin'), async (req, res) => {
 // @route   GET api/stats/bookings-by-month
 // @desc    Get bookings by month for the current year
 // @access  Private/Admin
-router.get('/bookings-by-month', auth, verifyRole('admin'), async (req, res) => {
+router.get('/bookings-by-month', auth, verifyRole(['admin', 'superadmin']), async (req, res) => {
   try {
     const bookingsByMonth = await Booking.aggregate([
       {

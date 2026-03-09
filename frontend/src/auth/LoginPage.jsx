@@ -51,35 +51,22 @@ const LoginPage = () => {
       
       logger.debug('Login response:', res.data);
       
-      // Extract user and token data from the response
-      // Handle both formats: { user, token } and { msg, token, user }
+      // Extract user data from the response (token is in httpOnly cookie)
       const responseData = res.data;
       const user = responseData.user;
-      const token = responseData.token;
       
       if (!user) {
         logger.error('Invalid response format - missing user:', responseData);
         throw new Error('Invalid response from server - missing user data');
       }
       
-      if (!token) {
-        logger.error('Invalid response format - missing token:', responseData);
-        throw new Error('Invalid response from server - missing authentication token');
-      }
-      
       logger.auth('Login successful. User:', user.name, 'Role:', user.role);
-      login(user, token);
-      
-      // Verify the token has been stored
-      setTimeout(() => {
-        const storedToken = localStorage.getItem('token');
-        logger.debug('Stored token check:', storedToken ? 'Present' : 'Missing');
-      }, 100);
+      login(user);
       
       // Short delay to ensure state updates before navigation
       await new Promise(resolve => setTimeout(resolve, 100));
       
-      if (user.role === 'admin') {
+      if (user.role === 'admin' || user.role === 'superadmin') {
         logger.debug('Navigating to /admin');
         navigate('/admin', { replace: true });
       } else {

@@ -50,7 +50,7 @@ const PageHeader = ({ title, subtitle, children }) => {
     .join('')
     .toUpperCase();
 
-  const roleLabel = user?.role === 'admin' ? 'Admin' : 'Member';
+  const roleLabel = user?.role === 'superadmin' ? 'Super Admin' : user?.role === 'admin' ? 'Admin' : 'Member';
 
   return (
     <header className="bg-white dark:bg-[#0a0a0a] border-b border-slate-200 dark:border-[#1a1a1a] sticky top-0 z-10">
@@ -123,7 +123,7 @@ const PageHeader = ({ title, subtitle, children }) => {
                 {/* Role Badge */}
                 <div className="px-4 py-2 border-b border-slate-100 dark:border-[#1a1a1a]">
                   <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                    user?.role === 'admin'
+                    user?.role === 'admin' || user?.role === 'superadmin'
                       ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
                       : 'bg-slate-100 text-slate-600 dark:bg-[#1a1a1a] dark:text-zinc-400'
                   }`}>

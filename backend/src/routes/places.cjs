@@ -48,7 +48,7 @@ const validateObjectId = (req, res, next) => {
 // @route   POST api/places/upload-image
 // @desc    Upload a venue image
 // @access  Private/Admin
-router.post('/upload-image', auth, verifyRole('admin'), (req, res) => {
+router.post('/upload-image', auth, verifyRole(['admin', 'superadmin']), (req, res) => {
   upload.single('image')(req, res, (err) => {
     if (err instanceof multer.MulterError) {
       if (err.code === 'LIMIT_FILE_SIZE') {
@@ -73,14 +73,15 @@ router.post('/upload-image', auth, verifyRole('admin'), (req, res) => {
 // @access  Private/Admin
 router.post('/', 
   auth,
-  verifyRole('admin'),
+  verifyRole(['admin', 'superadmin']),
   [
     body('name').trim().notEmpty().withMessage('Name is required').isLength({ max: 100 }),
     body('location').trim().notEmpty().withMessage('Location is required'),
     body('capacity').isInt({ min: 1 }).withMessage('Capacity must be a positive number'),
-    body('amenities').optional().isArray(),
-    body('cost').isNumeric().withMessage('Cost must be a number'),
-    body('description').optional().trim().isLength({ max: 500 })
+    body('description').optional().trim().isLength({ max: 500 }),
+    body('image').optional().trim(),
+    body('status').optional().trim(),
+    body('facilities').optional().isArray()
   ],
   async (req, res) => {
     try {
@@ -103,15 +104,16 @@ router.post('/',
 // @access  Private/Admin
 router.put('/:id', 
   auth, 
-  verifyRole('admin'),
+  verifyRole(['admin', 'superadmin']),
   validateObjectId,
   [
     body('name').optional().trim().notEmpty().withMessage('Name cannot be empty').isLength({ max: 100 }),
     body('location').optional().trim().notEmpty().withMessage('Location cannot be empty'),
     body('capacity').optional().isInt({ min: 1 }).withMessage('Capacity must be a positive number'),
-    body('amenities').optional().isArray(),
-    body('cost').optional().isNumeric().withMessage('Cost must be a number'),
-    body('description').optional().trim().isLength({ max: 500 })
+    body('description').optional().trim().isLength({ max: 500 }),
+    body('image').optional().trim(),
+    body('status').optional().trim(),
+    body('facilities').optional().isArray()
   ],
   async (req, res) => {
     try {
@@ -124,7 +126,18 @@ router.put('/:id',
       if (!place) {
         return res.status(404).json({ msg: 'Place not found' });
       }
-      place = await Place.findByIdAndUpdate(req.params.id, { $set: req.body }, { new: true });
+
+      // Whitelist allowed fields to prevent mass assignment
+      const allowedFields = ['name', 'location', 'capacity', 'details', 'description', 'image', 'status', 'facilities'];
+      const updates = {};
+      for (const field of allowedFields) {
+        if (req.body[field] !== undefined) {
+          updates[field] = req.body[field];
+        }
+      }
+      updates.updatedAt = Date.now();
+
+      place = await Place.findByIdAndUpdate(req.params.id, { $set: updates }, { new: true });
     res.json(place);
   } catch (err) {
     logger.error(err.message);
@@ -135,7 +148,7 @@ router.put('/:id',
 // @route   DELETE api/places/:id
 // @desc    Delete a place (only if no future bookings exist)
 // @access  Private/Admin
-router.delete('/:id', auth, verifyRole('admin'), validateObjectId, async (req, res) => {
+router.delete('/:id', auth, verifyRole(['admin', 'superadmin']), validateObjectId, async (req, res) => {
   try {
     let place = await Place.findById(req.params.id);
     if (!place) {
@@ -204,14 +217,39 @@ router.get('/popular', async (req, res) => {
 
 // @route   GET api/places/:id
 // @desc    Get a single place by ID
-// @access  Public
+// @access  Public (admin sees full data including facility emails)
 router.get('/:id', validateObjectId, async (req, res) => {
   try {
     const place = await Place.findById(req.params.id);
     if (!place) {
       return res.status(404).json({ msg: 'Place not found' });
     }
-    res.json(place);
+    const placeObj = place.toObject();
+
+    // If the request is from an authenticated admin, return full data
+    // Check for token in header or cookie to detect admin
+    let isAdmin = false;
+    try {
+      const jwt = require('jsonwebtoken');
+      let token = null;
+      if (req.header('Authorization')?.startsWith('Bearer ')) {
+        token = req.header('Authorization').substring(7);
+      } else if (req.cookies?.token) {
+        token = req.cookies.token;
+      }
+      if (token) {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const User = require('../models/User.cjs');
+        const user = await User.findById(decoded.user.id).select('role');
+        if (user?.role === 'admin' || user?.role === 'superadmin') isAdmin = true;
+      }
+    } catch (_) { /* not authenticated or invalid token — treat as public */ }
+
+    // Strip facility emails from public response, keep for admin
+    if (!isAdmin && placeObj.facilities) {
+      placeObj.facilities = placeObj.facilities.map(({ name, message }) => ({ name, message }));
+    }
+    res.json(placeObj);
   } catch (err) {
     logger.error(err.message);
     res.status(500).send('Server Error');
@@ -220,11 +258,37 @@ router.get('/:id', validateObjectId, async (req, res) => {
 
 // @route   GET api/places
 // @desc    Get all places
-// @access  Public
+// @access  Public (admin sees full data including facility emails)
 router.get('/', async (req, res) => {
   try {
     const places = await Place.find();
-    res.json(places);
+
+    // If the request is from an authenticated admin, return full data
+    let isAdmin = false;
+    try {
+      const jwt = require('jsonwebtoken');
+      let token = null;
+      if (req.header('Authorization')?.startsWith('Bearer ')) {
+        token = req.header('Authorization').substring(7);
+      } else if (req.cookies?.token) {
+        token = req.cookies.token;
+      }
+      if (token) {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const User = require('../models/User.cjs');
+        const user = await User.findById(decoded.user.id).select('role');
+        if (user?.role === 'admin' || user?.role === 'superadmin') isAdmin = true;
+      }
+    } catch (_) { /* not authenticated or invalid token — treat as public */ }
+
+    const result = places.map(place => {
+      const obj = place.toObject();
+      if (!isAdmin && obj.facilities) {
+        obj.facilities = obj.facilities.map(({ name, message }) => ({ name, message }));
+      }
+      return obj;
+    });
+    res.json(result);
   } catch (err) {
     logger.error(err.message);
     res.status(500).send('Server Error');

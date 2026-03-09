@@ -30,14 +30,14 @@ function App() {
   return (
     <Routes>
         {/* Public routes - accessible whether logged in or not */}
-        <Route path="/login" element={user ? (user.role === 'admin' ? <Navigate to="/admin" replace /> : <Navigate to="/dashboard" replace />) : <LoginPage />} />
-        <Route path="/signup" element={user ? (user.role === 'admin' ? <Navigate to="/admin" replace /> : <Navigate to="/dashboard" replace />) : <SignupPage />} />
+        <Route path="/login" element={user ? (['admin', 'superadmin'].includes(user.role) ? <Navigate to="/admin" replace /> : <Navigate to="/dashboard" replace />) : <LoginPage />} />
+        <Route path="/signup" element={user ? (['admin', 'superadmin'].includes(user.role) ? <Navigate to="/admin" replace /> : <Navigate to="/dashboard" replace />) : <SignupPage />} />
 
         {/* Routes with Layout - for authenticated users */}
         <Route element={<Layout />}>
           {/* Regular user routes */}
           <Route element={<PrivateRoute />}>
-            <Route path="/dashboard" element={<UserDashboardPage />} end />
+            <Route path="/dashboard" element={<UserDashboardPage />} />
             <Route path="/my-bookings" element={<MyBookingsPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/places/:id" element={<PlaceDetailsPage />} />
@@ -45,7 +45,7 @@ function App() {
 
           {/* Admin Routes */}
           <Route element={<PrivateRoute adminOnly={true} />}>
-            <Route path="/admin" element={<AdminDashboardPage />} end />
+            <Route path="/admin" element={<AdminDashboardPage />} />
             <Route path="/admin/requests" element={<BookingRequestsPage />} />
             <Route path="/admin/bookings" element={<AllBookingsPage />} />
             <Route path="/admin/settings" element={<SettingsPage />} />
@@ -56,12 +56,12 @@ function App() {
         </Route>
 
         {/* Root path redirect */}
-        <Route path="/" element={user ? (user.role === 'admin' ? <Navigate to="/admin" replace /> : <Navigate to="/dashboard" replace />) : <Navigate to="/login" replace />} />
+        <Route path="/" element={user ? (['admin', 'superadmin'].includes(user.role) ? <Navigate to="/admin" replace /> : <Navigate to="/dashboard" replace />) : <Navigate to="/login" replace />} />
 
         {/* Catch-all route - always redirects to login if not authenticated or to appropriate dashboard if authenticated */}
         <Route path="*" element={!user 
           ? <Navigate to="/login" replace /> 
-          : (user.role === 'admin' ? <Navigate to="/admin" replace /> : <Navigate to="/dashboard" replace />)} 
+          : (['admin', 'superadmin'].includes(user.role) ? <Navigate to="/admin" replace /> : <Navigate to="/dashboard" replace />)} 
         />
       </Routes>
   );

@@ -17,22 +17,29 @@ connectDB();
 const app = express();
 app.use(cookieParser());
 
-// Set trust proxy to trust the Render reverse proxy
-app.set('trust proxy', 1);
+// Trust proxy only in production (Render reverse proxy)
+if (process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', 1);
+}
 
 // Init Middleware with body size limit to prevent DoS
-app.use(express.json({ limit: '10kb' }));
-app.use(express.urlencoded({ extended: false, limit: '10kb' }));
+// Skip global body parser for db import route (it has its own 50mb limit)
+app.use((req, res, next) => {
+  if (req.path === '/api/db/import') return next();
+  express.json({ limit: '10kb' })(req, res, next);
+});
+app.use((req, res, next) => {
+  if (req.path === '/api/db/import') return next();
+  express.urlencoded({ extended: false, limit: '10kb' })(req, res, next);
+});
 
 // Define allowed origins
 const allowedOrigins = [
   'https://book-space-3xmh.vercel.app',
   'https://book-space.vercel.app',
   'http://localhost:3000',
-  'http://localhost:5173',  // Add Vite default development port
+  'http://localhost:5173',
   'http://127.0.0.1:5173',
-  'https://7143f8d8db88.ngrok-free.app',
-    // Also allow 127.0.0.1 (same as localhost)
 ];
 
 // Simplify the CORS configuration - use a single approach
@@ -41,9 +48,14 @@ app.use(cors({
   origin: function (origin, callback) {
     logger.debug('CORS request from origin:', origin);
     
-    // Allow requests with no origin (like mobile apps, curl requests, or server-to-server)
+    // Reject requests with no origin in production (prevents CSRF from non-browser clients)
+    // Allow in development for tools like curl/Postman
     if (!origin) {
-      logger.debug('Request has no origin, allowing');
+      if (process.env.NODE_ENV === 'production') {
+        logger.warn('Request with no origin blocked in production');
+        return callback(new Error('Not allowed by CORS'));
+      }
+      logger.debug('Request has no origin, allowing in dev mode');
       return callback(null, true);
     }
     
@@ -117,6 +129,7 @@ app.use('/api/places', require('./src/routes/places.cjs'));
 app.use('/api/bookings', require('./src/routes/bookings.cjs'));
 app.use('/api/stats', require('./src/routes/stats.cjs'));
 app.use('/api/users', require('./src/routes/users.cjs'));
+app.use('/api/db', require('./src/routes/db.cjs'));
 
 const PORT = process.env.PORT || 10000;
 

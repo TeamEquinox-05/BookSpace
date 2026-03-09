@@ -1,41 +1,28 @@
 // API Configuration
-// This file contains the centralized API URL configuration used across the application
+// Uses relative URL to leverage proxy (Vite in dev, Vercel rewrites in prod)
+// This ensures cookies work correctly (same-origin) and avoids CORS issues
 
 import logger from '../utils/logger';
 
 /**
- * Get the API base URL
- * In production: use Render backend
- * In development: try localhost first, fallback to Render if localhost is not available
+ * Get the API base URL (async - for cases needing fallback detection)
  */
 export const getApiUrl = async () => {
-  if (import.meta.env.PROD) {
-    return 'https://bookspace-be.onrender.com/api';
-  }
-  
-  // In development, check if local backend is running
-  try {
-    const response = await fetch('http://localhost:10000/api/health', { 
-      method: 'GET',
-      signal: AbortSignal.timeout(2000) // 2 second timeout
-    });
-    
-    if (response.ok) {
-      logger.api('Using local backend at http://localhost:10000/api');
-      return 'http://localhost:10000/api';
-    }
-  } catch {
-    logger.warn('Local backend not available, falling back to Render backend');
-  }
-  
-  return 'https://bookspace-be.onrender.com/api';
+  return '/api';
 };
 
 /**
  * Synchronous API URL for immediate use
- * In production: use Render backend
- * In development: use localhost (no fallback)
+ * Uses relative path to go through the proxy layer
  */
-export const API_URL = import.meta.env.PROD 
-  ? 'https://bookspace-be.onrender.com/api'
-  : 'http://localhost:10000/api';
+export const API_URL = '/api';
+
+/**
+ * Get the backend base URL (without /api) for static assets like images
+ */
+export const getBackendBaseUrl = () => {
+  if (import.meta.env.PROD) {
+    return 'https://bookspace-be.onrender.com';
+  }
+  return 'http://localhost:10000';
+};

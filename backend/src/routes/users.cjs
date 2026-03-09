@@ -1,6 +1,6 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
-const bcrypt = require('bcryptjs');
+const bcrypt = require('bcrypt');
 const router = express.Router();
 const mongoose = require('mongoose');
 const User = require('../models/User.cjs');
@@ -95,7 +95,7 @@ router.put('/me/password', auth, [
 // @route   GET api/users
 // @desc    Get all users with pagination, search, and filtering
 // @access  Private (Admin only)
-router.get('/', auth, verifyRole('admin'), async (req, res) => {
+router.get('/', auth, verifyRole(['admin', 'superadmin']), async (req, res) => {
   // Parse and validate pagination parameters
   const page = Math.max(1, parseInt(req.query.page, 10) || 1);
   const limit = Math.min(100, Math.max(1, parseInt(req.query.limit, 10) || 10)); // Limit between 1-100
@@ -139,7 +139,7 @@ router.get('/', auth, verifyRole('admin'), async (req, res) => {
 // @access  Private (Admin only)
 router.put('/:id/approve', 
   auth,
-  verifyRole('admin'),
+  verifyRole(['admin', 'superadmin']),
   validateObjectId,
   async (req, res) => {
     try {
@@ -173,7 +173,7 @@ router.put('/:id/approve',
 // @access  Private (Admin only)
 router.put('/:id/reject', 
   auth,
-  verifyRole('admin'),
+  verifyRole(['admin', 'superadmin']),
   validateObjectId,
   async (req, res) => {
     try {
@@ -205,7 +205,7 @@ router.put('/:id/reject',
 // @route   DELETE api/users/:id
 // @desc    Soft delete a user
 // @access  Private (Admin only)
-router.delete('/:id', auth, verifyRole('admin'), validateObjectId, async (req, res) => {
+router.delete('/:id', auth, verifyRole(['admin', 'superadmin']), validateObjectId, async (req, res) => {
   // Prevent admin from deleting themselves
   if (req.params.id === req.user.id) {
     return res.status(400).json({ msg: 'You cannot delete your own account' });
