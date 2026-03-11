@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Mail, KeyRound, Lock, X } from 'lucide-react';
 import api from '../../utils/api';
-import axios from 'axios';
 import logger from '../../utils/logger';
 
 // Helper component for the step indicator
@@ -160,28 +159,7 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
     timeoutIdRef.current = setTimeout(() => abortControllerRef.current?.abort(), 25000); // 25 second timeout
     
     try {
-      // Try with our API utility first
-      let response;
-      try {
-        response = await api.post('/auth/forgot-password', { email: trimmedEmail });
-      } catch (apiError) {
-        logger.warn('API utility request failed, falling back to direct axios:', apiError);
-        
-        // Fall back to direct axios call if API utility fails
-        response = await axios({
-          method: 'post',
-          url: 'https://bookspace-be.onrender.com/api/auth/forgot-password',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-            // Removed custom header causing CORS issues
-          },
-          data: { email: trimmedEmail },
-          timeout: 30000, // 30 second timeout
-          withCredentials: true, // Include credentials for cross-origin requests
-          signal: abortControllerRef.current.signal
-        });
-      }
+      const response = await api.post('/auth/forgot-password', { email: trimmedEmail });
       
       clearTimeout(timeoutIdRef.current);
       timeoutIdRef.current = null;
@@ -248,34 +226,10 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
     timeoutIdRef.current = setTimeout(() => abortControllerRef.current?.abort(), 25000); // 25 second timeout
     
     try {
-      // Try with API utility first
-      let response;
-      try {
-        response = await api.post('/auth/verify-otp', { 
-          email: trimmedEmail, 
-          otp: trimmedOTP 
-        });
-      } catch (apiError) {
-        logger.warn('API utility request failed for verify OTP, falling back to direct axios:', apiError);
-        
-        // Fall back to direct axios
-        response = await axios({
-          method: 'post',
-          url: 'https://bookspace-be.onrender.com/api/auth/verify-otp',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-            // Removed custom header causing CORS issues
-          },
-          data: { 
-            email: trimmedEmail, 
-            otp: trimmedOTP 
-          },
-          timeout: 30000, // 30 second timeout
-          withCredentials: true, // Include credentials for cross-origin requests
-          signal: abortControllerRef.current.signal
-        });
-      }
+      const response = await api.post('/auth/verify-otp', {
+        email: trimmedEmail,
+        otp: trimmedOTP
+      });
       
       clearTimeout(timeoutIdRef.current);
       timeoutIdRef.current = null;
@@ -366,36 +320,11 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
     timeoutIdRef.current = setTimeout(() => abortControllerRef.current?.abort(), 25000); // 25 second timeout
     
     try {
-      // Try with API utility first
-      let response;
-      try {
-        response = await api.post('/auth/reset-password', { 
-          email: trimmedEmail, 
-          otp: trimmedOTP, 
-          newPassword 
-        });
-      } catch (apiError) {
-        logger.warn('API utility request failed for password reset, falling back to direct axios:', apiError);
-        
-        // Fall back to direct axios
-        response = await axios({
-          method: 'post',
-          url: 'https://bookspace-be.onrender.com/api/auth/reset-password',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-            // Removed custom header causing CORS issues
-          },
-          data: { 
-            email: trimmedEmail, 
-            otp: trimmedOTP, 
-            newPassword 
-          },
-          timeout: 30000, // 30 second timeout
-          withCredentials: true, // Include credentials for cross-origin requests
-          signal: abortControllerRef.current.signal
-        });
-      }
+      const response = await api.post('/auth/reset-password', {
+        email: trimmedEmail,
+        otp: trimmedOTP,
+        newPassword
+      });
       
       clearTimeout(timeoutIdRef.current);
       timeoutIdRef.current = null;

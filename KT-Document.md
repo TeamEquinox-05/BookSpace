@@ -96,7 +96,7 @@ Admins can:
 
 ```
 BookSpace/
-├── bugs.md                     # Bug tracking document
+├── SETUP.md                    # Complete setup & deployment guide
 ├── functionality.md            # Functionality & file responsibility map
 ├── KT-Document.md              # This file
 │
@@ -129,15 +129,15 @@ BookSpace/
 │
 └── frontend/
     ├── package.json
-    ├── vite.config.js          # Vite config with proxy & Tailwind
-    ├── vercel.json             # Vercel rewrites (API proxy + SPA fallback)
+    ├── vite.config.js          # Vite config with dev proxy & Tailwind
+    ├── .env.example            # Frontend env var template
     ├── index.html              # HTML entry point
     └── src/
         ├── main.jsx            # React entry point
         ├── App.jsx             # Route definitions
         ├── index.css           # Global styles + Tailwind
         ├── config/
-        │   └── api-config.js   # API base URL configuration
+        │   └── api-config.js   # API base URL — reads VITE_API_URL env var
         ├── context/
         │   ├── AuthContext.jsx  # Authentication state & token management
         │   └── ThemeContext.jsx # Dark/light/system theme provider
@@ -239,17 +239,18 @@ npm run dev
 | Variable | Description | Example |
 |----------|-------------|---------|
 | `MONGO_URI` | MongoDB connection string | `mongodb+srv://user:pass@cluster.mongodb.net/collegeDB` |
-| `JWT_SECRET` | Secret key for signing JWTs (min 32 chars) | `a_long_random_cryptographic_string` |
+| `JWT_SECRET` | Secret key for signing JWTs (min 32 chars) | Generate: `node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"` |
 | `EMAIL_USER` | Gmail address for sending emails | `yourapp@gmail.com` |
 | `EMAIL_PASS` | Gmail App Password (NOT regular password) | `xxxx xxxx xxxx xxxx` |
 | `NODE_ENV` | Environment mode | `development` or `production` |
 | `PORT` | Server port (default: 10000) | `10000` |
+| `CORS_ORIGINS` | Comma-separated list of allowed frontend URLs | `https://your-app.vercel.app` |
 
 ### Frontend (Vite environment variables)
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `VITE_API_URL` | Backend API base URL | `https://bookspace-be.onrender.com/api` |
+| Variable | Description | When needed |
+|----------|-------------|-------------|
+| `VITE_API_URL` | Full backend API URL, e.g. `https://your-backend.onrender.com/api` | Production only. Not needed for local dev — Vite proxy handles it |
 
 ---
 
@@ -502,32 +503,26 @@ Both use:
 
 - Build command: `npm run build` (Vite)
 - Output: `dist/`
-- `vercel.json` rewrites:
-  - `/api/*` → proxied to `https://bookspace-be.onrender.com/api/*`
-  - Everything else → `/index.html` (SPA fallback)
+- Set `VITE_API_URL` environment variable in Vercel dashboard to your backend URL (e.g. `https://your-backend.onrender.com/api`)
+- Vercel auto-detects Vite and handles SPA routing (no `vercel.json` required)
 
-### Backend — Render
+### Backend — VPS (Node.js + PM2 + Nginx)
 
-- Runtime: Node.js
-- Start command: `node server.cjs`
-- Port: 10000 (via `PORT` env var)
-- Free tier: Spins down after inactivity (cold starts can take 30-60 seconds)
+- Start command: `node server.cjs` (managed by PM2)
+- Port: 10000 (via `PORT` env var), exposed via Nginx reverse proxy
 - Health check: `GET /api/health` (checks MongoDB connection)
+- Set `CORS_ORIGINS` to your frontend domain so cross-origin requests are allowed
 
 ### Database — MongoDB Atlas
 
-- Cluster: `cluster0.wmpzsno.mongodb.net`
 - Database name: `collegeDB`
 - Collections: `users`, `places`, `bookings`
 
 ### CORS Configuration
 
-Allowed origins:
-- `https://book-space-3xmh.vercel.app`
-- `https://book-space.vercel.app`
-- `http://localhost:3000`
-- `http://localhost:5173`
-- `http://127.0.0.1:5173`
+Allowed origins are configured via the `CORS_ORIGINS` environment variable (comma-separated).
+Localhost origins (`localhost:3000`, `localhost:5173`, `127.0.0.1:5173`) are always allowed.
+Set `CORS_ORIGINS=https://your-app.vercel.app` on the backend in production.
 
 ---
 
@@ -611,11 +606,8 @@ See `bugs.md` for the complete bug list. Key highlights:
 
 ```bash
 cd backend
-# Option 1: Use defaults (admin@bookspace.com / Admin@123)
 node seed-admin.cjs
-
-# Option 2: Custom credentials via env vars
-ADMIN_NAME="Custom Admin" ADMIN_EMAIL="custom@email.com" ADMIN_PASS="SecurePass123!" node seed-admin.cjs
+# Credentials are read from src/config/config.env (ADMIN_NAME, ADMIN_EMAIL, ADMIN_PASS)
 ```
 
 ### Rotate JWT Secret
@@ -646,7 +638,7 @@ db.users.updateOne({ email: 'user@email.com' }, { $set: { status: 'active' } })
 ### Check Server Health
 
 ```bash
-curl https://bookspace-be.onrender.com/api/health
+curl https://your-backend.onrender.com/api/health
 ```
 
 ---

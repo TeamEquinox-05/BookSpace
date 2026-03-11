@@ -45,7 +45,7 @@
 |------|---------------|
 | `frontend/src/main.jsx` | App entry with BrowserRouter, AuthProvider, ThemeProvider |
 | `frontend/src/App.jsx` | Route definitions: public routes (login, signup), user routes (dashboard, my-bookings, settings, place details), admin routes (dashboard, requests, bookings, venues, users, settings) |
-| `frontend/src/config/api-config.js` | API base URL config: production → Render, dev → localhost:10000 with health check fallback |
+| `frontend/src/config/api-config.js` | API base URL config: reads `VITE_API_URL` env var in production, falls back to `/api` (proxied by Vite in dev). Exports `API_URL` and `getBackendBaseUrl()` |
 | `frontend/src/utils/api.js` | Shared Axios instance with request/response interceptors, auto-attaches auth token, logs API calls, handles 401 by clearing token |
 | `frontend/src/utils/logger.js` | Frontend logging utility, suppressed in production |
 | `frontend/src/context/AuthContext.jsx` | Authentication state (user, loading, login, logout, refreshUser). Manages localStorage token + userData caching. Supports offline fallback using cached data |

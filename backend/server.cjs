@@ -34,9 +34,13 @@ app.use((req, res, next) => {
 });
 
 // Define allowed origins
+// Set CORS_ORIGINS in config.env as a comma-separated list of production frontend URLs
+const envOrigins = process.env.CORS_ORIGINS
+  ? process.env.CORS_ORIGINS.split(',').map(o => o.trim()).filter(Boolean)
+  : [];
+
 const allowedOrigins = [
-  'https://book-space-3xmh.vercel.app',
-  'https://book-space.vercel.app',
+  ...envOrigins,
   'http://localhost:3000',
   'http://localhost:5173',
   'http://127.0.0.1:5173',
