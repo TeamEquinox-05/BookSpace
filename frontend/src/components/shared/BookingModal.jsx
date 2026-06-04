@@ -68,8 +68,7 @@ const BookingModal = ({ isOpen, onClose, places, onBookingSubmit, initialBooking
   };
 
   const getMaxDate = () => {
-    const d = new Date();
-    d.setMonth(d.getMonth() + 1);
+    const d = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000);
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   };
 
@@ -564,6 +563,12 @@ const BookingModal = ({ isOpen, onClose, places, onBookingSubmit, initialBooking
 
             {/* Footer */}
             <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-100 dark:border-[#1a1a1a] flex-shrink-0">
+              {!isAvailable && bookingDetails.eventStartTime && bookingDetails.eventEndTime && (
+                <p className="text-xs text-red-500 dark:text-red-400 mr-auto flex items-center gap-1">
+                  <AlertCircle size={13} className="flex-shrink-0" />
+                  This slot is not available
+                </p>
+              )}
               <button
                 type="button"
                 onClick={onClose}

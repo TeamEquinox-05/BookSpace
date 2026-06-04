@@ -38,7 +38,7 @@ router.get('/me', auth, async (req, res) => {
 // @desc    Update current user profile (name, phone)
 // @access  Private
 router.put('/me', auth, [
-  body('name').optional().trim().notEmpty().withMessage('Name cannot be empty'),
+  body('name').optional().trim().notEmpty().isLength({ max: 50 }).withMessage('Name must be 1-50 characters'),
   body('phone').optional().trim()
 ], async (req, res) => {
   try {
@@ -65,7 +65,7 @@ router.put('/me', auth, [
 // @access  Private
 router.put('/me/password', auth, [
   body('currentPassword').notEmpty().withMessage('Current password is required'),
-  body('newPassword').isLength({ min: 8 }).withMessage('New password must be at least 8 characters')
+  body('newPassword').isLength({ min: 8, max: 128 }).withMessage('New password must be 8-128 characters')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -214,10 +214,16 @@ router.delete('/:id', auth, verifyRole(['admin', 'superadmin']), validateObjectI
   try {
     const user = await User.findByIdAndUpdate(req.params.id, { isDeleted: true }, { new: true });
     
-    // Check if user exists before trying to send email
     if (!user) {
       return res.status(404).json({ msg: 'User not found' });
     }
+
+    // Cancel all pending/approved bookings for the deleted user
+    const Booking = require('../models/Booking.cjs');
+    await Booking.updateMany(
+      { userId: req.params.id, status: { $in: ['pending', 'approved'] } },
+      { $set: { status: 'rejected', reason: 'User account removed' } }
+    );
     
     // Send removal email (don't block response on email)
     sendEmail(user.email, 'Account Removed', 'Your account has been removed from the platform.')

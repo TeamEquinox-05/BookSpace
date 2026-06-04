@@ -3,14 +3,15 @@ import { X, Plus, Trash2, ImagePlus, Upload, Loader2 } from 'lucide-react';
 import api from '../../utils/api';
 import { API_URL } from '../../config/api-config';
 
-// Resolve a venue image path to a full URL
+// Resolve a venue image path to an authenticated URL
 const resolveImageUrl = (image) => {
   if (!image) return '';
-  // Already an absolute URL
   if (image.startsWith('http://') || image.startsWith('https://')) return image;
-  // Relative path like /uploads/venue/xxx.jpg — prepend the API base (strip /api)
+  // Extract filename from /uploads/venue/xxx.jpg → xxx.jpg
+  const filename = image.split('/').pop();
+  if (!filename) return '';
   const baseUrl = API_URL.replace(/\/api\/?$/, '');
-  return `${baseUrl}${image}`;
+  return `${baseUrl}/api/places/image/${filename}`;
 };
 
 const VenueModal = ({ isOpen, onClose, onSave, venue }) => {

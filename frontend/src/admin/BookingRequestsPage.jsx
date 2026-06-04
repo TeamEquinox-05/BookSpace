@@ -182,47 +182,26 @@ export default function BookingRequestsPage() {
   // Toast notification system
   const { addToast, ToastContainer } = useToast();
 
-  useEffect(() => {
+  const fetchPendingBookings = React.useCallback(async () => {
     let isMounted = true;
-    
-    const fetchPendingBookings = async () => {
-      try {
-        setLoading(true);
-        const res = await api.get('/bookings/pending');
-        if (isMounted) {
-          setPendingBookings(res.data);
-        }
-      } catch (err) {
-        if (isMounted) {
-          setError(err.message);
-          logger.error('Error fetching pending bookings:', err);
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
-    };
-
-    fetchPendingBookings();
-    
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  const fetchPendingBookings = async () => {
     try {
       setLoading(true);
       const res = await api.get('/bookings/pending');
-      setPendingBookings(res.data);
+      if (isMounted) setPendingBookings(res.data);
     } catch (err) {
-      setError(err.message);
-      logger.error('Error fetching pending bookings:', err);
+      if (isMounted) {
+        setError(err.message);
+        logger.error('Error fetching pending bookings:', err);
+      }
     } finally {
-      setLoading(false);
+      if (isMounted) setLoading(false);
     }
-  };
+    return () => { isMounted = false; };
+  }, []);
+
+  useEffect(() => {
+    fetchPendingBookings();
+  }, [fetchPendingBookings]);
 
   const handleApprove = async (bookingId) => {
     setProcessingBookingId(bookingId);

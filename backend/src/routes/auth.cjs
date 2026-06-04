@@ -1,12 +1,23 @@
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');
+const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const rateLimit = require('express-rate-limit');
 const { sendEmail } = require('../utils/email.cjs');
 const User = require('../models/User.cjs');
 const logger = require('../utils/logger.cjs');
+
+// Constant-time string comparison to prevent timing attacks
+const safeCompare = (a, b) => {
+  try {
+    const sa = String(a || '');
+    const sb = String(b || '');
+    if (sa.length !== sb.length) return false;
+    return crypto.timingSafeEqual(Buffer.from(sa), Buffer.from(sb));
+  } catch { return false; }
+};
 
 // Check if running in production
 const isProduction = process.env.NODE_ENV === 'production';
@@ -31,6 +42,7 @@ const otpLimiter = rateLimit({
 
 // In-memory storage for OTPs (for demonstration purposes)
 const otpStore = {};
+const OTP_STORE_MAX_SIZE = 10000;
 
 // OTP expiration time in milliseconds (10 minutes)
 const OTP_EXPIRATION_TIME = 10 * 60 * 1000;
@@ -87,12 +99,17 @@ router.post('/send-otp',
   
       // Check if user already exists
       let user = await User.findOne({ email });
-      if (user) {
+      if (user && user.status !== 'rejected') {
         logger.auth('User already exists', email);
         return res.status(400).json({ msg: 'An account with this email already exists and is pending approval.' });
       }
 
       const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      // Evict oldest OTP if store is at capacity
+      if (Object.keys(otpStore).length >= OTP_STORE_MAX_SIZE) {
+        const oldest = Object.entries(otpStore).sort((a, b) => a[1].timestamp - b[1].timestamp)[0];
+        if (oldest) delete otpStore[oldest[0]];
+      }
       otpStore[email] = {
         otp,
         timestamp: Date.now(),
@@ -148,10 +165,10 @@ router.post('/send-otp',
 // @route   POST api/auth/signup
 // @desc    Register user
 // @access  Public
-router.post('/signup', [
+router.post('/signup', otpLimiter, [
   body('name').isLength({ min: 2, max: 50 }).trim().escape().withMessage('Name must be 2-50 characters'),
   body('email').isEmail().normalizeEmail().withMessage('Please include a valid email'),
-  body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
+  body('password').isLength({ min: 8, max: 128 }).withMessage('Password must be 8-128 characters'),
   body('phone').optional({ checkFalsy: true }).isMobilePhone().withMessage('Please include a valid phone number'),
   body('otp').isLength({ min: 6, max: 6 }).isNumeric().withMessage('OTP must be 6 digits')
 ], async (req, res) => {
@@ -172,7 +189,7 @@ router.post('/signup', [
   try {
     // Verify OTP
     const storedOtp = otpStore[email];
-    if (!storedOtp || storedOtp.otp !== otp) {
+    if (!storedOtp || !safeCompare(storedOtp.otp, otp)) {
       return res.status(400).json({ msg: 'Invalid OTP' });
     }
 
@@ -213,7 +230,8 @@ router.post('/login',
   authLimiter,
   [
     body('email').isEmail().normalizeEmail().withMessage('Please include a valid email'),
-    body('password').exists().withMessage('Password is required')
+    body('password').exists().withMessage('Password is required'),
+  body('password').isLength({ max: 128 }).withMessage('Password too long')
   ],
   async (req, res) => {
   // Check for validation errors
@@ -266,7 +284,7 @@ router.post('/login',
     jwt.sign(
       payload,
       process.env.JWT_SECRET,
-      { expiresIn: '24h' }, // Extended token expiration to 24 hours for testing
+      { expiresIn: '24h', algorithm: 'HS256' },
       (err, token) => {
         if (err) {
           logger.error('JWT sign error:', err.message);
@@ -425,15 +443,14 @@ router.post('/verify-otp',
     let user = await User.findOne({ email });
     if (!user) {
       logger.debug('User not found for email:', email);
-      return res.status(400).json({ msg: 'User not found' });
+      return res.status(400).json({ msg: 'Invalid or expired OTP' });
     }
 
-    // Don't log actual OTP values in production
     if (!isProduction) {
       logger.debug('[DEV] Stored OTP:', user.resetPasswordOtp, 'Expires:', user.resetPasswordOtpExpires, 'Current Time:', Date.now());
     }
-    
-    if (user.resetPasswordOtp !== otp || user.resetPasswordOtpExpires < Date.now()) {
+
+    if (!safeCompare(user.resetPasswordOtp, otp) || user.resetPasswordOtpExpires < Date.now()) {
       logger.auth('Invalid or expired OTP', email);
       return res.status(400).json({ msg: 'Invalid or expired OTP' });
     }
@@ -452,7 +469,7 @@ router.post('/verify-otp',
 router.post('/reset-password', [
   body('email').isEmail().normalizeEmail().withMessage('Please provide a valid email'),
   body('otp').isLength({ min: 6, max: 6 }).isNumeric().withMessage('OTP must be 6 digits'),
-  body('newPassword').isLength({ min: 8 }).withMessage('Password must be at least 8 characters')
+  body('newPassword').isLength({ min: 8, max: 128 }).withMessage('Password must be 8-128 characters')
 ], async (req, res) => {
   // Check for validation errors
   const errors = validationResult(req);
@@ -470,10 +487,10 @@ router.post('/reset-password', [
     let user = await User.findOne({ email });
     if (!user) {
       logger.debug('User not found for email:', email);
-      return res.status(400).json({ msg: 'User not found' });
+      return res.status(400).json({ msg: 'Invalid or expired OTP' });
     }
 
-    if (user.resetPasswordOtp !== otp || user.resetPasswordOtpExpires < Date.now()) {
+    if (!safeCompare(user.resetPasswordOtp, otp) || user.resetPasswordOtpExpires < Date.now()) {
       logger.auth('Invalid or expired OTP', email);
       return res.status(400).json({ msg: 'Invalid or expired OTP' });
     }
@@ -494,16 +511,32 @@ router.post('/reset-password', [
 });
 
 // @route   POST api/auth/logout
-// @desc    Logout user / Clear cookie
+// @desc    Logout user / Clear cookie and revoke token
 // @access  Public
-router.post('/logout', (req, res) => {
+router.post('/logout', async (req, res) => {
   logger.auth('Logout request received');
-  logger.debug('Origin header:', req.headers.origin);
-  logger.debug('Referer header:', req.headers.referer);
-  
-  // Try multiple approaches to ensure cookie is properly cleared
-  
-  // Clear the auth cookie
+
+  // Revoke the token so it cannot be reused even before it expires
+  let token = null;
+  if (req.header('Authorization')?.startsWith('Bearer ')) {
+    token = req.header('Authorization').substring(7);
+  } else if (req.cookies?.token) {
+    token = req.cookies.token;
+  }
+
+  if (token) {
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
+      const RevokedToken = require('../models/RevokedToken.cjs');
+      await RevokedToken.create({
+        token,
+        expiresAt: new Date(decoded.exp * 1000),
+      });
+    } catch (_) {
+      // Token already invalid — nothing to revoke
+    }
+  }
+
   res.cookie('token', '', {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
@@ -511,7 +544,7 @@ router.post('/logout', (req, res) => {
     path: '/',
     expires: new Date(0),
   });
-  
+
   logger.auth('Logout successful, cookie cleared');
   res.status(200).json({ msg: 'Logged out successfully', success: true });
 });

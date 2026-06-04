@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import api from '../utils/api';
 import moment from 'moment';
 import { PageHeader } from '../components/shared';
@@ -192,39 +192,20 @@ const DownloadReport = ({ filters, sortConfig, disabled }) => {
     setIsDownloading(true);
     setIsOpen(false);
     try {
-      // This is a simplified CSV generation. For a real app, a library like papaparse would be better.
-      const headers = ['Event', 'Place', 'User', 'Start Time', 'End Time', 'Duration', 'Status'];
       const query = new URLSearchParams({
+        format: 'csv',
         ...filters,
         sortKey: sortConfig.key,
         sortDirection: sortConfig.direction,
       }).toString();
-      const response = await api.get(`/bookings?${query}`);
-      const bookings = response.data;
 
-      let csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n";
-      bookings.forEach(b => {
-        const duration = moment.duration(moment(b.eventEndTime).diff(moment(b.eventStartTime)));
-        const hours = Math.floor(duration.asHours());
-        const minutes = duration.minutes();
-        const durationText = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+      // Use the report endpoint so filters are applied server-side
+      const response = await api.get(`/bookings/report?${query}`, { responseType: 'blob' });
 
-        const row = [
-          `"${b.eventTitle}"`,
-          `"${b.placeId?.name || 'N/A'}"`,
-          `"${b.userId?.name || 'N/A'}"`,
-          `"${moment(b.eventStartTime).format('YYYY-MM-DD HH:mm')}"`,
-          `"${moment(b.eventEndTime).format('YYYY-MM-DD HH:mm')}"`,
-          `"${durationText}"`,
-          `"${b.status}"`
-        ].join(",");
-        csvContent += row + "\n";
-      });
-
-      const encodedUri = encodeURI(csvContent);
-      const link = document.createElement("a");
-      link.setAttribute("href", encodedUri);
-      link.setAttribute("download", "bookings-report.csv");
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'bookings-report.csv');
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -324,94 +305,50 @@ const DownloadReport = ({ filters, sortConfig, disabled }) => {
 const AllBookingsPage = () => {
   const [bookings, setBookings] = useState([]);
   const [places, setPlaces] = useState([]);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [sortConfig, setSortConfig] = useState({ key: 'eventStartTime', direction: 'descending' });
   const [filters, setFilters] = useState({ status: '', placeId: '', dateFrom: '', dateTo: '', search: '' });
+  const [debouncedFilters, setDebouncedFilters] = useState(filters);
 
+  // Debounce filter changes (especially search)
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedFilters(filters), 300);
+    return () => clearTimeout(t);
+  }, [filters]);
+
+  // Fetch places once for the filter dropdown
+  useEffect(() => {
+    api.get('/places').then(r => setPlaces(r.data)).catch(() => {});
+  }, []);
+
+  // Fetch bookings whenever filters or sort changes
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [bookingsRes, placesRes] = await Promise.all([
-          api.get('/bookings'),
-          api.get('/places')
-        ]);
-        setBookings(bookingsRes.data);
-        setPlaces(placesRes.data);
+        const params = new URLSearchParams({
+          ...debouncedFilters,
+          sortKey: sortConfig.key,
+          sortDirection: sortConfig.direction,
+          limit: 100,
+        }).toString();
+        const res = await api.get(`/bookings?${params}`);
+        setBookings(res.data.bookings ?? res.data);
+        setTotal(res.data.total ?? res.data.length);
       } catch (err) {
-        setError('Failed to fetch data. You might not have the required permissions.');
-        logger.error('Error fetching bookings data:', err);
+        setError('Failed to fetch bookings.');
+        logger.error('Error fetching bookings:', err);
       } finally {
         setLoading(false);
       }
     };
-
     fetchData();
-  }, []);
+  }, [debouncedFilters, sortConfig]);
 
-  const filteredAndSortedBookings = useMemo(() => {
-    let filteredItems = [...bookings];
-
-    // Status filter
-    if (filters.status) {
-      filteredItems = filteredItems.filter(item => item.status === filters.status);
-    }
-
-    // Place filter
-    if (filters.placeId) {
-      filteredItems = filteredItems.filter(item => item.placeId?._id === filters.placeId);
-    }
-
-    // Date range filter
-    if (filters.dateFrom) {
-      filteredItems = filteredItems.filter(item => 
-        moment(item.eventStartTime).isSameOrAfter(filters.dateFrom, 'day')
-      );
-    }
-    if (filters.dateTo) {
-      filteredItems = filteredItems.filter(item => 
-        moment(item.eventStartTime).isSameOrBefore(filters.dateTo, 'day')
-      );
-    }
-
-    // Search filter (event title, user name, or booking ID)
-    if (filters.search) {
-      const searchLower = filters.search.toLowerCase();
-      filteredItems = filteredItems.filter(item => 
-        item.eventTitle?.toLowerCase().includes(searchLower) ||
-        item.userId?.name?.toLowerCase().includes(searchLower) ||
-        item.userId?.email?.toLowerCase().includes(searchLower) ||
-        item._id?.toLowerCase().includes(searchLower)
-      );
-    }
-
-    // Helper function to get nested property value
-    const getNestedValue = (obj, path) => {
-      return path.split('.').reduce((current, key) => current?.[key], obj);
-    };
-
-    if (sortConfig !== null) {
-      filteredItems.sort((a, b) => {
-        const aValue = getNestedValue(a, sortConfig.key);
-        const bValue = getNestedValue(b, sortConfig.key);
-        
-        // Handle null/undefined values
-        if (aValue == null && bValue == null) return 0;
-        if (aValue == null) return sortConfig.direction === 'ascending' ? 1 : -1;
-        if (bValue == null) return sortConfig.direction === 'ascending' ? -1 : 1;
-        
-        if (aValue < bValue) {
-          return sortConfig.direction === 'ascending' ? -1 : 1;
-        }
-        if (aValue > bValue) {
-          return sortConfig.direction === 'ascending' ? 1 : -1;
-        }
-        return 0;
-      });
-    }
-    return filteredItems;
-  }, [bookings, sortConfig, filters]);
+  // Bookings are already filtered and sorted by the server
+  const filteredAndSortedBookings = bookings;
 
   const requestSort = (key) => {
     let direction = 'ascending';

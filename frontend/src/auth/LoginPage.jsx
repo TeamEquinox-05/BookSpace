@@ -62,15 +62,10 @@ const LoginPage = () => {
       
       logger.auth('Login successful. User:', user.name, 'Role:', user.role);
       login(user);
-      
-      // Short delay to ensure state updates before navigation
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
+
       if (user.role === 'admin' || user.role === 'superadmin') {
-        logger.debug('Navigating to /admin');
         navigate('/admin', { replace: true });
       } else {
-        logger.debug('Navigating to /dashboard');
         navigate('/dashboard', { replace: true });
       }
     } catch (err) {

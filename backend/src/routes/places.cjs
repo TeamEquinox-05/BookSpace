@@ -90,7 +90,8 @@ router.post('/',
         return res.status(400).json({ errors: errors.array() });
       }
 
-      const newPlace = new Place(req.body);
+      const { name, location, capacity, details, description, image, status, facilities } = req.body;
+      const newPlace = new Place({ name, location, capacity, details, description, image, status, facilities });
       const place = await newPlace.save();
       res.json(place);
     } catch (err) {
@@ -185,6 +186,8 @@ router.delete('/:id', auth, verifyRole(['admin', 'superadmin']), validateObjectI
 router.get('/popular', async (req, res) => {
   try {
     const popularPlaces = await Booking.aggregate([
+      { $match: { status: { $in: ['approved', 'pending'] } } },
+      { $match: { status: { $in: ['approved', 'pending'] } } },
       { $group: { _id: '$placeId', bookings: { $sum: 1 } } },
       { $sort: { bookings: -1 } },
       { $limit: 5 },
@@ -253,6 +256,40 @@ router.get('/:id', validateObjectId, async (req, res) => {
   } catch (err) {
     logger.error(err.message);
     res.status(500).send('Server Error');
+  }
+});
+
+// @route   GET api/places/image/:filename
+// @desc    Serve uploaded venue image (requires authentication)
+// @access  Private (any authenticated user)
+router.get('/image/:filename', auth, (req, res) => {
+  try {
+    const { filename } = req.params;
+
+    // Prevent path traversal
+    if (filename.includes('..') || filename.includes('/') || filename.includes('\\') || filename.includes('\0')) {
+      return res.status(400).json({ msg: 'Invalid filename' });
+    }
+
+    // Sanitize and resolve path
+    const safeFilename = path.basename(filename);
+    const filePath = path.join(uploadDir, safeFilename);
+
+    // Verify resolved path is still within uploadDir
+    const resolved = path.resolve(filePath);
+    const allowed = path.resolve(uploadDir);
+    if (!resolved.startsWith(allowed + path.sep) && resolved !== allowed) {
+      return res.status(403).json({ msg: 'Access denied' });
+    }
+
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ msg: 'Image not found' });
+    }
+
+    res.sendFile(resolved);
+  } catch (err) {
+    logger.error('Image serve error:', err.message);
+    res.status(500).json({ msg: 'Server Error' });
   }
 });
 

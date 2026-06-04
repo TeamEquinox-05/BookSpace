@@ -23,10 +23,6 @@ import PlaceDetailsPage from './places/PlaceDetailsPage.jsx';
 function App() {
   const { user, loading } = useAuth();
 
-  if (loading) {
-    return null;
-  }
-
   return (
     <Routes>
         {/* Public routes - accessible whether logged in or not */}

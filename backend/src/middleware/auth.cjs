@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User.cjs');
+const RevokedToken = require('../models/RevokedToken.cjs');
 const logger = require('../utils/logger.cjs');
 
 module.exports = async function (req, res, next) {
@@ -30,7 +31,13 @@ module.exports = async function (req, res, next) {
 
   // Verify token
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
+
+    // Reject revoked tokens (logged-out sessions)
+    const revoked = await RevokedToken.findOne({ token });
+    if (revoked) {
+      return res.status(401).json({ msg: 'Token has been revoked' });
+    }
     
     // Fetch fresh user data from database to ensure role/status is current
     // This prevents issues with cached role in JWT after role changes

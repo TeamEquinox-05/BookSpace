@@ -87,7 +87,14 @@ export default function UserManagementPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [currentPage, setCurrentPage] = useState(1);
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [status, setStatus] = useState('');
+
+  // Debounce search input to avoid firing an API call on every keystroke
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(t);
+  }, [search]);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [actionType, setActionType] = useState('');
@@ -98,7 +105,7 @@ export default function UserManagementPage() {
     const fetchUsers = async () => {
       setLoading(true);
       try {
-        const res = await api.get(`/users?page=${currentPage}&limit=10&search=${search}&status=${status}`);
+        const res = await api.get(`/users?page=${currentPage}&limit=10&search=${debouncedSearch}&status=${status}`);
         if (isMounted) {
           setUsers(res.data.users);
           setTotalPages(res.data.totalPages);
@@ -109,42 +116,32 @@ export default function UserManagementPage() {
           logger.error('Error fetching users:', err);
         }
       } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
+        if (isMounted) setLoading(false);
       }
     };
 
     fetchUsers();
-    
-    return () => {
-      isMounted = false;
-    };
-  }, [currentPage, search, status]);
+    return () => { isMounted = false; };
+  }, [currentPage, debouncedSearch, status]);
 
   const handleAction = async () => {
     if (!selectedUser || !actionType) return;
-
     try {
-      if (actionType === 'approve') {
-        await api.put(`/users/${selectedUser._id}/approve`);
-      } else if (actionType === 'reject') {
-        await api.put(`/users/${selectedUser._id}/reject`);
-      } else if (actionType === 'remove') {
-        await api.delete(`/users/${selectedUser._id}`);
-      }
-      // Trigger refetch by updating a state that's in the dependency array
-      setCurrentPage(prev => prev); // Force re-render to refetch
-      // Refetch users manually
-      const res = await api.get(`/users?page=${currentPage}&limit=10&search=${search}&status=${status}`);
+      if (actionType === 'approve') await api.put(`/users/${selectedUser._id}/approve`);
+      else if (actionType === 'reject') await api.put(`/users/${selectedUser._id}/reject`);
+      else if (actionType === 'remove') await api.delete(`/users/${selectedUser._id}`);
+
+      const res = await api.get(`/users?page=${currentPage}&limit=10&search=${debouncedSearch}&status=${status}`);
       setUsers(res.data.users);
       setTotalPages(res.data.totalPages);
     } catch (err) {
       logger.error(`Error ${actionType}ing user:`, err);
+      setError(err.response?.data?.msg || `Failed to ${actionType} user. Please try again.`);
+    } finally {
+      setShowConfirmation(false);
+      setSelectedUser(null);
+      setActionType('');
     }
-    setShowConfirmation(false);
-    setSelectedUser(null);
-    setActionType('');
   };
 
   const openConfirmation = (user, type) => {
@@ -159,6 +156,13 @@ export default function UserManagementPage() {
         <PageHeader title="User Management" subtitle="Manage user accounts and permissions" />
         <main className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50 dark:bg-black p-4 sm:p-6 transition-colors">
           <div className="max-w-7xl mx-auto">
+            {/* Error banner */}
+            {error && !loading && (
+              <div className="mb-4 p-4 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 rounded-xl text-red-700 dark:text-red-400 text-sm flex items-center justify-between">
+                <span>{error}</span>
+                <button onClick={() => setError(null)} className="ml-4 text-red-500 hover:text-red-700 font-bold text-lg leading-none">&times;</button>
+              </div>
+            )}
             {/* Filters */}
             <div 
               className="bg-white dark:bg-[#0a0a0a] rounded-xl shadow-sm border border-slate-200 dark:border-[#1a1a1a] p-4 mb-6"

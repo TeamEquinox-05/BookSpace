@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
 const { body, validationResult } = require('express-validator');
+const rateLimit = require('express-rate-limit');
 const Booking = require('../models/Booking.cjs');
 const { sendEmail } = require('../utils/email.cjs');
 const auth = require('../middleware/auth.cjs');
@@ -10,6 +11,20 @@ const PDFDocument = require('pdfkit');
 const { Document, Packer, Paragraph, Table, TableCell, TableRow, WidthType } = require('docx');
 const moment = require('moment');
 const logger = require('../utils/logger.cjs');
+
+// Rate limiter for booking endpoints
+const bookingLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  message: { msg: 'Too many requests, please try again later' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// HTML-encode helper for email templates
+const escapeHtml = (str) => String(str || '')
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
 
 // Middleware to validate MongoDB ObjectId
 const validateObjectId = (req, res, next) => {
@@ -21,8 +36,8 @@ const validateObjectId = (req, res, next) => {
 
 // @route   POST api/bookings/check-availability
 // @desc    Check if a place is available for a given time range
-// @access  Public
-router.post('/check-availability', [
+// @access  Private
+router.post('/check-availability', auth, bookingLimiter, [
   body('placeId').isMongoId().withMessage('Invalid place ID'),
   body('eventStartTime').isISO8601().withMessage('Invalid start time format'),
   body('eventEndTime').isISO8601().withMessage('Invalid end time format')
@@ -94,12 +109,15 @@ router.post('/check-availability', [
 // @access  Private
 router.post('/', [
   auth,
+  bookingLimiter,
   body('placeId').isMongoId().withMessage('Invalid place ID'),
   body('eventTitle').isLength({ min: 3, max: 100 }).trim().escape().withMessage('Event title must be 3-100 characters'),
   body('description').optional().isLength({ max: 500 }).trim().escape().withMessage('Description must be less than 500 characters'),
   body('eventStartTime').isISO8601().withMessage('Invalid start time format'),
   body('eventEndTime').isISO8601().withMessage('Invalid end time format'),
-  body('requestedFacilities').optional().isArray().withMessage('Facilities must be an array')
+  body('requestedFacilities').optional().isArray().withMessage('Facilities must be an array'),
+  body('requestedFacilities.*.name').optional().isString().isLength({ max: 100 }).trim(),
+  body('requestedFacilities.*.email').optional().isEmail().normalizeEmail(),
 ], async (req, res) => {
   // Check for validation errors
   const errors = validationResult(req);
@@ -219,17 +237,20 @@ router.put('/:id/status',
       return res.status(404).json({ msg: 'Booking not found' });
     }
 
-    // --- Overlap check before approving ---
+    // --- Overlap check before approving (with same 30-min buffer as creation) ---
     if (status === 'approved') {
       const s = new Date(booking.eventStartTime);
       const e = new Date(booking.eventEndTime);
+      const bufferMs = 30 * 60 * 1000;
+      const bufferedStart = new Date(s.getTime() - bufferMs);
+      const bufferedEnd = new Date(e.getTime() + bufferMs);
 
       const conflict = await Booking.findOne({
         _id: { $ne: id },
         placeId: booking.placeId._id,
         status: 'approved',
         $or: [
-          { eventStartTime: { $lt: e }, eventEndTime: { $gt: s } }
+          { eventStartTime: { $lt: bufferedEnd }, eventEndTime: { $gt: bufferedStart } }
         ]
       }).populate('userId', ['name', 'email']);
 
@@ -298,18 +319,18 @@ Thank you for using BookSpace!`;
         // Send emails to each facility
         for (const facility of facilitiesToNotify) {
           if (facility.email) {
-            const facilityEmailText = `Hello ${facility.name} Manager,
+            const facilityEmailText = `Hello ${escapeHtml(facility.name)} Manager,
 
 A new booking has been approved that may require your services.
 
 Event Details:
-- Title: ${eventTitle}
-- Venue: ${placeName}
+- Title: ${escapeHtml(eventTitle)}
+- Venue: ${escapeHtml(placeName)}
 - From: ${startTime}
 - To: ${endTime}
-- Booked by: ${userName} (${userEmail})
+- Booked by: ${escapeHtml(userName)} (${escapeHtml(userEmail)})
 
-${facility.message ? `Note: ${facility.message}` : ''}
+${facility.message ? `Note: ${escapeHtml(facility.message)}` : ''}
 
 Please prepare accordingly.
 
@@ -389,7 +410,9 @@ router.put('/:id', [
   body('eventStartTime').optional().isISO8601().withMessage('Invalid start time format'),
   body('eventEndTime').optional().isISO8601().withMessage('Invalid end time format'),
   body('placeId').optional().isMongoId().withMessage('Invalid place ID'),
-  body('requestedFacilities').optional().isArray().withMessage('Facilities must be an array')
+  body('requestedFacilities').optional().isArray().withMessage('Facilities must be an array'),
+  body('requestedFacilities.*.name').optional().isString().isLength({ max: 100 }).trim(),
+  body('requestedFacilities.*.email').optional().isEmail().normalizeEmail(),
 ], async (req, res) => {
   // Check for validation errors
   const errors = validationResult(req);
@@ -446,11 +469,11 @@ router.put('/:id', [
       return res.status(400).json({ msg: 'End time must be after start time' });
     }
 
-    // Check for overlapping approved bookings (exclude current booking) within the transaction
+    // Check for overlapping bookings (approved AND pending) - exclude current booking
     const overlappingBookings = await Booking.find({
       _id: { $ne: booking._id },
       placeId: updatedPlaceId,
-      status: 'approved',
+      status: { $in: ['approved', 'pending'] },
       $or: [
         { eventStartTime: { $lt: updatedEventEndTime, $gte: updatedEventStartTime } },
         { eventEndTime: { $lte: updatedEventEndTime, $gt: updatedEventStartTime } },
@@ -568,12 +591,42 @@ router.get('/approved', auth, verifyRole(['admin', 'superadmin']), async (req, r
 });
 
 // @route   GET api/bookings
-// @desc    Get all bookings
+// @desc    Get all bookings with optional filtering
 // @access  Private (Admin only)
 router.get('/', auth, verifyRole(['admin', 'superadmin']), async (req, res) => {
   try {
-    const bookings = await Booking.find().populate('userId', ['name', 'email']).populate('placeId', ['name']);
-    res.json(bookings);
+    const { status, placeId, dateFrom, dateTo, search, page = 1, limit = 50 } = req.query;
+    const query = {};
+    if (status) query.status = status;
+    if (placeId) query.placeId = placeId;
+    if (dateFrom || dateTo) {
+      query.eventStartTime = {};
+      if (dateFrom) query.eventStartTime.$gte = new Date(dateFrom);
+      if (dateTo) query.eventStartTime.$lte = new Date(new Date(dateTo).setHours(23, 59, 59, 999));
+    }
+
+    const skip = (Math.max(1, parseInt(page)) - 1) * Math.min(100, Math.max(1, parseInt(limit)));
+    const lim = Math.min(100, Math.max(1, parseInt(limit)));
+
+    let bookings = await Booking.find(query)
+      .sort({ eventStartTime: -1 })
+      .skip(skip)
+      .limit(lim)
+      .populate('userId', ['name', 'email'])
+      .populate('placeId', ['name']);
+
+    if (search) {
+      const s = search.toLowerCase();
+      bookings = bookings.filter(b =>
+        b.eventTitle?.toLowerCase().includes(s) ||
+        b.userId?.name?.toLowerCase().includes(s) ||
+        b.userId?.email?.toLowerCase().includes(s) ||
+        b._id?.toString().includes(s)
+      );
+    }
+
+    const total = await Booking.countDocuments(query);
+    res.json({ bookings, total, page: parseInt(page), limit: lim });
   } catch (err) {
     logger.error(err.message);
     res.status(500).json({ msg: 'Server Error' });
@@ -627,7 +680,22 @@ router.get('/report', auth, verifyRole(['admin', 'superadmin']), async (req, res
 
     logger.info(`Found ${bookings.length} bookings to report.`);
 
-    if (format === 'pdf') {
+    if (format === 'csv') {
+      const headers = ['Event', 'Place', 'User', 'Start Time', 'End Time', 'Status'];
+      const rows = bookings.map(b => [
+        `"${(b.eventTitle || '').replace(/"/g, '""')}"`,
+        `"${(b.placeId?.name || 'N/A').replace(/"/g, '""')}"`,
+        `"${(b.userId?.name || 'N/A').replace(/"/g, '""')}"`,
+        `"${moment(b.eventStartTime).format('YYYY-MM-DD HH:mm')}"`,
+        `"${moment(b.eventEndTime).format('YYYY-MM-DD HH:mm')}"`,
+        `"${b.status || 'N/A'}"`,
+      ].join(','));
+      const csv = [headers.join(','), ...rows].join('\n');
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', 'attachment; filename=bookings-report.csv');
+      return res.send(csv);
+
+    } else if (format === 'pdf') {
       const doc = new PDFDocument({ margin: 50, size: 'A4' });
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', 'attachment; filename=bookings-report.pdf');

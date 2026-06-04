@@ -87,8 +87,8 @@ app.use((req, res, next) => {
   next();
 });
 
-// Serve uploaded files statically
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// NOTE: Uploaded files are served via authenticated route in places.cjs (B-05 fix)
+// Removed: app.use('/uploads', express.static(...)) — was publicly accessible
 
 // Health check endpoint with database connectivity verification
 app.get('/api/health', async (req, res) => {
@@ -101,27 +101,23 @@ app.get('/api/health', async (req, res) => {
     if (dbState !== 1) {
       return res.status(503).json({
         status: 'unhealthy',
-        message: 'Database connection is not available',
-        database: dbStateNames[dbState] || 'unknown',
+        message: 'Service unavailable',
         uptime: process.uptime()
       });
     }
     
-    // Optionally ping the database to ensure it's responsive
     await mongoose.connection.db.admin().ping();
     
     res.status(200).json({
       status: 'healthy',
       message: 'Server is running',
-      database: 'connected',
       uptime: process.uptime()
     });
   } catch (err) {
     logger.error('Health check failed:', err.message);
     res.status(503).json({
       status: 'unhealthy',
-      message: 'Health check failed',
-      error: err.message,
+      message: 'Service unavailable',
       uptime: process.uptime()
     });
   }

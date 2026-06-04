@@ -12,7 +12,7 @@ export const getApiUrl = async () => API_URL;
 
 /**
  * Base URL for static assets (images). Derived from VITE_API_URL.
- * Returns empty string in local dev so /uploads/... paths are proxied by Vite.
+ * Returns empty string in local dev so /api/places/image/... paths are proxied by Vite.
  */
 export const getBackendBaseUrl = () => {
   if (import.meta.env.VITE_API_URL) {

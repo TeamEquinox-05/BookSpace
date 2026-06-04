@@ -3,8 +3,8 @@ import { useContext } from 'react';
 import api from '../utils/api';
 import logger from '../utils/logger';
 
-// Cache expiry time: 1 hour
-const CACHE_EXPIRY_MS = 60 * 60 * 1000;
+// Cache expiry time: 5 minutes
+const CACHE_EXPIRY_MS = 5 * 60 * 1000;
 
 const AuthContext = createContext();
 

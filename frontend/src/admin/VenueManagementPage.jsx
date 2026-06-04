@@ -11,8 +11,10 @@ import logger from '../utils/logger';
 const resolveImageUrl = (path) => {
   if (!path) return '';
   if (path.startsWith('http')) return path;
+  const filename = path.split('/').pop();
+  if (!filename) return '';
   const base = API_URL.replace(/\/api\/?$/, '');
-  return `${base}${path}`;
+  return `${base}/api/places/image/${filename}`;
 };
 
 export default function VenueManagementPage() {
@@ -23,6 +25,7 @@ export default function VenueManagementPage() {
   const [selectedVenue, setSelectedVenue] = useState(null);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [venueToDelete, setVenueToDelete] = useState(null);
+  const [actionError, setActionError] = useState(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -71,23 +74,27 @@ export default function VenueManagementPage() {
       const method = venueData._id ? 'put' : 'post';
       const url = venueData._id ? `/places/${venueData._id}` : '/places';
       await api[method](url, venueData);
-
-      fetchVenues(); // Refresh the list
+      fetchVenues();
       setIsModalOpen(false);
+      setActionError(null);
     } catch (err) {
       logger.error('Error saving venue:', err);
+      setActionError(err.response?.data?.msg || 'Failed to save venue. Please try again.');
+      throw err;
     }
   };
 
   const handleDelete = async () => {
     try {
       await api.delete(`/places/${venueToDelete}`);
-
-      fetchVenues(); // Refresh the list
+      fetchVenues();
       setIsConfirmModalOpen(false);
       setVenueToDelete(null);
+      setActionError(null);
     } catch (err) {
       logger.error('Error deleting venue:', err);
+      setActionError(err.response?.data?.msg || 'Failed to delete venue. Please try again.');
+      setIsConfirmModalOpen(false);
     }
   };
 
@@ -122,6 +129,12 @@ export default function VenueManagementPage() {
         <PageHeader title="Venue Management" subtitle="Manage your venues and spaces" />
         <main className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50 dark:bg-black p-4 sm:p-6 transition-colors">
           <div className="max-w-7xl mx-auto">
+            {actionError && (
+              <div className="mb-4 p-4 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 rounded-xl text-red-700 dark:text-red-400 text-sm flex items-center justify-between">
+                <span>{actionError}</span>
+                <button onClick={() => setActionError(null)} className="ml-4 text-red-500 hover:text-red-700 font-bold text-lg leading-none">&times;</button>
+              </div>
+            )}
             {/* Header */}
             <div 
               className="flex justify-between items-center mb-6"

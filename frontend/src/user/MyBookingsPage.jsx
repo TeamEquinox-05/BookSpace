@@ -80,6 +80,15 @@ const BookingCard = ({ booking, onEdit, onDelete }) => {
         </div>
       )}
 
+      {booking.status === 'rejected' && booking.reason && (
+        <div className="px-5 pb-3">
+          <div className="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/30 rounded-xl">
+            <span className="text-xs font-semibold text-red-600 dark:text-red-400 flex-shrink-0">Reason:</span>
+            <span className="text-xs text-red-700 dark:text-red-300">{booking.reason}</span>
+          </div>
+        </div>
+      )}
+
       {/* Actions (pending only) */}
       {booking.status === 'pending' && (
         <>
@@ -109,7 +118,7 @@ const BookingCard = ({ booking, onEdit, onDelete }) => {
 const MyBookingsPage = () => {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [_error, setError] = useState(null);
+  const [error, setError] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [currentBooking, setCurrentBooking] = useState(null);
@@ -170,6 +179,10 @@ const MyBookingsPage = () => {
           <div className="max-w-6xl mx-auto">
             {loading ? (
               <CardGridSkeleton count={6} />
+            ) : error ? (
+              <div className="p-4 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 rounded-xl text-red-700 dark:text-red-400 text-sm">
+                {error}
+              </div>
             ) : bookings.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-24 text-center">
                 <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-[#1a1a1a] flex items-center justify-center mb-4">

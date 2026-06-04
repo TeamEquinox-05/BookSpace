@@ -24,18 +24,18 @@ router.get('/', auth, verifyRole(['admin', 'superadmin']), async (req, res) => {
     // Get pending approvals count
     const pendingApprovals = await Booking.countDocuments({ status: 'pending' });
 
-    // Get today's bookings - bookings that are happening today (start or end date is today)
-    const startOfToday = new Date();
-    startOfToday.setHours(0, 0, 0, 0);
-    const endOfToday = new Date();
-    endOfToday.setHours(23, 59, 59, 999);
-    
+    // IST = UTC+5:30. Compute today's boundaries in IST so the count is correct for Indian users.
+    const IST_OFFSET_MS = 330 * 60 * 1000;
+    const nowUtc = Date.now();
+    const startOfTodayIST = new Date(Math.floor((nowUtc + IST_OFFSET_MS) / 86400000) * 86400000 - IST_OFFSET_MS);
+    const endOfTodayIST = new Date(startOfTodayIST.getTime() + 86400000 - 1);
+
     const todayBookings = await Booking.countDocuments({
       status: 'approved',
       $or: [
-        { eventStartTime: { $gte: startOfToday, $lte: endOfToday } },
-        { eventEndTime: { $gte: startOfToday, $lte: endOfToday } },
-        { eventStartTime: { $lte: startOfToday }, eventEndTime: { $gte: endOfToday } }
+        { eventStartTime: { $gte: startOfTodayIST, $lte: endOfTodayIST } },
+        { eventEndTime: { $gte: startOfTodayIST, $lte: endOfTodayIST } },
+        { eventStartTime: { $lte: startOfTodayIST }, eventEndTime: { $gte: endOfTodayIST } }
       ]
     });
 
@@ -75,7 +75,7 @@ router.get('/bookings-by-month', auth, verifyRole(['admin', 'superadmin']), asyn
       },
       {
         $group: {
-          _id: { $month: "$eventStartTime" },
+          _id: { $month: { date: "$eventStartTime", timezone: "Asia/Kolkata" } },
           count: { $sum: 1 },
         },
       },

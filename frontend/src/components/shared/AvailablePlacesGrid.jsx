@@ -4,12 +4,14 @@ import { Link } from 'react-router-dom';
 import { Users, MapPin, Building } from 'lucide-react';
 import { API_URL } from '../../config/api-config';
 
-// Resolve a venue image path to a full URL
+// Resolve a venue image path to an authenticated URL
 const resolveImageUrl = (image) => {
   if (!image) return '';
   if (image.startsWith('http://') || image.startsWith('https://')) return image;
+  const filename = image.split('/').pop();
+  if (!filename) return '';
   const baseUrl = API_URL.replace(/\/api\/?$/, '');
-  return `${baseUrl}${image}`;
+  return `${baseUrl}/api/places/image/${filename}`;
 };
 
 const AvailablePlacesGrid = ({ places, role }) => {

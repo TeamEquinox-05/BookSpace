@@ -62,24 +62,18 @@ export default function AdminDashboardPage() {
 
   useEffect(() => {
     const fetchDashboardData = async () => {
-      try {
-        const [statsRes, placesRes, chartRes] = await Promise.all([
-          api.get('/stats'),
-          api.get('/places'),
-          api.get('/stats/bookings-by-month'),
-        ]);
-
-        setStats(statsRes.data);
-        setAvailablePlaces(placesRes.data);
-        setChartData(chartRes.data);
-      } catch (error) {
-        logger.error('Error fetching dashboard data:', error);
-        setError("Failed to load dashboard data. Please try again later.");
-      } finally {
-        setLoading(false);
-      }
+      const [statsResult, placesResult, chartResult] = await Promise.allSettled([
+        api.get('/stats'),
+        api.get('/places'),
+        api.get('/stats/bookings-by-month'),
+      ]);
+      if (statsResult.status === 'fulfilled') setStats(statsResult.value.data);
+      if (placesResult.status === 'fulfilled') setAvailablePlaces(placesResult.value.data);
+      if (chartResult.status === 'fulfilled') setChartData(chartResult.value.data);
+      if ([statsResult, placesResult, chartResult].some(r => r.status === 'rejected'))
+        setError('Some dashboard data failed to load.');
+      setLoading(false);
     };
-
     fetchDashboardData();
   }, []);
 

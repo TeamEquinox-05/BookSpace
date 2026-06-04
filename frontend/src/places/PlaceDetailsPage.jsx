@@ -16,11 +16,13 @@ import { API_URL, getBackendBaseUrl } from '../config/api-config';
 
 const localizer = momentLocalizer(moment);
 
-const resolveImageUrl = (path) => {
-  if (!path) return '';
-  if (path.startsWith('http')) return path;
+const resolveImageUrl = (imgPath) => {
+  if (!imgPath) return '';
+  if (imgPath.startsWith('http')) return imgPath;
+  const filename = imgPath.split('/').pop();
+  if (!filename) return '';
   const base = getBackendBaseUrl();
-  return `${base}${path}`;
+  return `${base}/api/places/image/${filename}`;
 };
 
 export default function PlaceDetailsPage() {
@@ -54,15 +56,17 @@ export default function PlaceDetailsPage() {
   }, [view, date, user]);
 
   useEffect(() => {
+    const controller = new AbortController();
     const fetchPlaceDetails = async () => {
       try {
         const [placeRes, bookingsRes] = await Promise.all([
-          api.get(`/places/${id}`),
-          api.get(`/places/${id}/bookings`),
+          api.get(`/places/${id}`, { signal: controller.signal }),
+          api.get(`/places/${id}/bookings`, { signal: controller.signal }),
         ]);
         setPlace(placeRes.data);
         setBookings(bookingsRes.data);
       } catch (err) {
+        if (err.name === 'CanceledError' || err.name === 'AbortError') return;
         setError(err.message);
         logger.error('Error fetching place details:', err);
       } finally {
@@ -70,8 +74,8 @@ export default function PlaceDetailsPage() {
         setBookingsLoading(false);
       }
     };
-
     fetchPlaceDetails();
+    return () => controller.abort();
   }, [id]);
 
   const fetchBookings = async () => {
