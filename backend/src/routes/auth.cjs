@@ -110,8 +110,9 @@ router.post('/send-otp',
         const oldest = Object.entries(otpStore).sort((a, b) => a[1].timestamp - b[1].timestamp)[0];
         if (oldest) delete otpStore[oldest[0]];
       }
+      const otpHash = await bcrypt.hash(otp, 10);
       otpStore[email] = {
-        otp,
+        otp: otpHash,
         timestamp: Date.now(),
       };
       // Only log OTP in development mode for debugging
@@ -189,7 +190,11 @@ router.post('/signup', otpLimiter, [
   try {
     // Verify OTP
     const storedOtp = otpStore[email];
-    if (!storedOtp || !safeCompare(storedOtp.otp, otp)) {
+    if (!storedOtp) {
+      return res.status(400).json({ msg: 'Invalid OTP' });
+    }
+    const otpValid = await bcrypt.compare(otp, storedOtp.otp);
+    if (!otpValid) {
       return res.status(400).json({ msg: 'Invalid OTP' });
     }
 

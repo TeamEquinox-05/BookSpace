@@ -7,7 +7,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { User, Mail, Phone, Shield, Lock, Sun, Moon, Monitor, Save, Eye, EyeOff, Check, Database, Download, Upload, AlertTriangle } from 'lucide-react';
 
-const SettingsSection = ({ icon: Icon, title, description, children, delay = 0 }) => (
+const SettingsSection = ({ icon: Icon, title, description, children, delay: _delay = 0 }) => (
   <div 
     className="bg-white dark:bg-[#0a0a0a] rounded-2xl shadow-sm border border-slate-200 dark:border-[#1a1a1a] overflow-hidden"
   >

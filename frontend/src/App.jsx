@@ -21,7 +21,7 @@ import SettingsPage from './settings/SettingsPage.jsx';
 import PlaceDetailsPage from './places/PlaceDetailsPage.jsx';
 
 function App() {
-  const { user, loading } = useAuth();
+  const { user } = useAuth();
 
   return (
     <Routes>

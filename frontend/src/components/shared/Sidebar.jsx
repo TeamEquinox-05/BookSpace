@@ -67,7 +67,7 @@ const Sidebar = ({ isExpanded, setIsExpanded: _setIsExpanded, onMouseEnter, onMo
 
       {/* Navigation */}
       <div className="flex-1 overflow-y-auto py-4 overflow-x-hidden">
-        {filteredSidebarSections.map((section, sectionIndex) => (
+        {filteredSidebarSections.map((section) => (
           <div key={section.title} className="mb-6">
             {/* Section Header */}
             {isExpanded && (
@@ -82,7 +82,7 @@ const Sidebar = ({ isExpanded, setIsExpanded: _setIsExpanded, onMouseEnter, onMo
 
             {/* Section Items */}
             <div className={cn("space-y-1", isExpanded ? "px-3" : "px-2")}>
-              {section.items.map((item, index) => (
+              {section.items.map((item) => (
                 <RouterNavLink
                   key={item.id}
                   to={item.href}

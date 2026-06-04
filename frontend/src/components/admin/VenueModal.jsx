@@ -95,7 +95,7 @@ const VenueModal = ({ isOpen, onClose, onSave, venue }) => {
     }
 
     setUploading(true);
-    setErrors(prev => { const { image, ...rest } = prev; return rest; });
+    setErrors(prev => { const { image: _, ...rest } = prev; return rest; });
 
     try {
       const fd = new FormData();
