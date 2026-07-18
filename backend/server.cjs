@@ -47,29 +47,7 @@ const allowedOrigins = [
 // Simplify the CORS configuration - use a single approach
 // This creates a cleaner middleware chain and reduces conflicts
 app.use(cors({
-  origin: function (origin, callback) {
-    logger.debug('CORS request from origin:', origin);
-    
-    // Reject requests with no origin in production (prevents CSRF from non-browser clients)
-    // Allow in development for tools like curl/Postman
-    if (!origin) {
-      if (process.env.NODE_ENV === 'production') {
-        logger.warn('Request with no origin blocked in production');
-        return callback(new Error('Not allowed by CORS'));
-      }
-      logger.debug('Request has no origin, allowing in dev mode');
-      return callback(null, true);
-    }
-    
-    // Check if origin is in our allowed list
-    if (allowedOrigins.includes(origin)) {
-      logger.debug('Origin allowed by CORS:', origin);
-      callback(null, true);
-    } else {
-      logger.warn('Origin blocked by CORS:', origin);
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+  origin: '*',
   credentials: true,
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
   allowedHeaders: 'Origin,X-Requested-With,Content-Type,Accept,Authorization,X-Auth-Token,X-Request-ID,X-Request-Source',
